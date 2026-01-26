@@ -1,73 +1,35 @@
 import React from 'react';
-import { Package, AlertCircle } from 'lucide-react';
 
-interface AdminInventoryProps {
-    stock: any[];
-    onRefresh: () => void;
-    isSyncing: boolean;
-    userRole: string;
-}
-
-const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, isSyncing, userRole }) => {
+const AdminInventory: React.FC<any> = ({ stock = [] }) => {
     return (
-        <div className="p-10 text-right">
-            <h1 className="text-2xl font-black mb-4 flex items-center gap-2">
-                <Package className="w-8 h-8 text-blue-600" />
-                اختبار صفحة المخزن
-            </h1>
+        <div style={{ padding: '50px', textAlign: 'right', direction: 'rtl', color: 'black', background: 'white', minHeight: '100vh' }}>
+            <h1 style={{ fontSize: '30px', fontWeight: 'bold' }}>برنامج الفحص الشامل - المرحلة 2</h1>
+            <p style={{ marginTop: '20px', fontSize: '18px' }}>إذا كنت ترى هذا النص، فالمشكلة كانت في المكونات المعقدة (مثل الأيقونات أو القوائم المخصصة).</p>
 
-            <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-2xl mb-6">
-                <p className="font-bold text-yellow-800">إذا كنت ترى هذه الصفحة، فهذا يعني أن المشكلة كانت في أحد المكونات المعقدة أو الحسابات.</p>
+            <div style={{ marginTop: '30px', padding: '20px', border: '2px solid red', borderRadius: '15px' }}>
+                <h2 style={{ fontWeight: 'bold' }}>بيانات التشخيص:</h2>
+                <ul style={{ marginTop: '10px' }}>
+                    <li>حالة المخزن: {Array.isArray(stock) ? 'مصفوفة سليمة' : 'ليست مصفوفة!'}</li>
+                    <li>عدد السجلات: {stock.length}</li>
+                    <li>الرابط الحالي: {window.location.hash}</li>
+                </ul>
+            </div>
+
+            <div style={{ marginTop: '30px' }}>
                 <button
-                    onClick={onRefresh}
-                    className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold"
+                    onClick={() => { localStorage.clear(); window.location.reload(); }}
+                    style={{ background: 'red', color: 'white', padding: '15px 30px', borderRadius: '10px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
                 >
-                    {isSyncing ? 'جاري التحديث...' : 'تحديث البيانات'}
+                    تصفير شامل للذاكرة المؤقتة (Clear All Storage)
                 </button>
             </div>
 
-            <div className="space-y-4">
-                <h2 className="font-black text-lg">إحصائيات أولية:</h2>
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white p-4 rounded-xl border">
-                        <p className="text-xs text-gray-400">إجمالي السجلات</p>
-                        <p className="text-2xl font-black">{Array.isArray(stock) ? stock.length : 0}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border">
-                        <p className="text-xs text-gray-400">صلاحية المستخدم</p>
-                        <p className="text-lg font-black">{userRole}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-10">
-                <h2 className="font-black text-lg mb-4">أول 5 سجلات (للتأكد من البيانات):</h2>
-                <div className="bg-white rounded-xl border overflow-hidden">
-                    <table className="w-full text-right">
-                        <thead className="bg-gray-50 border-b">
-                            <tr>
-                                <th className="p-3">الباركود</th>
-                                <th className="p-3">الفرع</th>
-                                <th className="p-3">الحالة</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Array.isArray(stock) && stock.slice(0, 5).map((s, i) => (
-                                <tr key={i} className="border-b">
-                                    <td className="p-3 font-mono">{String(s?.barcode || 'N/A')}</td>
-                                    <td className="p-3">{String(s?.branch || 'N/A')}</td>
-                                    <td className="p-3">{String(s?.status || 'N/A')}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div className="mt-10 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                <p className="text-xs font-bold">إذا ظهرت البيانات هنا، سأقوم بإعادة بناء المكون الأصلي خطوة بخطوة حتى نجد السطر المسبب للخلل.</p>
-            </div>
+            <script dangerouslySetInnerHTML={{
+                __html: `
+                window.onerror = function(msg, url, line) {
+                    alert('خطأ برمجي اكتشفناه: ' + msg + ' في السطر: ' + line);
+                };
+            `}} />
         </div>
     );
 };
