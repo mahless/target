@@ -1,7 +1,7 @@
 import { ServiceEntry, Expense, Branch, User, LoginResponse } from '../types';
 
 // سنقوم بتحديث هذا الرابط "Web App URL" لاحقاً
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwL96tj55VIFe-NtcfJmVYMSCxt3R0VkJBfLdQIcUKRJR0nXVmUxyrr-OEBcjCWf3cD/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9tgRY5Bm7AuwcHrxCpmDFiCEobYkdWEG5Iz7zUEZEjUaZGpLgYlbW7BHGXvrPTVzr/exec';
 
 export const GoogleSheetsService = {
     /**
