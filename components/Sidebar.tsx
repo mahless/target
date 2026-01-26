@@ -116,10 +116,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             </NavLink>
 
             {(userRole === 'مدير' || userRole === 'مساعد') && (
-              <NavLink to="/admin/inventory" className={linkClass} onClick={() => setIsOpen(false)}>
+              <a
+                href="#/admin/inventory"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-200 border-2 border-transparent hover:border-red-200`}
+                onClick={() => setIsOpen(false)}
+              >
                 <Package className="w-5 h-5" />
-                <span>مخزن الباركودات</span>
-              </NavLink>
+                <span>مخزن الباركودات (R)</span>
+              </a>
             )}
 
             <div className="border-t border-gray-100 my-2"></div>
