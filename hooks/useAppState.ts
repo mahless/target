@@ -55,68 +55,66 @@ export const useAppState = () => {
     try {
       // 1. مزامنة العمليات
       const remoteEntries = await GoogleSheetsService.getData<any>('Entries');
-      if (remoteEntries && remoteEntries.length > 0) {
-        const mappedEntries: ServiceEntry[] = remoteEntries.map((e: any) => {
-          // التعامل مع كائنات التاريخ أو النصوص بطريقة آمنة للمناطق الزمنية
-          let rawDateInput = e.date || e.entryDate || e['تاريخ العملية'] || e['التاريخ'] || '';
-          let dateStr = '';
+      if (Array.isArray(remoteEntries)) {
+        const mappedEntries: ServiceEntry[] = remoteEntries
+          .filter(Boolean)
+          .map((e: any) => {
+            // التعامل مع كائنات التاريخ أو النصوص بطريقة آمنة للمناطق الزمنية
+            let rawDateInput = e.date || e.entryDate || e['تاريخ العملية'] || e['التاريخ'] || '';
+            let dateStr = '';
 
-          if (rawDateInput instanceof Date) {
-            const y = rawDateInput.getFullYear();
-            const m = String(rawDateInput.getMonth() + 1).padStart(2, '0');
-            const d = String(rawDateInput.getDate()).padStart(2, '0');
-            dateStr = `${y}-${m}-${d}`;
-          } else {
-            // إذا كان نصاً، نتأكد من تنظيفه من أي توقيت ISO ملحق (مثل T22:00:00Z)
-            const s = String(rawDateInput).trim();
-            if (s.includes('T')) {
-              // محاولة استخراج التاريخ المحلي من ISO لتجنب التزحزح
-              const dObj = new Date(s);
-              if (!isNaN(dObj.getTime())) {
-                const y = dObj.getFullYear();
-                const m = String(dObj.getMonth() + 1).padStart(2, '0');
-                const d = dObj.getDate(); // استخدام getDate المحلي
-                dateStr = `${y}-${m}-${String(d).padStart(2, '0')}`;
-              } else {
-                dateStr = s.split('T')[0];
-              }
+            if (rawDateInput instanceof Date) {
+              const y = rawDateInput.getFullYear();
+              const m = String(rawDateInput.getMonth() + 1).padStart(2, '0');
+              const d = String(rawDateInput.getDate()).padStart(2, '0');
+              dateStr = `${y}-${m}-${d}`;
             } else {
-              dateStr = s;
+              const s = String(rawDateInput).trim();
+              if (s.includes('T')) {
+                const dObj = new Date(s);
+                if (!isNaN(dObj.getTime())) {
+                  dateStr = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
+                } else {
+                  dateStr = s.split('T')[0];
+                }
+              } else {
+                dateStr = s;
+              }
             }
-          }
 
-          const eDate = normalizeDate(dateStr);
+            const eDate = normalizeDate(dateStr);
 
-          return {
-            id: String(e.id || e['معرف'] || Date.now() + Math.random()),
-            clientName: String(e.clientName || e['اسم العميل'] || e['العميل'] || '').trim(),
-            nationalId: String(e.nationalId || e['الرقم القومي'] || '').trim(),
-            phoneNumber: String(e.phoneNumber || e['رقم الهاتف'] || '').trim(),
-            serviceType: String(e.serviceType || e['نوع الخدمة'] || '').trim(),
-            entryDate: eDate,
-            amountPaid: Number(e.amountPaid || e['المحصل'] || e['المبلغ المدفوع'] || 0),
-            serviceCost: Number(e.serviceCost || e['التكلفة'] || e['إجمالي التكلفة'] || 0),
-            remainingAmount: Number(e.remainingAmount || e['المتبقي'] || 0),
-            branchId: normalizeArabic(String(e.branchId || e['الفرع'] || '')),
-            status: (e.status || e['الحالة'] || 'active') as 'active' | 'cancelled',
-            timestamp: Number(e.timestamp || e['التوقيت'] || Date.now()),
-            recordedBy: String(e.recordedBy || e['الموظف'] || e['سجل بواسطة'] || '').trim(),
-            barcode: e.barcode || e['الباركود'],
-            speed: e.speed || e['السرعة'] || undefined,
-            hasThirdParty: e.hasThirdParty === true || e.hasThirdParty === 'true' || !!e.thirdPartyName || false,
-            thirdPartyName: e.thirdPartyName || e['اسم المورد'],
-            thirdPartyCost: Number(e.thirdPartyCost || e['تكلفة المورد'] || 0),
-            isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
-            electronicAmount: Number(e.electronicAmount || 0),
-            electronicMethod: e.electronicMethod
-          };
-        });
+            return {
+              id: String(e.id || e['معرف'] || Date.now() + Math.random()),
+              clientName: String(e.clientName || e['اسم العميل'] || e['العميل'] || '').trim(),
+              nationalId: String(e.nationalId || e['الرقم القومي'] || '').trim(),
+              phoneNumber: String(e.phoneNumber || e['رقم الهاتف'] || '').trim(),
+              serviceType: String(e.serviceType || e['نوع الخدمة'] || '').trim(),
+              entryDate: eDate,
+              amountPaid: Number(e.amountPaid || e['المحصل'] || e['المبلغ المدفوع'] || 0),
+              serviceCost: Number(e.serviceCost || e['التكلفة'] || e['إجمالي التكلفة'] || 0),
+              remainingAmount: Number(e.remainingAmount || e['المتبقي'] || 0),
+              branchId: normalizeArabic(String(e.branchId || e['الفرع'] || '')),
+              status: (e.status || e['الحالة'] || 'active') as 'active' | 'cancelled',
+              timestamp: Number(e.timestamp || e['التوقيت'] || Date.now()),
+              recordedBy: String(e.recordedBy || e['الموظف'] || e['سجل بواسطة'] || '').trim(),
+              barcode: e.barcode || e['الباركود'],
+              speed: e.speed || e['السرعة'] || undefined,
+              hasThirdParty: e.hasThirdParty === true || e.hasThirdParty === 'true' || !!e.thirdPartyName || false,
+              thirdPartyName: e.thirdPartyName || e['اسم المورد'],
+              thirdPartyCost: Number(e.thirdPartyCost || e['تكلفة المورد'] || 0),
+              isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
+              electronicAmount: Number(e.electronicAmount || 0),
+              electronicMethod: e.electronicMethod,
+              parentEntryId: e.parentEntryId || e['المعاملة الأم']
+            };
+          });
 
         setEntries(prev => {
           const mergedMap = new Map();
-          prev.forEach(item => mergedMap.set(item.id, item));
+          (Array.isArray(prev) ? prev : []).forEach(item => { if (item && item.id) mergedMap.set(item.id, item); });
           mappedEntries.forEach(item => {
-            if (item.id && item.id !== 'undefined') {
+            if (item && item.id && item.id !== 'undefined') {
               mergedMap.set(item.id, item);
             }
           });
@@ -126,48 +124,50 @@ export const useAppState = () => {
 
       // 2. مزامنة المصروفات
       const remoteExpenses = await GoogleSheetsService.getData<any>('Expenses');
-      if (remoteExpenses && remoteExpenses.length > 0) {
-        const mappedExpenses: Expense[] = remoteExpenses.map((ex: any) => {
-          let rawExDateInput = ex.date || ex['التاريخ'] || '';
-          let exDateStr = '';
+      if (Array.isArray(remoteExpenses)) {
+        const mappedExpenses: Expense[] = remoteExpenses
+          .filter(Boolean)
+          .map((ex: any) => {
+            let rawExDateInput = ex.date || ex['التاريخ'] || '';
+            let exDateStr = '';
 
-          if (rawExDateInput instanceof Date) {
-            const y = rawExDateInput.getFullYear();
-            const m = String(rawExDateInput.getMonth() + 1).padStart(2, '0');
-            const d = String(rawExDateInput.getDate()).padStart(2, '0');
-            exDateStr = `${y}-${m}-${d}`;
-          } else {
-            const s = String(rawExDateInput).trim();
-            if (s.includes('T')) {
-              const dObj = new Date(s);
-              if (!isNaN(dObj.getTime())) {
-                exDateStr = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
-              } else {
-                exDateStr = s.split('T')[0];
-              }
+            if (rawExDateInput instanceof Date) {
+              const y = rawExDateInput.getFullYear();
+              const m = String(rawExDateInput.getMonth() + 1).padStart(2, '0');
+              const d = String(rawExDateInput.getDate()).padStart(2, '0');
+              exDateStr = `${y}-${m}-${d}`;
             } else {
-              exDateStr = s;
+              const s = String(rawExDateInput).trim();
+              if (s.includes('T')) {
+                const dObj = new Date(s);
+                if (!isNaN(dObj.getTime())) {
+                  exDateStr = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
+                } else {
+                  exDateStr = s.split('T')[0];
+                }
+              } else {
+                exDateStr = s;
+              }
             }
-          }
-          const exDate = normalizeDate(exDateStr);
+            const exDate = normalizeDate(exDateStr);
 
-          return {
-            id: String(ex.id || ex['معرف'] || Date.now() + Math.random()),
-            category: (ex.category || ex['البند'] || ex['القسم'] || '') as any,
-            amount: Number(ex.amount || ex['المبلغ'] || 0),
-            date: exDate,
-            branchId: normalizeArabic(String(ex.branchId || ex['الفرع'] || '')),
-            timestamp: Number(ex.timestamp || ex['التوقيت'] || Date.now()),
-            recordedBy: String(ex.recordedBy || ex['الموظف'] || '').trim(),
-            relatedEntryId: ex.relatedEntryId || ex['رقم المعاملة'] || ex['Order_ID']
-          };
-        });
+            return {
+              id: String(ex.id || ex['معرف'] || Date.now() + Math.random()),
+              category: (ex.category || ex['البند'] || ex['القسم'] || '') as any,
+              amount: Number(ex.amount || ex['المبلغ'] || 0),
+              date: exDate,
+              branchId: normalizeArabic(String(ex.branchId || ex['الفرع'] || '')),
+              timestamp: Number(ex.timestamp || ex['التوقيت'] || Date.now()),
+              recordedBy: String(ex.recordedBy || ex['الموظف'] || '').trim(),
+              relatedEntryId: ex.relatedEntryId || ex['رقم المعاملة'] || ex['Order_ID']
+            };
+          });
 
         setExpenses(prev => {
           const mergedMap = new Map();
-          prev.forEach(item => mergedMap.set(item.id, item));
+          (Array.isArray(prev) ? prev : []).forEach(item => { if (item && item.id) mergedMap.set(item.id, item); });
           mappedExpenses.forEach(item => {
-            if (item.id && item.id !== 'undefined') {
+            if (item && item.id && item.id !== 'undefined') {
               mergedMap.set(item.id, item);
             }
           });
@@ -177,16 +177,18 @@ export const useAppState = () => {
 
       // 3. مزامنة المخزون (Stock)
       const remoteStock = await GoogleSheetsService.getData<any>('Stock');
-      if (remoteStock && remoteStock.length > 0) {
-        const mappedStock: StockItem[] = remoteStock.map((s: any) => ({
-          barcode: String(s.barcode || s.Barcode || s['الباركود'] || ''),
-          category: (s.category || s.Category || s['الفئة'] || 'عادي') as any,
-          branch: String(s.branch || s.Branch || s['الفرع'] || ''),
-          status: (s.status || s.Status || s['الحالة'] || 'Available') as any,
-          created_at: Number(s.created_at || s.Created_At || s.timestamp || Date.now()),
-          used_by: s.used_by || s.Used_By || s['الموظف'] || '',
-          order_id: s.order_id || s.Order_ID || s['رقم الطلب'] || ''
-        }));
+      if (Array.isArray(remoteStock)) {
+        const mappedStock: StockItem[] = remoteStock
+          .filter(Boolean)
+          .map((s: any) => ({
+            barcode: String(s.barcode || s.Barcode || s['الباركود'] || ''),
+            category: (s.category || s.Category || s['الفئة'] || 'عادي') as any,
+            branch: String(s.branch || s.Branch || s['الفرع'] || ''),
+            status: (s.status || s.Status || s['الحالة'] || 'Available') as any,
+            created_at: Number(s.created_at || s.Created_At || s.timestamp || Date.now()),
+            used_by: s.used_by || s.Used_By || s['الموظف'] || '',
+            order_id: s.order_id || s.Order_ID || s['رقم الطلب'] || ''
+          }));
         setStock(mappedStock);
         localStorage.setItem('target_stock', JSON.stringify(mappedStock));
       }
