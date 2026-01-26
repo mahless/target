@@ -16,6 +16,13 @@ import { BRANCHES } from './constants';
 // Lazy load AdminInventory to isolate potential bundle crashes
 const AdminInventory = React.lazy(() => import('./pages/AdminInventory'));
 
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, branch, currentDate } = useAppState();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!branch || !currentDate) return <Navigate to="/setup" replace />;
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
   const {
     user, userRole, branch, currentDate, entries, expenses, stock,
@@ -39,11 +46,7 @@ const AppContent: React.FC = () => {
     }
   }, [location.pathname]);
 
-  const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    if (!user) return <Navigate to="/login" replace />;
-    if (!branch || !currentDate) return <Navigate to="/setup" replace />;
-    return <>{children}</>;
-  };
+
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-right">
