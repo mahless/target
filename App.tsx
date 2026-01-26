@@ -9,10 +9,12 @@ import ServiceForm from './pages/ServiceForm';
 import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import Receivables from './pages/Receivables';
-import AdminInventory from './pages/AdminInventory';
 import { ModalProvider } from './context/ModalContext';
 import { useAppState } from './hooks/useAppState';
 import { BRANCHES } from './constants';
+
+// Lazy load AdminInventory to isolate potential bundle crashes
+const AdminInventory = React.lazy(() => import('./pages/AdminInventory'));
 
 const AppContent: React.FC = () => {
   const {
@@ -91,8 +93,15 @@ const AppContent: React.FC = () => {
                     } />
                     <Route path="/expenses" element={<Expenses expenses={expenses} entries={entries} onAddExpense={addExpense} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} />} />
                     <Route path="/reports" element={<Reports entries={entries} expenses={expenses} branches={BRANCHES} manualDate={currentDate || ''} branchId={branch?.id || ''} onUpdateEntry={updateEntry} onAddExpense={addExpense} isSyncing={isSyncing} onRefresh={syncAll} username={user?.name || ''} />} />
-                    {/* فصلنا البيانات الحقيقية عن الصفحة لاختبار سبب الانهيار */}
-                    <Route path="/admin/inventory" element={<AdminInventory stock={Array.isArray(stock) ? stock : []} onRefresh={syncAll} isSyncing={isSyncing} userRole={userRole} />} />
+                    {/* استخدام Suspense لضمان تحميل الصفحة بشكل منفصل وآمن */}
+                    <Route
+                      path="/admin/inventory"
+                      element={
+                        <React.Suspense fallback={<div className="p-10 text-center font-bold text-gray-500">جاري تحميل واجهة المخزن...</div>}>
+                          <AdminInventory stock={Array.isArray(stock) ? stock : []} onRefresh={syncAll} isSyncing={isSyncing} userRole={userRole} />
+                        </React.Suspense>
+                      }
+                    />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </ErrorBoundary>
