@@ -73,7 +73,8 @@ function handleLogin(id, password) {
           success: true, 
           id: data[i][0], 
           name: data[i][1], 
-          role: data[i][3] // مدير، مساعد، موظف
+          role: data[i][3], // مدير، مساعد، موظف
+          assignedBranchId: data[i][4] || null // الفرع المخصص (إن وجد)
         });
       }
     }

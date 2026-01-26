@@ -78,6 +78,7 @@ export interface User {
   name: string;
   role: 'مدير' | 'مساعد' | 'موظف';
   branchId: string; // Used for local filtering
+  assignedBranchId?: string; // Optional: restricts employee to a specific branch
 }
 
 export interface LoginResponse {

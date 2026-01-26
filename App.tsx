@@ -53,7 +53,7 @@ const AppContent: React.FC = () => {
       <ErrorBoundary>
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/setup" /> : <Login onLogin={handleLogin} />} />
-          <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} />} />
+          <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} user={user} />} />
 
           <Route path="/*" element={
             <ProtectedRoute>
@@ -62,6 +62,7 @@ const AppContent: React.FC = () => {
                 onLogout={handleLogout} currentBranch={branch} currentDate={currentDate}
                 onBranchChange={setBranch} onDateChange={setCurrentDate}
                 userRole={userRole}
+                user={user}
               />
               <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
                 <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} branch={branch} date={currentDate} username={user?.name || ''} pageTitle={pageTitle} />

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3, MapPin, Calendar, Clock, Package } from 'lucide-react';
+import { Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3, MapPin, Calendar, Clock, Package, Lock } from 'lucide-react';
 import { BRANCHES } from '../constants';
-import { Branch } from '../types';
+import { Branch, User } from '../types';
 import CustomSelect from './CustomSelect';
 
 interface SidebarProps {
@@ -14,6 +14,7 @@ interface SidebarProps {
   onBranchChange: (branch: Branch) => void;
   onDateChange: (date: string) => void;
   userRole: string;
+  user: User;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -24,7 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentDate,
   onBranchChange,
   onDateChange,
-  userRole
+  userRole,
+  user
 }) => {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${isActive
@@ -35,6 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const controlInputClass = "w-full p-2.5 mt-1 border-2 border-blue-200 rounded-lg bg-white text-black font-bold text-xs focus:ring-4 focus:ring-blue-50 focus:border-blue-600 outline-none transition-all shadow-sm";
   // Remove useMemo to ensure fresh data always
   const branchOptions = BRANCHES.map(b => ({ id: b.id, name: b.name }));
+  const isRestricted = !!user.assignedBranchId;
 
   return (
     <>
@@ -66,16 +69,29 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             <div className="space-y-3">
               <div>
-                <CustomSelect
-                  label="الفرع"
-                  options={branchOptions}
-                  value={currentBranch?.id || ''}
-                  onChange={(val) => {
-                    const b = BRANCHES.find(br => br.id === val);
-                    if (b) onBranchChange(b);
-                  }}
-                  icon={<MapPin className="w-3 h-3 text-blue-600" />}
-                />
+                {isRestricted ? (
+                  <div>
+                    <label className="flex items-center gap-1 text-xs font-bold text-gray-600 px-1 mb-1">
+                      <MapPin className="w-3 h-3 text-blue-600" />
+                      الفرع
+                    </label>
+                    <div className="flex items-center gap-2 p-2.5 mt-1 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-700 font-bold text-xs cursor-not-allowed">
+                      <Lock className="w-3 h-3 text-gray-500" />
+                      <span>{currentBranch?.name || 'محدد'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <CustomSelect
+                    label="الفرع"
+                    options={branchOptions}
+                    value={currentBranch?.id || ''}
+                    onChange={(val) => {
+                      const b = BRANCHES.find(br => br.id === val);
+                      if (b) onBranchChange(b);
+                    }}
+                    icon={<MapPin className="w-3 h-3 text-blue-600" />}
+                  />
+                )}
               </div>
 
               <div>
