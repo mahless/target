@@ -2,9 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { StockItem, StockCategory, StockStatus } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { BRANCHES } from '../constants';
-import { PlusCircle, Package, AlertCircle, CheckCircle2, Search, History } from 'lucide-react';
+import { PlusCircle, Package, AlertCircle, CheckCircle2, Search, History, RefreshCw } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
-import { toEnglishDigits } from '../utils';
 import CustomSelect from '../components/CustomSelect';
 
 interface AdminInventoryProps {
@@ -25,10 +24,10 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
 
     const canAddStock = userRole === 'مدير' || userRole === 'مساعد';
 
-    // 1. حساب الإحصائيات بأمان شديد
+    // 1. حساب الإحصائيات بأمان مطلق
     const stats = useMemo(() => {
+        const summary: Record<string, Record<string, number>> = {};
         try {
-            const summary: Record<string, Record<string, number>> = {};
             (BRANCHES || []).forEach(b => {
                 if (b && b.id) summary[b.id] = { 'عادي': 0, 'مستعجل': 0, 'فوري': 0 };
             });
@@ -36,23 +35,22 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
             const safeStock = Array.isArray(stock) ? stock : [];
             safeStock.forEach(item => {
                 if (item && item.status === 'Available' && item.branch && summary[item.branch]) {
-                    const cat = item.category === 'سوبر فوري' ? 'فوري' : item.category;
+                    const cat = item.category === 'سوبر فوري' ? 'فوري' : (item.category || 'عادي');
                     if (summary[item.branch][cat] !== undefined) summary[item.branch][cat]++;
                 }
             });
-            return summary;
         } catch (e) {
             console.error("Stats Calc Error:", e);
-            return {};
         }
+        return summary;
     }, [stock]);
 
-    // 2. تصفية المخزون بأمان شديد
+    // 2. تصفية المخزون بأمان مطلق
     const filteredStock = useMemo(() => {
         try {
             const safeStock = Array.isArray(stock) ? stock : [];
             const term = (searchTerm || '').toLowerCase();
-
+            
             return safeStock.filter(item => {
                 if (!item) return false;
                 const barcode = String(item.barcode || '').toLowerCase();
@@ -97,7 +95,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
     };
 
     const updateStatus = async (barcode: string, newStatus: StockStatus) => {
-        if (isSubmitting) return;
+        if (isSubmitting || !barcode) return;
         setIsSubmitting(true);
         try {
             const success = await GoogleSheetsService.updateStockStatus(barcode, newStatus, 'Admin Override', userRole);
@@ -114,9 +112,13 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
         }
     };
 
-    // حماية ضد أي خطأ غير متوقع أثناء التصيير (Render)
+    const clearLocalStock = () => {
+        localStorage.removeItem('target_stock');
+        window.location.reload();
+    };
+
     if (!BRANCHES || !Array.isArray(BRANCHES)) {
-        return <div className="p-10 text-center text-red-500 font-bold">خطأ في تحميل الثوابت (BRANCHES)</div>;
+        return <div className="p-10 text-center text-red-500 font-black">خطأ في تحميل بيانات الفروع</div>;
     }
 
     return (
@@ -130,13 +132,22 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                     </h2>
                     <p className="text-sm text-gray-400 font-bold">تحكم في توزيع الأرقام ومراقبة الاستهلاك</p>
                 </div>
-                <button
-                    onClick={onRefresh}
-                    disabled={isSyncing}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-50"
-                >
-                    {isSyncing ? 'جاري التحديث...' : 'تحديث المخزن'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                      onClick={clearLocalStock}
+                      className="bg-gray-100 text-gray-600 px-4 py-3 rounded-2xl font-black text-xs hover:bg-gray-200 transition-all flex items-center gap-2"
+                      title="مسح الكاش المحلي وإعادة التحميل"
+                  >
+                      <RefreshCw className="w-4 h-4" /> مسح المؤقت
+                  </button>
+                  <button
+                      onClick={onRefresh}
+                      disabled={isSyncing}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                      {isSyncing ? 'جاري التحديث...' : 'تحديث المخزن'}
+                  </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -145,8 +156,26 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                         <PlusCircle className="w-5 h-5" /> إضافة مخزون جديد
                     </h3>
                     <div className="space-y-4">
-                        <CustomSelect label="الفرع المخصص" options={BRANCHES.map(b => ({ id: b.id, name: b.name }))} value={selectedBranch} onChange={setSelectedBranch} />
-                        <CustomSelect label="الفئة" options={[{ id: 'عادي', name: 'عادي' }, { id: 'مستعجل', name: 'مستعجل' }, { id: 'فوري', name: 'فوري' }]} value={selectedCategory} onChange={(v) => setSelectedCategory(v as StockCategory)} />
+                        <div className="relative">
+                            <CustomSelect 
+                              label="الفرع المخصص" 
+                              options={BRANCHES.map(b => ({ id: b.id, name: b.name }))} 
+                              value={selectedBranch} 
+                              onChange={setSelectedBranch} 
+                            />
+                        </div>
+                        <div className="relative">
+                            <CustomSelect 
+                                label="الفئة" 
+                                options={[
+                                    { id: 'عادي', name: 'عادي' },
+                                    { id: 'مستعجل', name: 'مستعجل' },
+                                    { id: 'فوري', name: 'فوري' }
+                                ]} 
+                                value={selectedCategory} 
+                                onChange={(v) => setSelectedCategory(v as StockCategory)} 
+                            />
+                        </div>
                         <div>
                             <label className="text-[10px] font-black text-gray-400 block mb-2 mr-1">الباركودات</label>
                             <textarea
@@ -195,7 +224,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                             <h4 className="font-black text-sm text-gray-800 flex items-center gap-2"><History className="w-4 h-4" /> سجل الرقابة</h4>
                             <div className="flex gap-2 items-center">
                                 <div className="w-32">
-                                    <CustomSelect options={[{ id: 'Available', name: 'متاح' }, { id: 'Used', name: 'مستخدم' }, { id: 'Error', name: 'خطأ' }]} value={statusFilter} onChange={(v) => setStatusFilter(v as any)} placeholder="الكل" />
+                                    <CustomSelect options={[
+                                        { id: 'Available', name: 'متاح' }, 
+                                        { id: 'Used', name: 'مستخدم' }, 
+                                        { id: 'Error', name: 'خطأ' }
+                                    ]} value={statusFilter} onChange={(v) => setStatusFilter(v as any)} placeholder="الكل" />
                                 </div>
                                 <div className="relative">
                                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -236,7 +269,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                                             <td className="py-3 px-4 text-center">
                                                 <div className="flex justify-center gap-1">
                                                     {item.status !== 'Used' && (
-                                                        <button onClick={() => updateStatus(item.barcode, item.status === 'Error' ? 'Available' : 'Error')} className={`p-1.5 rounded-lg ${item.status === 'Error' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                                        <button 
+                                                          onClick={() => updateStatus(item.barcode, item.status === 'Error' ? 'Available' : 'Error')} 
+                                                          className={`p-1.5 rounded-lg ${item.status === 'Error' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}
+                                                          title={item.status === 'Error' ? 'إعادة تفعيل' : 'تبليغ عن خطأ'}
+                                                        >
                                                             {item.status === 'Error' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                                                         </button>
                                                     )}
@@ -246,6 +283,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                                     ))}
                                 </tbody>
                             </table>
+                            {filteredStock.length === 0 && (
+                                <div className="p-10 text-center text-gray-300 italic">لم يتم العثور على نتائج</div>
+                            )}
                         </div>
                     </div>
                 </div>
