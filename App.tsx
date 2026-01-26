@@ -48,6 +48,10 @@ const AppContent: React.FC = () => {
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/setup" /> : <Login onLogin={handleLogin} />} />
         <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} />} />
+
+        {/* مسار طوارئ خارج التخطيط */}
+        <Route path="/debug" element={<AdminInventory stock={[]} onRefresh={() => { }} isSyncing={false} userRole="مدير" />} />
+
         <Route path="/*" element={
           <ProtectedRoute>
             <Sidebar
@@ -87,7 +91,8 @@ const AppContent: React.FC = () => {
                     } />
                     <Route path="/expenses" element={<Expenses expenses={expenses} entries={entries} onAddExpense={addExpense} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} />} />
                     <Route path="/reports" element={<Reports entries={entries} expenses={expenses} branches={BRANCHES} manualDate={currentDate || ''} branchId={branch?.id || ''} onUpdateEntry={updateEntry} onAddExpense={addExpense} isSyncing={isSyncing} onRefresh={syncAll} username={user?.name || ''} />} />
-                    <Route path="/admin/inventory" element={<AdminInventory stock={stock || []} onRefresh={syncAll} isSyncing={isSyncing} userRole={userRole} />} />
+                    {/* فصلنا البيانات الحقيقية عن الصفحة لاختبار سبب الانهيار */}
+                    <Route path="/admin/inventory" element={<AdminInventory stock={[]} onRefresh={() => { }} isSyncing={false} userRole={userRole} />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </ErrorBoundary>
