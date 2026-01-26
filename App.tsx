@@ -92,7 +92,7 @@ const AppContent: React.FC = () => {
                     <Route path="/expenses" element={<Expenses expenses={expenses} entries={entries} onAddExpense={addExpense} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} />} />
                     <Route path="/reports" element={<Reports entries={entries} expenses={expenses} branches={BRANCHES} manualDate={currentDate || ''} branchId={branch?.id || ''} onUpdateEntry={updateEntry} onAddExpense={addExpense} isSyncing={isSyncing} onRefresh={syncAll} username={user?.name || ''} />} />
                     {/* فصلنا البيانات الحقيقية عن الصفحة لاختبار سبب الانهيار */}
-                    <Route path="/admin/inventory" element={<AdminInventory stock={[]} onRefresh={() => { }} isSyncing={false} userRole={userRole} />} />
+                    <Route path="/admin/inventory" element={<AdminInventory stock={Array.isArray(stock) ? stock : []} onRefresh={syncAll} isSyncing={isSyncing} userRole={userRole} />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </ErrorBoundary>
