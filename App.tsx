@@ -59,36 +59,38 @@ const AppContent: React.FC = () => {
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
               <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} branch={branch} date={currentDate} username={user?.name || ''} pageTitle={pageTitle} />
               <main className="flex-1 overflow-y-auto">
-                <Routes>
-                  <Route path="/dashboard" element={
-                    <Dashboard
-                      allEntries={entries}
-                      allExpenses={expenses}
-                      currentDate={currentDate || ''}
-                      branchId={branch?.id || ''}
-                      onUpdateEntry={updateEntry}
-                      isSyncing={isSyncing}
-                      onRefresh={syncAll}
-                    />
-                  } />
-                  <Route path="/new-service" element={<ServiceForm onAddEntry={addEntry} onAddExpense={addExpense} entries={entries} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} userRole={userRole} />} />
-                  <Route path="/receivables" element={
-                    <Receivables
-                      entries={entries}
-                      onUpdateEntry={updateEntry}
-                      onAddEntry={addEntry}
-                      branchId={branch?.id || ''}
-                      currentDate={currentDate || ''}
-                      username={user?.name || ''}
-                      isSyncing={isSyncing}
-                      onRefresh={syncAll}
-                    />
-                  } />
-                  <Route path="/expenses" element={<Expenses expenses={expenses} entries={entries} onAddExpense={addExpense} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} />} />
-                  <Route path="/reports" element={<Reports entries={entries} expenses={expenses} branches={BRANCHES} manualDate={currentDate || ''} branchId={branch?.id || ''} onUpdateEntry={updateEntry} onAddExpense={addExpense} isSyncing={isSyncing} onRefresh={syncAll} username={user?.name || ''} />} />
-                  <Route path="/admin/inventory" element={<AdminInventory stock={stock} onRefresh={syncAll} isSyncing={isSyncing} userRole={userRole} />} />
-                  <Route path="*" element={<Navigate to="/dashboard" />} />
-                </Routes>
+                <ErrorBoundary>
+                  <Routes>
+                    <Route path="/dashboard" element={
+                      <Dashboard
+                        allEntries={entries}
+                        allExpenses={expenses}
+                        currentDate={currentDate || ''}
+                        branchId={branch?.id || ''}
+                        onUpdateEntry={updateEntry}
+                        isSyncing={isSyncing}
+                        onRefresh={syncAll}
+                      />
+                    } />
+                    <Route path="/new-service" element={<ServiceForm onAddEntry={addEntry} onAddExpense={addExpense} entries={entries} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} userRole={userRole} />} />
+                    <Route path="/receivables" element={
+                      <Receivables
+                        entries={entries}
+                        onUpdateEntry={updateEntry}
+                        onAddEntry={addEntry}
+                        branchId={branch?.id || ''}
+                        currentDate={currentDate || ''}
+                        username={user?.name || ''}
+                        isSyncing={isSyncing}
+                        onRefresh={syncAll}
+                      />
+                    } />
+                    <Route path="/expenses" element={<Expenses expenses={expenses} entries={entries} onAddExpense={addExpense} branchId={branch?.id || ''} currentDate={currentDate || ''} username={user?.name || ''} />} />
+                    <Route path="/reports" element={<Reports entries={entries} expenses={expenses} branches={BRANCHES} manualDate={currentDate || ''} branchId={branch?.id || ''} onUpdateEntry={updateEntry} onAddExpense={addExpense} isSyncing={isSyncing} onRefresh={syncAll} username={user?.name || ''} />} />
+                    <Route path="/admin/inventory" element={<AdminInventory stock={stock || []} onRefresh={syncAll} isSyncing={isSyncing} userRole={userRole} />} />
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
+                  </Routes>
+                </ErrorBoundary>
               </main>
             </div>
           </ProtectedRoute>
@@ -97,6 +99,54 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
+
+// Error Boundary بسيط لالتقاط أي انهيار في الصفحات
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 text-center">
+          <h2 className="text-2xl font-black text-red-600 mb-4">حدث خطأ تقني في هذه الصفحة</h2>
+          <div className="bg-red-50 p-4 rounded-xl border border-red-100 text-left font-mono text-xs overflow-auto max-h-40">
+            {this.state.error?.toString()}
+          </div>
+          <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.reload();
+            }}
+            className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition"
+          >
+            مسح البيانات وإعادة التحميل
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const App: React.FC = () => (
   <ModalProvider>
