@@ -15,6 +15,7 @@ export const SERVICE_TYPES = [
 ];
 
 export const EXPENSE_CATEGORIES = [
+  'دليفري',
   'كهرباء',
   'إيجار',
   'سلف',
