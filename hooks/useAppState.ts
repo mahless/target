@@ -167,10 +167,19 @@ export const useAppState = () => {
       }
 
       // 3. مزامنة المخزون (Stock)
-      const remoteStock = await GoogleSheetsService.getData<StockItem>('Stock');
+      const remoteStock = await GoogleSheetsService.getData<any>('Stock');
       if (remoteStock && remoteStock.length > 0) {
-        setStock(remoteStock);
-        localStorage.setItem('target_stock', JSON.stringify(remoteStock));
+        const mappedStock: StockItem[] = remoteStock.map((s: any) => ({
+          barcode: String(s.barcode || s.Barcode || s['الباركود'] || ''),
+          category: (s.category || s.Category || s['الفئة'] || 'عادي') as any,
+          branch: String(s.branch || s.Branch || s['الفرع'] || ''),
+          status: (s.status || s.Status || s['الحالة'] || 'Available') as any,
+          created_at: Number(s.created_at || s.Created_At || s.timestamp || Date.now()),
+          used_by: s.used_by || s.Used_By || s['الموظف'] || '',
+          order_id: s.order_id || s.Order_ID || s['رقم الطلب'] || ''
+        }));
+        setStock(mappedStock);
+        localStorage.setItem('target_stock', JSON.stringify(mappedStock));
       }
     } catch (error) {
       console.error("Sync Error:", error);

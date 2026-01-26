@@ -51,11 +51,16 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
             };
         });
 
-        stock.filter(s => s.status === 'Available').forEach(item => {
-            if (summary[item.branch]) {
-                summary[item.branch][item.category]++;
-            }
-        });
+        if (Array.isArray(stock)) {
+            stock.filter(s => s && s.status === 'Available').forEach(item => {
+                if (summary[item.branch]) {
+                    const cat = item.category === 'سوبر فوري' ? 'فوري' : item.category;
+                    if (summary[item.branch][cat] !== undefined) {
+                        summary[item.branch][cat]++;
+                    }
+                }
+            });
+        }
 
         return summary;
     }, [stock]);
@@ -257,7 +262,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                                                     {item.category}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-center">{BRANCHES.find(b => b.id === item.branch)?.name?.split('-')[0]}</td>
+                                            <td className="py-3 px-4 text-center">
+                                                {item.branch ? (BRANCHES.find(b => b.id === item.branch)?.name?.split('-')[0] || item.branch) : '-'}
+                                            </td>
                                             <td className="py-3 px-4 text-center">
                                                 <span className={`px-2 py-1 rounded-md ${item.status === 'Used' ? 'bg-green-100 text-green-700' :
                                                     item.status === 'Error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
