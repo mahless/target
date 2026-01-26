@@ -47,25 +47,22 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-right">
-      <Routes>
-        <Route path="/login" element={user ? <Navigate to="/setup" /> : <Login onLogin={handleLogin} />} />
-        <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} />} />
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/login" element={user ? <Navigate to="/setup" /> : <Login onLogin={handleLogin} />} />
+          <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} />} />
 
-        {/* مسار طوارئ خارج التخطيط */}
-
-
-        <Route path="/*" element={
-          <ProtectedRoute>
-            <Sidebar
-              isOpen={sidebarOpen} setIsOpen={setSidebarOpen}
-              onLogout={handleLogout} currentBranch={branch} currentDate={currentDate}
-              onBranchChange={setBranch} onDateChange={setCurrentDate}
-              userRole={userRole}
-            />
-            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-              <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} branch={branch} date={currentDate} username={user?.name || ''} pageTitle={pageTitle} />
-              <main className="flex-1 overflow-y-auto">
-                <ErrorBoundary>
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <Sidebar
+                isOpen={sidebarOpen} setIsOpen={setSidebarOpen}
+                onLogout={handleLogout} currentBranch={branch} currentDate={currentDate}
+                onBranchChange={setBranch} onDateChange={setCurrentDate}
+                userRole={userRole}
+              />
+              <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+                <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} branch={branch} date={currentDate} username={user?.name || ''} pageTitle={pageTitle} />
+                <main className="flex-1 overflow-y-auto">
                   <Routes>
                     <Route path="/dashboard" element={
                       <Dashboard
@@ -104,12 +101,12 @@ const AppContent: React.FC = () => {
                     />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
-                </ErrorBoundary>
-              </main>
-            </div>
-          </ProtectedRoute>
-        } />
-      </Routes>
+                </main>
+              </div>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </ErrorBoundary>
     </div>
   );
 };

@@ -6,18 +6,24 @@ import { normalizeArabic, normalizeDate } from '../utils';
 export const useAppState = () => {
   // Initialize state from localStorage if available
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('target_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('target_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
   });
 
   const [branch, setBranch] = useState<Branch | null>(() => {
-    const saved = localStorage.getItem('target_branch');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('target_branch');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
   });
 
   const [currentDate, setCurrentDate] = useState<string | null>(() => {
-    const saved = localStorage.getItem('target_date');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('target_date');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
   });
 
   const [entries, setEntries] = useState<ServiceEntry[]>(() => {
