@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { StockItem, Branch, StockCategory, StockStatus } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { BRANCHES } from '../constants';
-import { PlusCircle, Package, AlertCircle, CheckCircle2, Search, Filter, History, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, Package, AlertCircle, CheckCircle2, Search, History } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { toEnglishDigits } from '../utils';
 import CustomSelect from '../components/CustomSelect';
@@ -14,20 +14,19 @@ interface AdminInventoryProps {
     userRole: string;
 }
 
-const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyncing, userRole }) => {
+const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, isSyncing, userRole }) => {
     const { showModal, showQuickStatus } = useModal();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [newBarcodes, setNewBarcodes] = useState('');
     const [selectedBranch, setSelectedBranch] = useState('الملكه');
     const [selectedCategory, setSelectedCategory] = useState<StockCategory>('عادي');
 
-    const isManager = userRole === 'مدير';
     const canAddStock = userRole === 'مدير' || userRole === 'مساعد';
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
 
-    const branchOptions = useMemo(() => BRANCHES.map(b => ({ id: b.id, name: b.name })), []);
+    const branchOptions = useMemo(() => (BRANCHES || []).map(b => ({ id: b.id, name: b.name })), []);
     const categoryOptions = useMemo(() => [
         { id: 'عادي', name: 'عادي' },
         { id: 'مستعجل', name: 'مستعجل' },
@@ -43,31 +42,30 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
     const stats = useMemo(() => {
         const summary: Record<string, Record<string, number>> = {};
 
-        BRANCHES.forEach(b => {
-            summary[b.id] = {
-                'عادي': 0,
-                'مستعجل': 0,
-                'فوري': 0
-            };
+        (BRANCHES || []).forEach(b => {
+            if (b && b.id) {
+                summary[b.id] = { 'عادي': 0, 'مستعجل': 0, 'فوري': 0 };
+            }
         });
 
-        if (Array.isArray(stock)) {
-            stock.filter(s => s && s.status === 'Available').forEach(item => {
-                if (summary[item.branch]) {
-                    const cat = item.category === 'سوبر فوري' ? 'فوري' : item.category;
-                    if (summary[item.branch][cat] !== undefined) {
-                        summary[item.branch][cat]++;
-                    }
+        const safeStock = Array.isArray(stock) ? stock : [];
+
+        safeStock.forEach(item => {
+            if (item && item.status === 'Available' && item.branch && summary[item.branch]) {
+                const cat = item.category === 'سوبر فوري' ? 'فوري' : item.category;
+                if (summary[item.branch][cat] !== undefined) {
+                    summary[item.branch][cat]++;
                 }
-            });
-        }
+            }
+        });
 
         return summary;
     }, [stock]);
 
     const handleAddStock = async () => {
+        if (!newBarcodes || isSubmitting) return;
         const list = newBarcodes.split(/[\n, ]+/).filter(b => b.trim().length > 0);
-        if (list.length === 0 || isSubmitting) return;
+        if (list.length === 0) return;
 
         setIsSubmitting(true);
         try {
@@ -95,11 +93,17 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
     };
 
     const filteredStock = useMemo(() => {
-        return stock.filter(item => {
-            const matchSearch = item.barcode.includes(searchTerm) || (item.used_by || '').includes(searchTerm);
+        const safeStock = Array.isArray(stock) ? stock : [];
+        return safeStock.filter(item => {
+            if (!item) return false;
+            const barcode = String(item.barcode || '').toLowerCase();
+            const usedBy = String(item.used_by || '').toLowerCase();
+            const term = searchTerm.toLowerCase();
+
+            const matchSearch = barcode.includes(term) || usedBy.includes(term);
             const matchStatus = statusFilter === 'All' || item.status === statusFilter;
             return matchSearch && matchStatus;
-        }).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        }).sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0));
     }, [stock, searchTerm, statusFilter]);
 
     const updateStatus = async (barcode: string, newStatus: StockStatus) => {
@@ -140,31 +144,16 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                 </button>
             </div>
 
-            {/* Adding Stock Card */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Adding Stock Card */}
                 <div className="lg:col-span-1 bg-white p-6 rounded-3xl border border-blue-100 shadow-sm space-y-6">
                     <h3 className="font-black text-blue-900 flex items-center gap-2">
                         <PlusCircle className="w-5 h-5" /> إضافة مخزون جديد
                     </h3>
 
                     <div className="space-y-4">
-                        <div>
-                            <CustomSelect
-                                label="الفرع المخصص"
-                                options={branchOptions}
-                                value={selectedBranch}
-                                onChange={setSelectedBranch}
-                            />
-                        </div>
-
-                        <div>
-                            <CustomSelect
-                                label="الفئة"
-                                options={categoryOptions}
-                                value={selectedCategory}
-                                onChange={(v) => setSelectedCategory(v as StockCategory)}
-                            />
-                        </div>
+                        <CustomSelect label="الفرع المخصص" options={branchOptions} value={selectedBranch} onChange={setSelectedBranch} />
+                        <CustomSelect label="الفئة" options={categoryOptions} value={selectedCategory} onChange={(v) => setSelectedCategory(v as StockCategory)} />
 
                         <div>
                             <label className="text-[10px] font-black text-gray-400 block mb-2 mr-1">الباركودات (رقم في كل سطر أو مفصولة بفاصلة)</label>
@@ -190,7 +179,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                 {/* Inventory Summary Dashboard */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {BRANCHES.map(b => (
+                        {(BRANCHES || []).map(b => (
                             <div key={b.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                                 <p className="text-[10px] font-black text-gray-400 mb-4 border-b pb-2">{b.name}</p>
                                 <div className="grid grid-cols-3 gap-2">
@@ -219,12 +208,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                             </h4>
                             <div className="flex gap-2 items-center">
                                 <div className="w-32">
-                                    <CustomSelect
-                                        options={statusOptions}
-                                        value={statusFilter}
-                                        onChange={(v) => setStatusFilter(v as any)}
-                                        placeholder="الكل"
-                                    />
+                                    <CustomSelect options={statusOptions} value={statusFilter} onChange={(v) => setStatusFilter(v as any)} placeholder="الكل" />
                                 </div>
                                 <div className="relative">
                                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
