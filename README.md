@@ -63,3 +63,4 @@ npx cap open android
 
 ---
 تم التطوير بواسطة Antigravity لمشروع تارجت.
+# target
