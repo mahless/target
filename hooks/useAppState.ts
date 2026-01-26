@@ -21,18 +21,27 @@ export const useAppState = () => {
   });
 
   const [entries, setEntries] = useState<ServiceEntry[]>(() => {
-    const saved = localStorage.getItem('target_entries');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('target_entries');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('target_expenses');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('target_expenses');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   const [stock, setStock] = useState<StockItem[]>(() => {
-    const saved = localStorage.getItem('target_stock');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('target_stock');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   const [isSyncing, setIsSyncing] = useState(false);

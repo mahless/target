@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { StockItem, Branch, StockCategory, StockStatus } from '../types';
+import { StockItem, StockCategory, StockStatus } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { BRANCHES } from '../constants';
 import { PlusCircle, Package, AlertCircle, CheckCircle2, Search, History } from 'lucide-react';
@@ -20,47 +20,52 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
     const [newBarcodes, setNewBarcodes] = useState('');
     const [selectedBranch, setSelectedBranch] = useState('الملكه');
     const [selectedCategory, setSelectedCategory] = useState<StockCategory>('عادي');
-
-    const canAddStock = userRole === 'مدير' || userRole === 'مساعد';
-
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
 
-    const branchOptions = useMemo(() => (BRANCHES || []).map(b => ({ id: b.id, name: b.name })), []);
-    const categoryOptions = useMemo(() => [
-        { id: 'عادي', name: 'عادي' },
-        { id: 'مستعجل', name: 'مستعجل' },
-        { id: 'فوري', name: 'فوري / سوبر فوري' }
-    ], []);
-    const statusOptions = useMemo(() => [
-        { id: 'Available', name: 'متاح' },
-        { id: 'Used', name: 'مستخدم' },
-        { id: 'Error', name: 'خطأ / تالف' }
-    ], []);
+    const canAddStock = userRole === 'مدير' || userRole === 'مساعد';
 
-    // إحصائيات المخزن
+    // 1. حساب الإحصائيات بأمان شديد
     const stats = useMemo(() => {
-        const summary: Record<string, Record<string, number>> = {};
+        try {
+            const summary: Record<string, Record<string, number>> = {};
+            (BRANCHES || []).forEach(b => {
+                if (b && b.id) summary[b.id] = { 'عادي': 0, 'مستعجل': 0, 'فوري': 0 };
+            });
 
-        (BRANCHES || []).forEach(b => {
-            if (b && b.id) {
-                summary[b.id] = { 'عادي': 0, 'مستعجل': 0, 'فوري': 0 };
-            }
-        });
-
-        const safeStock = Array.isArray(stock) ? stock : [];
-
-        safeStock.forEach(item => {
-            if (item && item.status === 'Available' && item.branch && summary[item.branch]) {
-                const cat = item.category === 'سوبر فوري' ? 'فوري' : item.category;
-                if (summary[item.branch][cat] !== undefined) {
-                    summary[item.branch][cat]++;
+            const safeStock = Array.isArray(stock) ? stock : [];
+            safeStock.forEach(item => {
+                if (item && item.status === 'Available' && item.branch && summary[item.branch]) {
+                    const cat = item.category === 'سوبر فوري' ? 'فوري' : item.category;
+                    if (summary[item.branch][cat] !== undefined) summary[item.branch][cat]++;
                 }
-            }
-        });
-
-        return summary;
+            });
+            return summary;
+        } catch (e) {
+            console.error("Stats Calc Error:", e);
+            return {};
+        }
     }, [stock]);
+
+    // 2. تصفية المخزون بأمان شديد
+    const filteredStock = useMemo(() => {
+        try {
+            const safeStock = Array.isArray(stock) ? stock : [];
+            const term = (searchTerm || '').toLowerCase();
+
+            return safeStock.filter(item => {
+                if (!item) return false;
+                const barcode = String(item.barcode || '').toLowerCase();
+                const usedBy = String(item.used_by || '').toLowerCase();
+                const matchSearch = barcode.includes(term) || usedBy.includes(term);
+                const matchStatus = statusFilter === 'All' || item.status === statusFilter;
+                return matchSearch && matchStatus;
+            }).sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0));
+        } catch (e) {
+            console.error("Filter Stock Error:", e);
+            return [];
+        }
+    }, [stock, searchTerm, statusFilter]);
 
     const handleAddStock = async () => {
         if (!newBarcodes || isSubmitting) return;
@@ -76,7 +81,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                 status: 'Available',
                 created_at: Date.now()
             }));
-
             const success = await GoogleSheetsService.addStockBatch(items, userRole);
             if (success) {
                 showQuickStatus('تمت إضافة المخزون');
@@ -91,20 +95,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
             setIsSubmitting(false);
         }
     };
-
-    const filteredStock = useMemo(() => {
-        const safeStock = Array.isArray(stock) ? stock : [];
-        return safeStock.filter(item => {
-            if (!item) return false;
-            const barcode = String(item.barcode || '').toLowerCase();
-            const usedBy = String(item.used_by || '').toLowerCase();
-            const term = searchTerm.toLowerCase();
-
-            const matchSearch = barcode.includes(term) || usedBy.includes(term);
-            const matchStatus = statusFilter === 'All' || item.status === statusFilter;
-            return matchSearch && matchStatus;
-        }).sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0));
-    }, [stock, searchTerm, statusFilter]);
 
     const updateStatus = async (barcode: string, newStatus: StockStatus) => {
         if (isSubmitting) return;
@@ -123,6 +113,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
             setIsSubmitting(false);
         }
     };
+
+    // حماية ضد أي خطأ غير متوقع أثناء التصيير (Render)
+    if (!BRANCHES || !Array.isArray(BRANCHES)) {
+        return <div className="p-10 text-center text-red-500 font-bold">خطأ في تحميل الثوابت (BRANCHES)</div>;
+    }
 
     return (
         <div className={`p-4 md:p-8 space-y-8 animate-fadeIn transition-opacity ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -145,18 +140,15 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Adding Stock Card */}
                 <div className="lg:col-span-1 bg-white p-6 rounded-3xl border border-blue-100 shadow-sm space-y-6">
                     <h3 className="font-black text-blue-900 flex items-center gap-2">
                         <PlusCircle className="w-5 h-5" /> إضافة مخزون جديد
                     </h3>
-
                     <div className="space-y-4">
-                        <CustomSelect label="الفرع المخصص" options={branchOptions} value={selectedBranch} onChange={setSelectedBranch} />
-                        <CustomSelect label="الفئة" options={categoryOptions} value={selectedCategory} onChange={(v) => setSelectedCategory(v as StockCategory)} />
-
+                        <CustomSelect label="الفرع المخصص" options={BRANCHES.map(b => ({ id: b.id, name: b.name }))} value={selectedBranch} onChange={setSelectedBranch} />
+                        <CustomSelect label="الفئة" options={[{ id: 'عادي', name: 'عادي' }, { id: 'مستعجل', name: 'مستعجل' }, { id: 'فوري', name: 'فوري' }]} value={selectedCategory} onChange={(v) => setSelectedCategory(v as StockCategory)} />
                         <div>
-                            <label className="text-[10px] font-black text-gray-400 block mb-2 mr-1">الباركودات (رقم في كل سطر أو مفصولة بفاصلة)</label>
+                            <label className="text-[10px] font-black text-gray-400 block mb-2 mr-1">الباركودات</label>
                             <textarea
                                 value={newBarcodes}
                                 onChange={e => setNewBarcodes(e.target.value)}
@@ -165,7 +157,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                                 placeholder="أدخل الأرقام هنا..."
                             />
                         </div>
-
                         <button
                             onClick={handleAddStock}
                             disabled={!canAddStock}
@@ -176,10 +167,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                     </div>
                 </div>
 
-                {/* Inventory Summary Dashboard */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(BRANCHES || []).map(b => (
+                        {BRANCHES.map(b => (
                             <div key={b.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                                 <p className="text-[10px] font-black text-gray-400 mb-4 border-b pb-2">{b.name}</p>
                                 <div className="grid grid-cols-3 gap-2">
@@ -200,15 +190,12 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                         ))}
                     </div>
 
-                    {/* Audit Log Table */}
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="p-5 border-b flex justify-between items-center bg-gray-50/50">
-                            <h4 className="font-black text-sm text-gray-800 flex items-center gap-2">
-                                <History className="w-4 h-4" /> سجل الرقابة
-                            </h4>
+                            <h4 className="font-black text-sm text-gray-800 flex items-center gap-2"><History className="w-4 h-4" /> سجل الرقابة</h4>
                             <div className="flex gap-2 items-center">
                                 <div className="w-32">
-                                    <CustomSelect options={statusOptions} value={statusFilter} onChange={(v) => setStatusFilter(v as any)} placeholder="الكل" />
+                                    <CustomSelect options={[{ id: 'Available', name: 'متاح' }, { id: 'Used', name: 'مستخدم' }, { id: 'Error', name: 'خطأ' }]} value={statusFilter} onChange={(v) => setStatusFilter(v as any)} placeholder="الكل" />
                                 </div>
                                 <div className="relative">
                                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -222,10 +209,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                                 </div>
                             </div>
                         </div>
-
                         <div className="overflow-x-auto">
                             <table className="w-full text-right text-[10px]">
-                                <thead className="bg-gray-50 text-gray-400 font-black tracking-widest uppercase">
+                                <thead className="bg-gray-50 text-gray-400 font-black uppercase">
                                     <tr>
                                         <th className="py-4 px-4 text-center">الباركود</th>
                                         <th className="py-4 px-4 text-center">الفئة</th>
@@ -240,44 +226,18 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                                         <tr key={item.barcode} className="hover:bg-gray-50 transition-colors">
                                             <td className="py-3 px-4 text-center font-mono">{item.barcode}</td>
                                             <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 rounded-md ${item.category === 'فوري' ? 'bg-red-50 text-red-600' :
-                                                    item.category === 'مستعجل' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
-                                                    }`}>
-                                                    {item.category}
-                                                </span>
+                                                <span className={`px-2 py-1 rounded-md ${item.category === 'فوري' ? 'bg-red-50 text-red-600' : item.category === 'مستعجل' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>{item.category}</span>
                                             </td>
+                                            <td className="py-3 px-4 text-center">{BRANCHES.find(b => b.id === item.branch)?.name || item.branch}</td>
                                             <td className="py-3 px-4 text-center">
-                                                {item.branch ? (BRANCHES.find(b => b.id === item.branch)?.name?.split('-')[0] || item.branch) : '-'}
+                                                <span className={`px-2 py-1 rounded-md ${item.status === 'Used' ? 'bg-green-100 text-green-700' : item.status === 'Error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>{item.status === 'Used' ? 'مستخدم' : item.status === 'Error' ? 'خطأ' : 'متاح'}</span>
                                             </td>
-                                            <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 rounded-md ${item.status === 'Used' ? 'bg-green-100 text-green-700' :
-                                                    item.status === 'Error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
-                                                    }`}>
-                                                    {item.status === 'Used' ? 'مستخدم' : item.status === 'Error' ? 'خطأ' : 'متاح'}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-center text-gray-400">
-                                                {item.used_by || '-'}
-                                                {item.order_id && <span className="block text-[8px] text-blue-500">#{item.order_id.substring(0, 6)}</span>}
-                                            </td>
+                                            <td className="py-3 px-4 text-center text-gray-400">{item.used_by || '-'}</td>
                                             <td className="py-3 px-4 text-center">
                                                 <div className="flex justify-center gap-1">
-                                                    {item.status === 'Error' && (
-                                                        <button
-                                                            onClick={() => updateStatus(item.barcode, 'Available')}
-                                                            className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
-                                                            title="إعادة تفعيل"
-                                                        >
-                                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    )}
                                                     {item.status !== 'Used' && (
-                                                        <button
-                                                            onClick={() => updateStatus(item.barcode, 'Error')}
-                                                            className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-                                                            title="تبليغ عن خطأ"
-                                                        >
-                                                            <AlertCircle className="w-3.5 h-3.5" />
+                                                        <button onClick={() => updateStatus(item.barcode, item.status === 'Error' ? 'Available' : 'Error')} className={`p-1.5 rounded-lg ${item.status === 'Error' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                                            {item.status === 'Error' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                                                         </button>
                                                     )}
                                                 </div>
@@ -286,9 +246,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock = [], onRefresh, 
                                     ))}
                                 </tbody>
                             </table>
-                            {filteredStock.length === 0 && (
-                                <div className="p-10 text-center text-gray-300 italic">لم يتم العثور على نتائج</div>
-                            )}
                         </div>
                     </div>
                 </div>
