@@ -33,7 +33,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     }`;
 
   const controlInputClass = "w-full p-2.5 mt-1 border-2 border-blue-200 rounded-lg bg-white text-black font-bold text-xs focus:ring-4 focus:ring-blue-50 focus:border-blue-600 outline-none transition-all shadow-sm";
-  const branchOptions = useMemo(() => BRANCHES.map(b => ({ id: b.id, name: b.name })), []);
+  // Remove useMemo to ensure fresh data always
+  const branchOptions = BRANCHES.map(b => ({ id: b.id, name: b.name }));
 
   return (
     <>
