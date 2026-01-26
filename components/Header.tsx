@@ -22,6 +22,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, branch, date, username, 
         </button>
         <h2 className="text-lg font-semibold text-gray-800 hidden sm:block">
           {pageTitle}
+          <span className="text-[9px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded ml-2 font-mono">v0.0.1</span>
         </h2>
       </div>
 
