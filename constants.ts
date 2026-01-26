@@ -29,6 +29,7 @@ export const BRANCHES = [
   { id: 'الملكه', name: 'الملكه' },
   { id: 'الطوابق', name: 'الطوابق' },
   { id: 'فيصل', name: 'فيصل' },
+  { id: 'امبابه', name: 'امبابه' },
 ];
 
 export const ID_CARD_SPEEDS = ['عادي', 'مستعجل', 'فوري', 'سوبر فوري'];

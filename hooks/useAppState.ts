@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ServiceEntry, Expense, Branch, StockItem, User } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic, normalizeDate } from '../utils';
@@ -55,7 +55,7 @@ export const useAppState = () => {
   /**
    * دالة المزامنة الشاملة مع دمج البيانات للحفاظ على ما لم يُرفع بعد
    */
-  const syncAll = async () => {
+  const syncAll = useCallback(async () => {
     if (!navigator.onLine) return;
     setIsSyncing(true);
     try {
@@ -203,12 +203,12 @@ export const useAppState = () => {
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   // المزامنة عند فتح التطبيق أو تغيير الفرع/التاريخ
   useEffect(() => {
     if (user) syncAll();
-  }, [branch?.id, currentDate, user?.id]);
+  }, [branch?.id, currentDate, user?.id, syncAll]);
 
   // حفظ البيانات محلياً عند تغييرها
   useEffect(() => {
@@ -238,13 +238,13 @@ export const useAppState = () => {
     localStorage.setItem('target_stock', JSON.stringify(stock));
   }, [stock]);
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = useCallback((userData: User) => {
     setUser(userData);
     localStorage.setItem('target_user', JSON.stringify(userData));
     localStorage.setItem('target_is_logged_in', 'true');
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setUser(null);
     setBranch(null);
     setCurrentDate(null);
@@ -252,14 +252,14 @@ export const useAppState = () => {
     localStorage.removeItem('target_branch');
     localStorage.removeItem('target_date');
     localStorage.removeItem('target_is_logged_in');
-  };
+  }, []);
 
-  const handleSessionSetup = (selectedBranch: Branch, date: string) => {
+  const handleSessionSetup = useCallback((selectedBranch: Branch, date: string) => {
     setBranch(selectedBranch);
     setCurrentDate(date);
-  };
+  }, []);
 
-  const addEntry = async (entry: ServiceEntry): Promise<boolean> => {
+  const addEntry = useCallback(async (entry: ServiceEntry): Promise<boolean> => {
     const sheetEntry = {
       ...entry,
       date: entry.entryDate,
@@ -279,9 +279,9 @@ export const useAppState = () => {
       console.error("Failed to sync entry to server");
     }
     return success;
-  };
+  }, [user]);
 
-  const updateEntry = async (updatedEntry: ServiceEntry): Promise<boolean> => {
+  const updateEntry = useCallback(async (updatedEntry: ServiceEntry): Promise<boolean> => {
     // تحديث محلي سريع
     setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
 
@@ -304,9 +304,9 @@ export const useAppState = () => {
       console.error("Failed to sync update to server");
     }
     return success;
-  };
+  }, [user]);
 
-  const addExpense = async (expense: Expense): Promise<boolean> => {
+  const addExpense = useCallback(async (expense: Expense): Promise<boolean> => {
     const sheetExpense = {
       ...expense,
       'التاريخ': expense.date,
@@ -318,7 +318,7 @@ export const useAppState = () => {
 
     setExpenses(prev => [{ ...expense, recordedBy: user?.name || '' }, ...prev]);
     return await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || 'موظف');
-  };
+  }, [user]);
 
   return {
     user,
