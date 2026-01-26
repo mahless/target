@@ -50,7 +50,7 @@ const AppContent: React.FC = () => {
         <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} />} />
 
         {/* مسار طوارئ خارج التخطيط */}
-        <Route path="/debug" element={<AdminInventory stock={[]} onRefresh={() => { }} isSyncing={false} userRole="مدير" />} />
+
 
         <Route path="/*" element={
           <ProtectedRoute>
