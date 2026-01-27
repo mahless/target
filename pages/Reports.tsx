@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { ServiceEntry, Expense, Branch } from '../types';
+import React, { useMemo, useState, useEffect } from 'react';
+import { ServiceEntry, Expense, Branch, User } from '../types';
 import { SERVICE_TYPES } from '../constants';
-import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt } from 'lucide-react';
+import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt, Lock, MapPin } from 'lucide-react';
 import { generateReceipt } from '../services/pdfService';
 import { useModal } from '../context/ModalContext';
 import { normalizeArabic, normalizeDate } from '../utils';
+import { BRANCHES } from '../constants';
 import CustomSelect from '../components/CustomSelect';
 
 interface ReportsProps {
@@ -18,6 +19,7 @@ interface ReportsProps {
   isSyncing: boolean;
   onRefresh: () => void;
   username: string;
+  user: User;
 }
 
 const StatCard = ({ title, value, icon, color, footer }: any) => {
@@ -41,13 +43,22 @@ const StatCard = ({ title, value, icon, color, footer }: any) => {
 };
 
 const Reports: React.FC<ReportsProps> = ({
-  entries, expenses, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username
+  entries, expenses, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, user
 }) => {
   const [startDate, setStartDate] = useState(manualDate);
   const [endDate, setEndDate] = useState(manualDate);
   const [selectedBranchId, setSelectedBranchId] = useState<string>(branchId);
   const [selectedService, setSelectedService] = useState<string>('الكل');
   const [activeTab, setActiveTab] = useState<'entries' | 'expenses'>('entries');
+
+  const isRestricted = !!user.assignedBranchId;
+
+  // If user is restricted, lock them to their assigned branch
+  useEffect(() => {
+    if (isRestricted && user.assignedBranchId) {
+      setSelectedBranchId(user.assignedBranchId);
+    }
+  }, [isRestricted, user.assignedBranchId]);
 
   const { showModal } = useModal();
 
@@ -137,14 +148,24 @@ const Reports: React.FC<ReportsProps> = ({
           <h3 className="text-lg font-black text-gray-800">تخصيص عرض التقارير</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <CustomSelect
-            label="فرع البحث"
-            options={branchOptions}
-            value={selectedBranchId}
-            onChange={setSelectedBranchId}
-            placeholder="كل الفروع"
-            icon={<Filter className="w-3.5 h-3.5" />}
-          />
+          {isRestricted ? (
+            <div className="flex-1">
+              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1 mb-1">فرع البحث</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-2xl border-2 border-gray-200 text-gray-700 font-bold text-sm cursor-not-allowed">
+                <Lock className="w-4 h-4 text-gray-400" />
+                <span>{branches.find(b => b.id === selectedBranchId)?.name || selectedBranchId}</span>
+              </div>
+            </div>
+          ) : (
+            <CustomSelect
+              label="فرع البحث"
+              options={[{ id: 'الكل', name: 'كل الفروع' }, ...branches.map(b => ({ id: b.id, name: b.name }))]}
+              value={selectedBranchId}
+              onChange={setSelectedBranchId}
+              placeholder="كل الفروع"
+              icon={<Filter className="w-3.5 h-3.5" />}
+            />
+          )}
 
           <CustomSelect
             label="نوع الخدمة"
