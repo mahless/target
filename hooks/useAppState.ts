@@ -112,6 +112,9 @@ export const useAppState = () => {
               isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
               electronicAmount: Number(e.electronicAmount || 0),
               electronicMethod: e.electronicMethod,
+              isCostPaid: e.isCostPaid === true || e.isCostPaid === 'true' || false,
+              costPaidDate: e.costPaidDate,
+              costPaidBy: e.costPaidBy,
               parentEntryId: e.parentEntryId || e['المعاملة الأم']
             };
           });
@@ -296,7 +299,10 @@ export const useAppState = () => {
       'المحصل': updatedEntry.amountPaid,
       'المتبقي': updatedEntry.remainingAmount,
       'الحالة': updatedEntry.status,
-      'ملاحظات': updatedEntry.notes || ''
+      'ملاحظات': updatedEntry.notes || '',
+      isCostPaid: updatedEntry.isCostPaid,
+      costPaidDate: updatedEntry.costPaidDate,
+      costPaidBy: updatedEntry.costPaidBy
     };
 
     const success = await GoogleSheetsService.updateEntry('Entries', sheetEntry, user?.role || 'موظف');

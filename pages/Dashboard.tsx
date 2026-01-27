@@ -146,6 +146,37 @@ const Dashboard: React.FC<DashboardProps> = ({ allEntries, allExpenses, currentD
     });
   };
 
+  const handleSettleThirdParty = (entry: ServiceEntry) => {
+    if (!entry.thirdPartyCost) return;
+
+    showModal({
+      title: 'تسوية تكلفة مورد',
+      content: (
+        <div className="space-y-4 text-right">
+          <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+            <p className="text-sm font-black text-blue-900 mb-1">تأكيد خروج مبلغ من الخزنة:</p>
+            <p className="text-[11px] text-blue-700 font-bold leading-relaxed">
+              سيتم تسجيل أن مبلغ <span className="font-black text-gray-900">{entry.thirdPartyCost} ج.م</span> قد خرج فعلياً من الخزنة كمدفوعات لـ <span className="underline">{entry.thirdPartyName}</span>.
+            </p>
+          </div>
+        </div>
+      ),
+      confirmText: 'تأكيد الصرف الآن',
+      onConfirm: async () => {
+        const updatedEntry: ServiceEntry = {
+          ...entry,
+          isCostPaid: true,
+          costPaidDate: new Date().toLocaleString('ar-EG'),
+          costPaidBy: localStorage.getItem('target_user') ? JSON.parse(localStorage.getItem('target_user')!).name : 'غير معروف'
+        };
+
+        // تحديث لحظي (Optimistic Update)
+        onUpdateEntry(updatedEntry);
+        showQuickStatus('تمت التسوية بنجاح');
+      }
+    });
+  };
+
   const handleCancelService = (entry: ServiceEntry) => {
     let treasuryRetainedAmount = 0;
 
@@ -215,10 +246,11 @@ const Dashboard: React.FC<DashboardProps> = ({ allEntries, allExpenses, currentD
   return (
     <div className="p-3 md:p-5 space-y-4">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="كاش الخزنة اليومي" value={stats.netCash} icon={<DollarSign className="w-6 h-6" />} color="blue" footer="تحصيل اليوم - المصروفات" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard title="كاش الخزنة اليومي" value={stats.netCash} icon={<DollarSign className="w-6 h-6" />} color="blue" footer="تحصيل اليوم - مصروفات - تكاليف موردين مسددة" />
         <StatCard title="مصروفات اليوم" value={stats.expenses} icon={<DollarSign className="w-6 h-6" />} color="red" footer="بند المصروفات النثرية" />
-        <StatCard title="مبالغ آجلة اليوم" value={stats.remaining} icon={<Users className="w-6 h-6" />} color="amber" footer="مديونيات جديدة" />
+        <StatCard title="التزامات لم تخرج" value={stats.liabilities || 0} icon={<AlertTriangle className="w-6 h-6" />} color="amber" footer="تكاليف موردين لم تُسدد بعد" />
+        <StatCard title="مبالغ آجلة اليوم" value={stats.remaining} icon={<Users className="w-6 h-6" />} color="blue" footer="مديونيات جديدة للعملاء" />
       </div>
 
       {/* Main Table */}
@@ -287,12 +319,22 @@ const Dashboard: React.FC<DashboardProps> = ({ allEntries, allExpenses, currentD
                     <td className="py-3 px-6 text-center">
                       <div className="flex justify-center gap-2">
                         {entry.status === 'active' && (
-                          <button
-                            onClick={() => handleCancelService(entry)}
-                            className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl text-[10px] font-black hover:bg-red-600 hover:text-white transition-all border border-red-100"
-                          >
-                            إلغاء الخدمة
-                          </button>
+                          <>
+                            {entry.hasThirdParty && entry.thirdPartyCost && !entry.isCostPaid && (
+                              <button
+                                onClick={() => handleSettleThirdParty(entry)}
+                                className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl text-[10px] font-black hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
+                              >
+                                دفع للمورد
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleCancelService(entry)}
+                              className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl text-[10px] font-black hover:bg-red-600 hover:text-white transition-all border border-red-100"
+                            >
+                              إلغاء الخدمة
+                            </button>
+                          </>
                         )}
                         {entry.status === 'cancelled' && (
                           <span className="text-[10px] text-gray-400 font-black px-3 py-1.5 bg-gray-100 rounded-xl">ملغاة</span>

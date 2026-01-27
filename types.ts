@@ -34,8 +34,9 @@ export interface ServiceEntry {
   hasThirdParty: boolean;
   thirdPartyName?: string;
   thirdPartyCost?: number;
-  isThirdPartySettled?: boolean;
-  settlementDate?: string;
+  isCostPaid?: boolean;
+  costPaidDate?: string;
+  costPaidBy?: string;
 
   // Electronic Payment
   isElectronic: boolean;
