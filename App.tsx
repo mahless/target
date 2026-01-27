@@ -52,7 +52,7 @@ const AppContent: React.FC = () => {
     <div className="flex min-h-screen bg-gray-50 text-right">
       <ErrorBoundary>
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/setup" /> : <Login onLogin={handleLogin} />} />
+          <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} onSessionSetup={handleSessionSetup} />} />
           <Route path="/setup" element={!user ? <Navigate to="/login" /> : (branch && currentDate) ? <Navigate to="/dashboard" /> : <SessionSetup onComplete={handleSessionSetup} user={user} />} />
 
           <Route path="/*" element={

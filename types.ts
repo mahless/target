@@ -87,6 +87,7 @@ export interface LoginResponse {
   id?: string;
   name?: string;
   role?: 'مدير' | 'مساعد' | 'موظف';
+  assignedBranchId?: string | null;
 }
 
 export interface Branch {

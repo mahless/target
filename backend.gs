@@ -67,14 +67,28 @@ function handleLogin(id, password) {
     if (!sheet) return createJSONResponse({ success: false, message: "Users sheet not found" });
     
     const data = sheet.getDataRange().getValues();
+    
+    // Header mapping: find column indices by column names
+    const headers = data[0];
+    const idCol = headers.indexOf('id');
+    const nameCol = headers.indexOf('name');
+    const passwordCol = headers.indexOf('password');
+    const roleCol = headers.indexOf('role');
+    const assignedBranchIdCol = headers.indexOf('assignedBranchId');
+    
+    // Validate required columns exist
+    if (idCol === -1 || passwordCol === -1) {
+      return createJSONResponse({ success: false, message: "Missing required columns in Users sheet" });
+    }
+    
     for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(id) && String(data[i][2]) === String(password)) {
+      if (String(data[i][idCol]) === String(id) && String(data[i][passwordCol]) === String(password)) {
         return createJSONResponse({ 
           success: true, 
-          id: data[i][0], 
-          name: data[i][1], 
-          role: data[i][3], // مدير، مساعد، موظف
-          assignedBranchId: data[i][4] || null // الفرع المخصص (إن وجد)
+          id: data[i][idCol], 
+          name: nameCol !== -1 ? data[i][nameCol] : '',
+          role: roleCol !== -1 ? data[i][roleCol] : 'موظف',
+          assignedBranchId: assignedBranchIdCol !== -1 ? (data[i][assignedBranchIdCol] || null) : null
         });
       }
     }
