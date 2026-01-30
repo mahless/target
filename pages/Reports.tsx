@@ -1,11 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { ServiceEntry, Expense, Branch, User } from '../types';
+import React, { useMemo, useState } from 'react';
+import { ServiceEntry, Expense, Branch } from '../types';
 import { SERVICE_TYPES } from '../constants';
-import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt, Lock, MapPin } from 'lucide-react';
+import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt } from 'lucide-react';
 import { generateReceipt } from '../services/pdfService';
 import { useModal } from '../context/ModalContext';
-import { normalizeArabic, normalizeDate } from '../utils';
-import { BRANCHES } from '../constants';
+import { normalizeArabic, normalizeDate, toEnglishDigits } from '../utils';
 import CustomSelect from '../components/CustomSelect';
 
 interface ReportsProps {
@@ -19,7 +18,7 @@ interface ReportsProps {
   isSyncing: boolean;
   onRefresh: () => void;
   username: string;
-  user: User;
+  userRole: string;
 }
 
 const StatCard = ({ title, value, icon, color, footer }: any) => {
@@ -43,58 +42,81 @@ const StatCard = ({ title, value, icon, color, footer }: any) => {
 };
 
 const Reports: React.FC<ReportsProps> = ({
-  entries, expenses, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, user
+  entries, expenses, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
 }) => {
-  const [startDate, setStartDate] = useState(manualDate);
-  const [endDate, setEndDate] = useState(manualDate);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(branchId);
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(
+    userRole === 'مدير' ? 'الكل' : branchId || 'الكل'
+  );
   const [selectedService, setSelectedService] = useState<string>('الكل');
   const [activeTab, setActiveTab] = useState<'entries' | 'expenses'>('entries');
 
-  const isRestricted = !!user.assignedBranchId;
-
-  // If user is restricted, lock them to their assigned branch
-  useEffect(() => {
-    if (isRestricted && user.assignedBranchId) {
-      setSelectedBranchId(user.assignedBranchId);
-    }
-  }, [isRestricted, user.assignedBranchId]);
-
-  const { showModal } = useModal();
+  const { showModal, setIsProcessing } = useModal();
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
-      title: 'تفاصيل المعاملة',
+      title: 'تفاصيل المعاملة (عرض)',
       content: (
-        <div className="space-y-4 text-right">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">العميل</span>
-              <p className="font-black text-gray-800">{entry.clientName}</p>
+        <div className="space-y-3 text-right">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">العميل</span>
+              <p className="font-black text-gray-800 text-xs">{entry.clientName}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">الرقم القومي</span>
-              <p className="font-black text-gray-800">{entry.nationalId}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">الرقم القومي</span>
+              <p className="font-black text-gray-800 text-xs">{entry.nationalId}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">نوع الخدمة</span>
-              <p className="font-black text-blue-600">{entry.serviceType}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">نوع الخدمة</span>
+              <p className="font-black text-blue-600 text-xs">{entry.serviceType}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 font-mono">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">الباركود</span>
-              <p className="font-black text-gray-800">{entry.barcode || '-'}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100 font-mono">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">الباركود</span>
+              <p className="font-black text-gray-800 text-xs">{entry.barcode || '-'}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">تاريخ العملية</span>
-              <p className="font-black text-gray-800">{entry.entryDate}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">تاريخ العملية</span>
+              <p className="font-black text-gray-800 text-xs" dir="ltr">
+                {entry.entryDate}
+                <span className="text-gray-400 mx-1">|</span>
+                {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
+            {entry.hasThirdParty && (
+              <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[10px] text-blue-400 font-black block mb-0.5">المورد/الطرف الثالث</span>
+                  <p className="font-black text-blue-800 text-xs">{entry.thirdPartyName}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-blue-400 font-black block mb-0.5">تكلفة المورد</span>
+                  <p className="font-black text-blue-800 text-xs">{entry.thirdPartyCost} ج.م</p>
+                </div>
+                <div className="col-span-2 pt-1 border-t border-blue-100 flex justify-between items-center">
+                  <span className="text-[10px] font-black text-blue-500">حالة تسوية المصاريف:</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${entry.isCostPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {entry.isCostPaid ? `تم الدفع (${entry.costPaidDate})` : 'لم يتم الدفع بعد'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           <button
             type="button"
-            onClick={() => generateReceipt(entry)}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-2 transition-all"
+            onClick={async () => {
+              setIsProcessing(true);
+              try {
+                await generateReceipt(entry);
+              } finally {
+                setIsProcessing(false);
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-1 transition-all text-sm"
           >
-            <Printer className="w-5 h-5" />
+            <Printer className="w-4 h-4" />
             طباعة إيصال العميل
           </button>
         </div>
@@ -148,24 +170,15 @@ const Reports: React.FC<ReportsProps> = ({
           <h3 className="text-lg font-black text-gray-800">تخصيص عرض التقارير</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {isRestricted ? (
-            <div className="flex-1">
-              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1 mb-1">فرع البحث</label>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-2xl border-2 border-gray-200 text-gray-700 font-bold text-sm cursor-not-allowed">
-                <Lock className="w-4 h-4 text-gray-400" />
-                <span>{branches.find(b => b.id === selectedBranchId)?.name || selectedBranchId}</span>
-              </div>
-            </div>
-          ) : (
-            <CustomSelect
-              label="فرع البحث"
-              options={[{ id: 'الكل', name: 'كل الفروع' }, ...branches.map(b => ({ id: b.id, name: b.name }))]}
-              value={selectedBranchId}
-              onChange={setSelectedBranchId}
-              placeholder="كل الفروع"
-              icon={<Filter className="w-3.5 h-3.5" />}
-            />
-          )}
+          <CustomSelect
+            label="فرع البحث"
+            options={branchOptions}
+            value={selectedBranchId}
+            onChange={setSelectedBranchId}
+            placeholder="كل الفروع"
+            icon={<Filter className="w-3.5 h-3.5" />}
+            disabled={userRole !== 'مدير'}
+          />
 
           <CustomSelect
             label="نوع الخدمة"
@@ -181,7 +194,7 @@ const Reports: React.FC<ReportsProps> = ({
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
               className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
             />
           </div>
@@ -191,7 +204,7 @@ const Reports: React.FC<ReportsProps> = ({
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
               className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
             />
           </div>

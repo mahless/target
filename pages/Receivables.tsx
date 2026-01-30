@@ -9,55 +9,86 @@ import CustomSelect from '../components/CustomSelect';
 
 interface ReceivablesProps {
   entries: ServiceEntry[];
-  onUpdateEntry: (updatedEntry: ServiceEntry) => Promise<boolean>;
+  onUpdateEntry: (updatedEntry: ServiceEntry) => void;
   onAddEntry: (entry: ServiceEntry) => Promise<boolean>;
   branchId: string;
   currentDate: string;
   username: string;
   isSyncing: boolean;
   onRefresh: () => void;
+  isSubmitting?: boolean;
 }
 
 const Receivables: React.FC<ReceivablesProps> = ({
-  entries, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh
+  entries, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false
 }) => {
+  /* Update destructuring */
   const [searchTerm, setSearchTerm] = useState('');
   const [filterService, setFilterService] = useState<string>('الكل');
-  const { showModal, showQuickStatus } = useModal();
+  const { showModal, showQuickStatus, setIsProcessing } = useModal();
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
       title: 'تفاصيل المعاملة',
       content: (
-        <div className="space-y-4 text-right">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">العميل</span>
-              <p className="font-black text-gray-800">{entry.clientName}</p>
+        <div className="space-y-3 text-right">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">العميل</span>
+              <p className="font-black text-gray-800 text-xs">{entry.clientName}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">الرقم القومي</span>
-              <p className="font-black text-gray-800">{entry.nationalId}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">الرقم القومي</span>
+              <p className="font-black text-gray-800 text-xs">{entry.nationalId}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">نوع الخدمة</span>
-              <p className="font-black text-blue-600">{entry.serviceType}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">نوع الخدمة</span>
+              <p className="font-black text-blue-600 text-xs">{entry.serviceType}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 font-mono">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">الباركود</span>
-              <p className="font-black text-gray-800">{entry.barcode || '-'}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100 font-mono">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">الباركود</span>
+              <p className="font-black text-gray-800 text-xs">{entry.barcode || '-'}</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-1">تاريخ العملية</span>
-              <p className="font-black text-gray-800">{entry.entryDate}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">تاريخ العملية</span>
+              <p className="font-black text-gray-800 text-xs" dir="ltr">
+                {entry.entryDate}
+                <span className="text-gray-400 mx-1">|</span>
+                {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
+            {entry.hasThirdParty && (
+              <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[10px] text-blue-400 font-black block mb-0.5">المورد/الطرف الثالث</span>
+                  <p className="font-black text-blue-800 text-xs">{entry.thirdPartyName}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-blue-400 font-black block mb-0.5">تكلفة المورد</span>
+                  <p className="font-black text-blue-800 text-xs">{entry.thirdPartyCost} ج.م</p>
+                </div>
+                <div className="col-span-2 pt-1 border-t border-blue-100 flex justify-between items-center">
+                  <span className="text-[10px] font-black text-blue-500">حالة تسوية المصاريف:</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${entry.isCostPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {entry.isCostPaid ? `تم الدفع (${entry.costPaidDate})` : 'لم يتم الدفع بعد'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           <button
             type="button"
-            onClick={() => generateReceipt(entry)}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-2 transition-all"
+            onClick={async () => {
+              setIsProcessing(true);
+              try {
+                await generateReceipt(entry);
+              } finally {
+                setIsProcessing(false);
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-1 transition-all text-sm"
           >
-            <Printer className="w-5 h-5" />
+            <Printer className="w-4 h-4" />
             طباعة إيصال العميل
           </button>
         </div>
@@ -67,7 +98,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
   };
 
   const handleCollect = (entry: ServiceEntry) => {
-    let amount = 0;
+    let amount = entry.remainingAmount;
     showModal({
       title: `تحصيل من: ${entry.clientName}`,
       content: (
@@ -79,10 +110,12 @@ const Receivables: React.FC<ReceivablesProps> = ({
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-1">المبلغ المحصل الآن</label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               autoFocus
               className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-xl text-center outline-none transition-all"
-              placeholder="0.00"
+              defaultValue={entry.remainingAmount}
               onChange={(e) => amount = Number(toEnglishDigits(e.target.value))}
             />
           </div>
@@ -105,23 +138,12 @@ const Receivables: React.FC<ReceivablesProps> = ({
           notes: `سداد متبقي من عملية: ${entry.serviceType}`,
           timestamp: Date.now(),
           entryDate: currentDate || '',
-          barcode: entry.barcode,
-          parentEntryId: entry.id // ربط السداد بالمعاملة الأصلية
+          barcode: entry.barcode
         };
         const success = await onAddEntry(settlementEntry);
         if (success) {
-          // تحديث المتبقي في المعاملة الأصلية والانتظار لضمان الحفظ
-          const updateSuccess = await onUpdateEntry({
-            ...entry,
-            remainingAmount: entry.remainingAmount - amount
-          });
-
-          if (updateSuccess) {
-            showQuickStatus('تم التحصيل وتحديث الرصيد بنجاح');
-            onRefresh();
-          } else {
-            showQuickStatus('تم التحصيل ولكن فشل تحديث الرصيد على السيرفر', 'warning');
-          }
+          onUpdateEntry({ ...entry, remainingAmount: entry.remainingAmount - amount });
+          showQuickStatus('تم التحصيل بنجاح');
         }
       }
     });
@@ -156,7 +178,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(toEnglishDigits(e.target.value))}
                 placeholder="بحث..."
                 className="w-full pr-10 pl-4 py-3 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 font-bold text-xs outline-none transition-all"
               />
@@ -174,7 +196,11 @@ const Receivables: React.FC<ReceivablesProps> = ({
           />
 
           <div className="flex items-end">
-            <button onClick={onRefresh} className="w-full p-3 bg-white rounded-2xl border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 flex items-center justify-center gap-2 font-black text-xs h-[52px]">
+            <button
+              onClick={onRefresh}
+              disabled={isSyncing || isSubmitting}
+              className={`w-full p-3 rounded-2xl border-2 font-black text-xs h-[52px] flex items-center justify-center gap-2 transition-all active:scale-95 ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400 border-transparent cursor-not-allowed' : 'bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-50'}`}
+            >
               <Clock className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'جاري التحديث...' : 'تحديث البيانات'}
             </button>
@@ -199,7 +225,11 @@ const Receivables: React.FC<ReceivablesProps> = ({
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-red-400">المتبقي</span>
                 <span className="text-xl font-black text-red-600">{entry.remainingAmount}</span>
               </div>
-              <button onClick={() => handleCollect(entry)} className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-black text-xs shadow-lg shadow-emerald-600/10 transition-all active:scale-95 group-hover:translate-y-[-2px]">
+              <button
+                onClick={() => handleCollect(entry)}
+                disabled={isSubmitting}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${isSubmitting ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/10 group-hover:translate-y-[-2px]'}`}
+              >
                 <ArrowLeftRight className="w-4 h-4" />
                 تحصيل الآن
               </button>

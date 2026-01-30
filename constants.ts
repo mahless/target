@@ -36,3 +36,10 @@ export const BRANCHES = [
 export const ID_CARD_SPEEDS = ['عادي', 'مستعجل', 'فوري', 'سوبر فوري'];
 export const PASSPORT_SPEEDS = ['عادي', 'مستعجل'];
 export const ELECTRONIC_METHODS = ['انستا باي', 'محفظة إلكترونية'];
+
+export const BRANCH_IPS: Record<string, string> = {
+  'الملكه': '0.0.0.0', // PLACEHOLDER
+  'الطوابق': '0.0.0.0', // PLACEHOLDER
+  'فيصل': '0.0.0.0',   // PLACEHOLDER
+  'امبابه': '0.0.0.0', // PLACEHOLDER
+};

@@ -1,7 +1,7 @@
 import { ServiceEntry, Expense, Branch, User, LoginResponse } from '../types';
 
 // سنقوم بتحديث هذا الرابط "Web App URL" لاحقاً
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxX97nybq35V-l_rfuXJ91lltgW6e3nzh1xubiHljY61eMOe8snMIXHCT__lZpMy2WG/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyF0kK1GAv8A7FEbWpepDX93OX7Kx783MvQk0NryUwpgxcQcin8QPezWYS3UnlNd9uD/exec';
 
 export const GoogleSheetsService = {
     /**
@@ -38,6 +38,22 @@ export const GoogleSheetsService = {
             return [];
         } catch (error) {
             console.error('Network Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * جلب تقرير HR (ساعات الموظفين) للمدير
+     */
+    async getHRReport(): Promise<any[]> {
+        if (!GOOGLE_SCRIPT_URL) return [];
+        try {
+            const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getHRReport&t=${Date.now()}`);
+            const json = await response.json();
+            if (json && !json.status) return json;
+            return [];
+        } catch (error) {
+            console.error('HR Report Error:', error);
             return [];
         }
     },
@@ -135,6 +151,86 @@ export const GoogleSheetsService = {
         } catch (error) {
             console.error('Update Entry Error:', error);
             return false;
+        }
+    },
+
+    /**
+     * تحديث بيانات باركود (الرقم أو الفرع)
+     */
+    async updateStockItem(oldBarcode: string, newBarcode: string, newBranch: string, role: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=updateStockItem&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ oldBarcode, newBarcode, newBranch })
+            });
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Update Stock Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * حذف باركود من المخزن
+     */
+    async deleteStockItem(barcode: string, role: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=deleteStockItem&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ barcode })
+            });
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Delete Stock Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * جلب عنوان IP العميل (Frontend)
+     */
+    async fetchClientIP(): Promise<string | null> {
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            return data.ip;
+        } catch (error) {
+            console.error("Error fetching IP:", error);
+            return null;
+        }
+    },
+
+    /**
+     * تسجيل الحضور أو الانصراف
+     */
+    async recordAttendance(username: string, branchId: string, type: 'check-in' | 'check-out', ip: string): Promise<{ success: boolean; message?: string; timestamp?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=attendance`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({
+                    username,
+                    branchId,
+                    type,
+                    ip
+                })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                return { success: true, timestamp: data.timestamp };
+            } else {
+                return { success: false, message: data.message || 'فشل تسجيل الحضور' };
+            }
+        } catch (error) {
+            console.error("Error recording attendance:", error);
+            return { success: false, message: 'خطأ في الاتصال' };
         }
     }
 };

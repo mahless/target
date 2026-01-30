@@ -3,6 +3,7 @@ export const normalizeArabic = (text: string) => {
   return text.toString().trim()
     .replace(/[أإآ]/g, 'ا')
     .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
     .replace(/\s+/g, ' ');
 };
 

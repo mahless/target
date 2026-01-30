@@ -1,129 +1,141 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { ServiceEntry, Expense, Branch, StockItem, User } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic, normalizeDate } from '../utils';
+import { BRANCHES } from '../constants';
+import { useModal } from '../context/ModalContext';
 
 export const useAppState = () => {
+  const { setIsProcessing } = useModal();
+
   // Initialize state from localStorage if available
   const [user, setUser] = useState<User | null>(() => {
-    try {
-      const saved = localStorage.getItem('target_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
+    const saved = localStorage.getItem('target_user');
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [branch, setBranch] = useState<Branch | null>(() => {
-    try {
-      const saved = localStorage.getItem('target_branch');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
+    const saved = localStorage.getItem('target_branch');
+    return saved ? JSON.parse(saved) : null;
   });
 
-  const [currentDate, setCurrentDate] = useState<string | null>(() => {
-    try {
-      const saved = localStorage.getItem('target_date');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
+  const [currentDate, setCurrentDate] = useState<string>(() => {
+    // دائماً اجعل التاريخ الافتراضي هو اليوم عند فتح التطبيق
+    return new Date().toISOString().split('T')[0];
   });
 
   const [entries, setEntries] = useState<ServiceEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem('target_entries');
-      const parsed = saved ? JSON.parse(saved) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+    const saved = localStorage.getItem('target_entries');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
-    try {
-      const saved = localStorage.getItem('target_expenses');
-      const parsed = saved ? JSON.parse(saved) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+    const saved = localStorage.getItem('target_expenses');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [stock, setStock] = useState<StockItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('target_stock');
-      const parsed = saved ? JSON.parse(saved) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+    const saved = localStorage.getItem('target_stock');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
 
+  /* 
+   * Global Loading State for User Actions (Mutation Guard)
+   * This is different from isSyncing (background sync).
+   * It blocks user interaction during submission to prevent duplicates.
+   * isSubmitting is still used for local component flags if needed, 
+   * but isProcessing (global) will show the overlay.
+   */
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const startSubmitting = () => {
+    setIsSubmitting(true);
+    setIsProcessing(true);
+  };
+  const stopSubmitting = () => {
+    setIsSubmitting(false);
+    setIsProcessing(false);
+  };
+
   /**
    * دالة المزامنة الشاملة مع دمج البيانات للحفاظ على ما لم يُرفع بعد
    */
-  const syncAll = useCallback(async () => {
+  const syncAll = async () => {
     if (!navigator.onLine) return;
     setIsSyncing(true);
     try {
-      // 1. مزامنة العمليات
-      const remoteEntries = await GoogleSheetsService.getData<any>('Entries');
-      if (Array.isArray(remoteEntries)) {
-        const mappedEntries: ServiceEntry[] = remoteEntries
-          .filter(Boolean)
-          .map((e: any) => {
-            // التعامل مع كائنات التاريخ أو النصوص بطريقة آمنة للمناطق الزمنية
-            let rawDateInput = e.date || e.entryDate || e['تاريخ العملية'] || e['التاريخ'] || '';
-            let dateStr = '';
+      // تنفيذ كافة طلبات الجلب في وقت واحد (Promise.all) للتسريع
+      const [remoteEntries, remoteExpenses, remoteStock] = await Promise.all([
+        GoogleSheetsService.getData<any>('Entries'),
+        GoogleSheetsService.getData<any>('Expenses'),
+        GoogleSheetsService.getData<StockItem>('Stock')
+      ]);
 
-            if (rawDateInput instanceof Date) {
-              const y = rawDateInput.getFullYear();
-              const m = String(rawDateInput.getMonth() + 1).padStart(2, '0');
-              const d = String(rawDateInput.getDate()).padStart(2, '0');
-              dateStr = `${y}-${m}-${d}`;
-            } else {
-              const s = String(rawDateInput).trim();
-              if (s.includes('T')) {
-                const dObj = new Date(s);
-                if (!isNaN(dObj.getTime())) {
-                  dateStr = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
-                } else {
-                  dateStr = s.split('T')[0];
-                }
+      // 1. معالجة العمليات (Entries)
+      if (remoteEntries && remoteEntries.length > 0) {
+        const mappedEntries: ServiceEntry[] = remoteEntries.map((e: any) => {
+          let rawDateInput = e.date || e.entryDate || e['تاريخ العملية'] || e['التاريخ'] || '';
+          let dateStr = '';
+
+          if (rawDateInput instanceof Date) {
+            const y = rawDateInput.getFullYear();
+            const m = String(rawDateInput.getMonth() + 1).padStart(2, '0');
+            const d = String(rawDateInput.getDate()).padStart(2, '0');
+            dateStr = `${y}-${m}-${d}`;
+          } else {
+            const s = String(rawDateInput).trim();
+            if (s.includes('T')) {
+              const dObj = new Date(s);
+              if (!isNaN(dObj.getTime())) {
+                const y = dObj.getFullYear();
+                const m = String(dObj.getMonth() + 1).padStart(2, '0');
+                const d = dObj.getDate();
+                dateStr = `${y}-${m}-${String(d).padStart(2, '0')}`;
               } else {
-                dateStr = s;
+                dateStr = s.split('T')[0];
               }
+            } else {
+              dateStr = s;
             }
+          }
 
-            const eDate = normalizeDate(dateStr);
+          const eDate = normalizeDate(dateStr);
 
-            return {
-              id: String(e.id || e['معرف'] || Date.now() + Math.random()),
-              clientName: String(e.clientName || e['اسم العميل'] || e['العميل'] || '').trim(),
-              nationalId: String(e.nationalId || e['الرقم القومي'] || '').trim(),
-              phoneNumber: String(e.phoneNumber || e['رقم الهاتف'] || '').trim(),
-              serviceType: String(e.serviceType || e['نوع الخدمة'] || '').trim(),
-              entryDate: eDate,
-              amountPaid: Number(e.amountPaid || e['المحصل'] || e['المبلغ المدفوع'] || 0),
-              serviceCost: Number(e.serviceCost || e['التكلفة'] || e['إجمالي التكلفة'] || 0),
-              remainingAmount: Number(e.remainingAmount || e['المتبقي'] || 0),
-              branchId: normalizeArabic(String(e.branchId || e['الفرع'] || '')),
-              status: (e.status || e['الحالة'] || 'active') as 'active' | 'cancelled',
-              timestamp: Number(e.timestamp || e['التوقيت'] || Date.now()),
-              recordedBy: String(e.recordedBy || e['الموظف'] || e['سجل بواسطة'] || '').trim(),
-              barcode: e.barcode || e['الباركود'],
-              speed: e.speed || e['السرعة'] || undefined,
-              hasThirdParty: e.hasThirdParty === true || e.hasThirdParty === 'true' || !!e.thirdPartyName || false,
-              thirdPartyName: e.thirdPartyName || e['اسم المورد'],
-              thirdPartyCost: Number(e.thirdPartyCost || e['تكلفة المورد'] || 0),
-              isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
-              electronicAmount: Number(e.electronicAmount || 0),
-              electronicMethod: e.electronicMethod,
-              isCostPaid: e.isCostPaid === true || e.isCostPaid === 'true' || false,
-              costPaidDate: e.costPaidDate,
-              costPaidBy: e.costPaidBy,
-              parentEntryId: e.parentEntryId || e['المعاملة الأم']
-            };
-          });
+          return {
+            id: String(e.id || e['معرف'] || Date.now() + Math.random()),
+            clientName: String(e.clientName || e['اسم العميل'] || e['العميل'] || '').trim(),
+            nationalId: String(e.nationalId || e['الرقم القومي'] || '').trim(),
+            phoneNumber: String(e.phoneNumber || e['رقم الهاتف'] || '').trim(),
+            serviceType: String(e.serviceType || e['نوع الخدمة'] || '').trim(),
+            entryDate: eDate,
+            amountPaid: Number(e.amountPaid || e['المحصل'] || e['المبلغ المدفوع'] || 0),
+            serviceCost: Number(e.serviceCost || e['التكلفة'] || e['إجمالي التكلفة'] || 0),
+            remainingAmount: Number(e.remainingAmount || e['المتبقي'] || 0),
+            branchId: normalizeArabic(String(e.branchId || e['الفرع'] || '')),
+            status: (e.status || e['الحالة'] || 'active') as 'active' | 'cancelled',
+            timestamp: Number(e.timestamp || e['التوقيت'] || Date.now()),
+            recordedBy: String(e.recordedBy || e['الموظف'] || e['سجل بواسطة'] || '').trim(),
+            barcode: e.barcode || e['الباركود'],
+            speed: e.speed || e['السرعة'] || undefined,
+            hasThirdParty: e.hasThirdParty === true || e.hasThirdParty === 'true' || !!e.thirdPartyName || false,
+            thirdPartyName: e.thirdPartyName || e['اسم المورد'] || e['thirdPartyName'],
+            thirdPartyCost: Number(e.thirdPartyCost || e['تكلفة المورد'] || e['thirdPartyCost'] || 0),
+            isCostPaid: e.isCostPaid === true || e.isCostPaid === 'true' || false,
+            costPaidDate: e.costPaidDate || e['تاريخ دفع التكلفة'],
+            costSettledBy: e.costSettledBy || e['سجل الدفع بواسطة'],
+            isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
+            electronicAmount: Number(e.electronicAmount || 0),
+            electronicMethod: e.electronicMethod
+          };
+        });
 
         setEntries(prev => {
           const mergedMap = new Map();
-          (Array.isArray(prev) ? prev : []).forEach(item => { if (item && item.id) mergedMap.set(item.id, item); });
+          prev.forEach(item => mergedMap.set(item.id, item));
           mappedEntries.forEach(item => {
-            if (item && item.id && item.id !== 'undefined') {
+            if (item.id && item.id !== 'undefined') {
               mergedMap.set(item.id, item);
             }
           });
@@ -131,52 +143,49 @@ export const useAppState = () => {
         });
       }
 
-      // 2. مزامنة المصروفات
-      const remoteExpenses = await GoogleSheetsService.getData<any>('Expenses');
-      if (Array.isArray(remoteExpenses)) {
-        const mappedExpenses: Expense[] = remoteExpenses
-          .filter(Boolean)
-          .map((ex: any) => {
-            let rawExDateInput = ex.date || ex['التاريخ'] || '';
-            let exDateStr = '';
+      // 2. معالجة المصروفات (Expenses)
+      if (remoteExpenses && remoteExpenses.length > 0) {
+        const mappedExpenses: Expense[] = remoteExpenses.map((ex: any) => {
+          let rawExDateInput = ex.date || ex['التاريخ'] || '';
+          let exDateStr = '';
 
-            if (rawExDateInput instanceof Date) {
-              const y = rawExDateInput.getFullYear();
-              const m = String(rawExDateInput.getMonth() + 1).padStart(2, '0');
-              const d = String(rawExDateInput.getDate()).padStart(2, '0');
-              exDateStr = `${y}-${m}-${d}`;
-            } else {
-              const s = String(rawExDateInput).trim();
-              if (s.includes('T')) {
-                const dObj = new Date(s);
-                if (!isNaN(dObj.getTime())) {
-                  exDateStr = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
-                } else {
-                  exDateStr = s.split('T')[0];
-                }
+          if (rawExDateInput instanceof Date) {
+            const y = rawExDateInput.getFullYear();
+            const m = String(rawExDateInput.getMonth() + 1).padStart(2, '0');
+            const d = String(rawExDateInput.getDate()).padStart(2, '0');
+            exDateStr = `${y}-${m}-${d}`;
+          } else {
+            const s = String(rawExDateInput).trim();
+            if (s.includes('T')) {
+              const dObj = new Date(s);
+              if (!isNaN(dObj.getTime())) {
+                exDateStr = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
               } else {
-                exDateStr = s;
+                exDateStr = s.split('T')[0];
               }
+            } else {
+              exDateStr = s;
             }
-            const exDate = normalizeDate(exDateStr);
+          }
+          const exDate = normalizeDate(exDateStr);
 
-            return {
-              id: String(ex.id || ex['معرف'] || Date.now() + Math.random()),
-              category: (ex.category || ex['البند'] || ex['القسم'] || '') as any,
-              amount: Number(ex.amount || ex['المبلغ'] || 0),
-              date: exDate,
-              branchId: normalizeArabic(String(ex.branchId || ex['الفرع'] || '')),
-              timestamp: Number(ex.timestamp || ex['التوقيت'] || Date.now()),
-              recordedBy: String(ex.recordedBy || ex['الموظف'] || '').trim(),
-              relatedEntryId: ex.relatedEntryId || ex['رقم المعاملة'] || ex['Order_ID']
-            };
-          });
+          return {
+            id: String(ex.id || ex['معرف'] || Date.now() + Math.random()),
+            category: (ex.category || ex['البند'] || ex['القسم'] || '') as any,
+            amount: Number(ex.amount || ex['المبلغ'] || 0),
+            date: exDate,
+            branchId: normalizeArabic(String(ex.branchId || ex['الفرع'] || '')),
+            timestamp: Number(ex.timestamp || ex['التوقيت'] || Date.now()),
+            recordedBy: String(ex.recordedBy || ex['الموظف'] || '').trim(),
+            notes: ex.notes || ex['ملاحظات'] || ''
+          };
+        });
 
         setExpenses(prev => {
           const mergedMap = new Map();
-          (Array.isArray(prev) ? prev : []).forEach(item => { if (item && item.id) mergedMap.set(item.id, item); });
+          prev.forEach(item => mergedMap.set(item.id, item));
           mappedExpenses.forEach(item => {
-            if (item && item.id && item.id !== 'undefined') {
+            if (item.id && item.id !== 'undefined') {
               mergedMap.set(item.id, item);
             }
           });
@@ -184,34 +193,22 @@ export const useAppState = () => {
         });
       }
 
-      // 3. مزامنة المخزون (Stock)
-      const remoteStock = await GoogleSheetsService.getData<any>('Stock');
-      if (Array.isArray(remoteStock)) {
-        const mappedStock: StockItem[] = remoteStock
-          .filter(Boolean)
-          .map((s: any) => ({
-            barcode: String(s.barcode || s.Barcode || s['الباركود'] || ''),
-            category: (s.category || s.Category || s['الفئة'] || 'عادي') as any,
-            branch: String(s.branch || s.Branch || s['الفرع'] || ''),
-            status: (s.status || s.Status || s['الحالة'] || 'Available') as any,
-            created_at: Number(s.created_at || s.Created_At || s.timestamp || Date.now()),
-            used_by: s.used_by || s.Used_By || s['الموظف'] || '',
-            order_id: s.order_id || s.Order_ID || s['رقم الطلب'] || ''
-          }));
-        setStock(mappedStock);
-        localStorage.setItem('target_stock', JSON.stringify(mappedStock));
+      // 3. معالجة المخزون (Stock)
+      if (remoteStock && remoteStock.length > 0) {
+        setStock(remoteStock);
+        localStorage.setItem('target_stock', JSON.stringify(remoteStock));
       }
     } catch (error) {
       console.error("Sync Error:", error);
     } finally {
       setIsSyncing(false);
     }
-  }, []);
+  };
 
   // المزامنة عند فتح التطبيق أو تغيير الفرع/التاريخ
   useEffect(() => {
     if (user) syncAll();
-  }, [branch?.id, currentDate, user?.id, syncAll]);
+  }, [branch?.id, currentDate, user?.id]);
 
   // حفظ البيانات محلياً عند تغييرها
   useEffect(() => {
@@ -241,13 +238,45 @@ export const useAppState = () => {
     localStorage.setItem('target_stock', JSON.stringify(stock));
   }, [stock]);
 
-  const handleLogin = useCallback((userData: User) => {
+  // Auto-assign branch and date on startup OR when user changes
+  useEffect(() => {
+    if (user && user.assignedBranchId && (!branch || !currentDate)) {
+      const assignedBranch = BRANCHES.find(b => b.id === user.assignedBranchId);
+      if (assignedBranch) {
+        if (!branch) {
+          setBranch(assignedBranch);
+          localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
+        }
+        if (!currentDate) {
+          const today = new Date().toISOString().split('T')[0];
+          setCurrentDate(today);
+          localStorage.setItem('target_date', JSON.stringify(today));
+        }
+      }
+    }
+  }, [user, branch, currentDate]);
+
+  const handleLogin = (userData: User) => {
     setUser(userData);
     localStorage.setItem('target_user', JSON.stringify(userData));
     localStorage.setItem('target_is_logged_in', 'true');
-  }, []);
 
-  const handleLogout = useCallback(() => {
+    // Auto-assign branch if configured
+    if (userData.assignedBranchId) {
+      const assignedBranch = BRANCHES.find(b => b.id === userData.assignedBranchId);
+      if (assignedBranch) {
+        setBranch(assignedBranch);
+        localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
+
+        // Auto-set Date to Today
+        const today = new Date().toISOString().split('T')[0];
+        setCurrentDate(today);
+        localStorage.setItem('target_date', JSON.stringify(today));
+      }
+    }
+  };
+
+  const handleLogout = () => {
     setUser(null);
     setBranch(null);
     setCurrentDate(null);
@@ -255,76 +284,172 @@ export const useAppState = () => {
     localStorage.removeItem('target_branch');
     localStorage.removeItem('target_date');
     localStorage.removeItem('target_is_logged_in');
+  };
+
+  const addEntry = async (entry: ServiceEntry): Promise<boolean> => {
+    if (isSubmitting) return false;
+    startSubmitting();
+    try {
+      const sheetEntry = {
+        ...entry,
+        date: entry.entryDate,
+        recordedBy: user?.name || '',
+        'اسم العميل': entry.clientName,
+        'الفرع': entry.branchId,
+        'التكلفة': entry.serviceCost,
+        'المحصل': entry.amountPaid,
+        'المتبقي': entry.remainingAmount,
+        isCostPaid: entry.isCostPaid || false
+      };
+
+      // إضافة محلية فورية
+      setEntries(prev => [entry, ...prev]);
+
+      const success = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || 'موظف');
+      if (!success) {
+        console.error("Failed to sync entry to server");
+      }
+      return success;
+    } finally {
+      stopSubmitting();
+    }
+  };
+
+  const updateEntry = async (updatedEntry: ServiceEntry): Promise<boolean> => {
+    if (isSubmitting) return false;
+    startSubmitting();
+    try {
+      // تحديث محلي سريع
+      setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+
+      // تحضير البيانات للمزامنة (تحويل الأسماء العربية للأعمدة)
+      const sheetEntry = {
+        ...updatedEntry,
+        'الحالة': updatedEntry.status,
+        'المحصل': updatedEntry.amountPaid,
+        'المتبقي': updatedEntry.remainingAmount,
+        'إجمالي التكلفة': updatedEntry.serviceCost,
+        'isCostPaid': updatedEntry.isCostPaid,
+        'تاريخ دفع التكلفة': updatedEntry.costPaidDate,
+        'سجل الدفع بواسطة': updatedEntry.costSettledBy,
+        'ملاحظات': updatedEntry.notes || ''
+      };
+
+      const success = await GoogleSheetsService.updateEntry('Entries', sheetEntry, user?.role || 'موظف');
+
+      // إذا نجح التحديث وكان الإلغاء هو الحالة الجديدة، نقوم بتحرير الباركود إن وجد
+      if (success && updatedEntry.status === 'cancelled' && updatedEntry.barcode) {
+        await GoogleSheetsService.updateStockStatus(
+          updatedEntry.barcode,
+          'Available',
+          '',
+          user?.role || 'موظف'
+        );
+      }
+
+      if (!success) {
+        console.error("Failed to sync update to server");
+        // اختيارياً: يمكن هنا إعادة الحالة السابقة في حالة الفشل
+      }
+      return success;
+    } finally {
+      stopSubmitting();
+    }
+  };
+
+  const addExpense = async (expense: Expense): Promise<boolean> => {
+    if (isSubmitting) return false;
+    startSubmitting();
+    try {
+      const sheetExpense = {
+        ...expense,
+        'التاريخ': expense.date,
+        'البند': expense.category,
+        'المبلغ': expense.amount,
+        'الفرع': expense.branchId
+      };
+
+      setExpenses(prev => [{ ...expense, recordedBy: user?.name || '' }, ...prev]);
+      return await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || 'موظف');
+    } finally {
+      stopSubmitting();
+    }
+  };
+
+  /*
+   * Attendance State
+   */
+  const [attendanceStatus, setAttendanceStatus] = useState<'checked-in' | 'checked-out'>('checked-out');
+  const [attendanceDate, setAttendanceDate] = useState<string | null>(null);
+
+  // Initialize attendance from local storage
+  useEffect(() => {
+    const savedStatus = localStorage.getItem('target_attendance_status');
+    const savedDate = localStorage.getItem('target_attendance_date');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (savedStatus && savedDate === today) {
+      setAttendanceStatus(savedStatus as 'checked-in' | 'checked-out');
+      setAttendanceDate(savedDate);
+    } else {
+      // Reset if date changed
+      setAttendanceStatus('checked-out');
+      setAttendanceDate(null);
+      localStorage.removeItem('target_attendance_status');
+      localStorage.removeItem('target_attendance_date');
+    }
   }, []);
 
-  const handleSessionSetup = useCallback((selectedBranch: Branch, date: string) => {
-    setBranch(selectedBranch);
-    setCurrentDate(date);
-  }, []);
+  const checkIn = async (username: string, branchId: string): Promise<{ success: boolean; message?: string }> => {
+    if (isSubmitting) return { success: false, message: 'جاري التنفيذ...' };
+    startSubmitting();
+    try {
+      const ip = await GoogleSheetsService.fetchClientIP().catch(() => '0.0.0.0') || '0.0.0.0';
 
-  const addEntry = useCallback(async (entry: ServiceEntry): Promise<boolean> => {
-    const sheetEntry = {
-      ...entry,
-      date: entry.entryDate,
-      recordedBy: user?.name || '',
-      'اسم العميل': entry.clientName,
-      'الفرع': entry.branchId,
-      'التكلفة': entry.serviceCost,
-      'المحصل': entry.amountPaid,
-      'المتبقي': entry.remainingAmount
-    };
+      const result = await GoogleSheetsService.recordAttendance(username, branchId, 'check-in', ip);
 
-    // إضافة محلية فورية
-    setEntries(prev => [entry, ...prev]);
-
-    const success = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || 'موظف');
-    if (!success) {
-      console.error("Failed to sync entry to server");
+      if (result.success) {
+        const today = new Date().toISOString().split('T')[0];
+        setAttendanceStatus('checked-in');
+        setAttendanceDate(today);
+        localStorage.setItem('target_attendance_status', 'checked-in');
+        localStorage.setItem('target_attendance_date', today);
+        return { success: true };
+      } else {
+        return { success: false, message: result.message };
+      }
+    } catch (e) {
+      return { success: false, message: 'حدث خطأ غير متوقع' };
+    } finally {
+      stopSubmitting();
     }
-    return success;
-  }, [user]);
+  };
 
-  const updateEntry = useCallback(async (updatedEntry: ServiceEntry): Promise<boolean> => {
-    // تحديث محلي سريع
-    setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+  const checkOut = async (username: string, branchId: string): Promise<{ success: boolean; message?: string }> => {
+    if (isSubmitting) return { success: false, message: 'جاري التنفيذ...' };
+    startSubmitting();
+    try {
+      const ip = await GoogleSheetsService.fetchClientIP().catch(() => '0.0.0.0') || '0.0.0.0';
 
-    // تحضير البيانات للمزامنة (تحويل الأسماء العربية للأعمدة لضمان المطابقة في الشيت)
-    const sheetEntry = {
-      ...updatedEntry,
-      'معرف': updatedEntry.id,
-      'التاريخ': updatedEntry.entryDate,
-      'اسم العميل': updatedEntry.clientName,
-      'الفرع': updatedEntry.branchId,
-      'التكلفة': updatedEntry.serviceCost,
-      'المحصل': updatedEntry.amountPaid,
-      'المتبقي': updatedEntry.remainingAmount,
-      'الحالة': updatedEntry.status,
-      'ملاحظات': updatedEntry.notes || '',
-      isCostPaid: updatedEntry.isCostPaid,
-      costPaidDate: updatedEntry.costPaidDate,
-      costPaidBy: updatedEntry.costPaidBy
-    };
+      const result = await GoogleSheetsService.recordAttendance(username, branchId, 'check-out', ip);
 
-    const success = await GoogleSheetsService.updateEntry('Entries', sheetEntry, user?.role || 'موظف');
-    if (!success) {
-      console.error("Failed to sync update to server");
+      if (result.success) {
+        setAttendanceStatus('checked-out');
+        localStorage.setItem('target_attendance_status', 'checked-out');
+
+        // مسح الجلسة عند الخروج كما هو مطلوب
+        handleLogout();
+
+        return { success: true };
+      } else {
+        return { success: false, message: result.message };
+      }
+    } catch (e) {
+      return { success: false, message: 'حدث خطأ غير متوقع' };
+    } finally {
+      stopSubmitting();
     }
-    return success;
-  }, [user]);
-
-  const addExpense = useCallback(async (expense: Expense): Promise<boolean> => {
-    const sheetExpense = {
-      ...expense,
-      'التاريخ': expense.date,
-      'البند': expense.category,
-      'المبلغ': expense.amount,
-      'الفرع': expense.branchId,
-      'رقم المعاملة': expense.relatedEntryId
-    };
-
-    setExpenses(prev => [{ ...expense, recordedBy: user?.name || '' }, ...prev]);
-    return await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || 'موظف');
-  }, [user]);
+  };
 
   return {
     user,
@@ -335,13 +460,18 @@ export const useAppState = () => {
     expenses,
     stock,
     isSyncing,
+    isSubmitting,
+    attendanceStatus, // Added
+    startSubmitting,
+    stopSubmitting,
     syncAll,
     handleLogin,
     handleLogout,
-    handleSessionSetup,
     addEntry,
     updateEntry,
     addExpense,
+    checkIn, // Added
+    checkOut, // Added
     setBranch,
     setCurrentDate
   };

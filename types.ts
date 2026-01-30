@@ -13,7 +13,6 @@ export interface Expense {
   date: string; // YYYY-MM-DD
   timestamp: number;
   recordedBy: string; // Username of the employee
-  relatedEntryId?: string;
 }
 
 export interface ServiceEntry {
@@ -36,7 +35,7 @@ export interface ServiceEntry {
   thirdPartyCost?: number;
   isCostPaid?: boolean;
   costPaidDate?: string;
-  costPaidBy?: string;
+  costSettledBy?: string;
 
   // Electronic Payment
   isElectronic: boolean;
@@ -79,7 +78,7 @@ export interface User {
   name: string;
   role: 'مدير' | 'مساعد' | 'موظف';
   branchId: string; // Used for local filtering
-  assignedBranchId?: string; // Optional: restricts employee to a specific branch
+  assignedBranchId?: string; // New field for auto-assignment
 }
 
 export interface LoginResponse {
@@ -88,7 +87,7 @@ export interface LoginResponse {
   id?: string;
   name?: string;
   role?: 'مدير' | 'مساعد' | 'موظف';
-  assignedBranchId?: string | null;
+  assignedBranchId?: string; // New field
 }
 
 export interface Branch {

@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { Lock, User } from 'lucide-react';
-import { User as UserType, Branch } from '../types';
+import { User as UserType } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
-import { BRANCHES } from '../constants';
+import { toEnglishDigits } from '../utils';
+import { useModal } from '../context/ModalContext';
 
 interface LoginProps {
   onLogin: (userData: UserType) => void;
-  onSessionSetup: (branch: Branch, date: string) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onSessionSetup }) => {
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { setIsProcessing } = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,43 +24,24 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSessionSetup }) => {
     }
 
     setIsLoading(true);
+    setIsProcessing(true);
     setError('');
 
     const response = await GoogleSheetsService.login(id, password);
 
     if (response.success && response.id && response.name && response.role) {
-      const userData: UserType = {
+      onLogin({
         id: response.id,
         name: response.name,
         role: response.role,
-        branchId: '', // Will be set by auto-session setup
-        assignedBranchId: response.assignedBranchId || undefined
-      };
-
-      // Auto-select branch
-      let selectedBranch: Branch | undefined;
-      if (userData.assignedBranchId) {
-        // If user has assigned branch, use it
-        selectedBranch = BRANCHES.find(b => b.id === userData.assignedBranchId);
-      }
-      // If no assigned branch or not found, use first branch
-      if (!selectedBranch) {
-        selectedBranch = BRANCHES[0];
-      }
-
-      // Auto-select today's date
-      const today = new Date().toISOString().split('T')[0];
-
-      // Set user data with branch
-      userData.branchId = selectedBranch.id;
-      onLogin(userData);
-
-      // Auto-setup session
-      onSessionSetup(selectedBranch, today);
+        branchId: response.assignedBranchId || '',
+        assignedBranchId: response.assignedBranchId
+      });
     } else {
       setError(response.message || 'فشل تسجيل الدخول، تحقق من البيانات');
     }
     setIsLoading(false);
+    setIsProcessing(false);
   };
 
   const inputClasses = "w-full pr-10 pl-4 py-3 border-none rounded-lg bg-gray-200 text-black font-bold placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all";
@@ -72,7 +54,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSessionSetup }) => {
           <div className="w-20 h-20 bg-blue-700 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl shadow-blue-900/40 rotate-3">
             <Lock className={`w-10 h-10 text-white -rotate-3 ${isLoading ? 'animate-pulse' : ''}`} />
           </div>
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">تارجت للخدمات الحكومية</h1>
+          <h1 className="text-3xl font-bold text-blue-900 mb-2">تارجت للخدمات الحكوميه</h1>
           <p className="text-gray-500 font-medium">سجل دخول للمتابعة</p>
         </div>
 
@@ -86,7 +68,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSessionSetup }) => {
               <input
                 type="text"
                 value={id}
-                onChange={(e) => setId(e.target.value)}
+                onChange={(e) => setId(toEnglishDigits(e.target.value))}
                 className={inputClasses}
                 placeholder="أدخل المعرف الخاص بك"
                 disabled={isLoading}

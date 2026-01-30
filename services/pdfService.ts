@@ -1,126 +1,317 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { ServiceEntry } from '../types';
 
-export const generateReceipt = async (entry: ServiceEntry) => {
-  // 1. Create a temporary container for the receipt
-  const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '-9999px';
-  container.style.width = '148mm'; // A5 Width
-  container.dir = 'rtl';
+export const generateReceiptHtml = (entry: ServiceEntry): string => {
+  return `
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <title>إيصال تارجت</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        
+        @page {
+          size: A5 landscape;
+          margin: 0;
+        }
+        
+        * {
+          box-sizing: border-box;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
 
-  // 2. Define the HTML structure for the receipt
-  container.innerHTML = `
-    <div style="padding: 15mm; background: white; font-family: 'Cairo', sans-serif; color: #1f2937; line-height: 1.5;">
-      <div style="text-align: center; margin-bottom: 10mm; border-bottom: 2px solid #1e40af; padding-bottom: 5mm;">
-        <h1 style="font-size: 24pt; margin: 0; color: #1e40af;">تارجت للخدمات الحكومية</h1>
-        <p style="font-size: 14pt; margin: 5px 0; color: #6b7280;">Target Government Services</p>
-      </div>
+        body {
+          margin: 0;
+          padding: 5mm;
+          font-family: 'Cairo', sans-serif;
+          background: white;
+          color: black;
+          width: 100%;
+          height: 100vh;
+          overflow: hidden;
+          position: relative;
+        }
 
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10mm;">
-        <div>
-           <p style="margin: 2px 0;"><strong>رقم الإيصال:</strong> #${entry.id.substring(0, 8)}</p>
-           <p style="margin: 2px 0;"><strong>التاريخ:</strong> ${entry.entryDate}</p>
+        .container {
+          width: 100%;
+          height: 100%;
+          border: 2px solid #000;
+          padding: 15px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          background: transparent;
+        }
+
+        /* Header Grid: Logo (Right), Info (Center), Meta (Left) */
+        .header {
+          display: grid;
+          grid-template-columns: 1fr 2fr 1fr;
+          gap: 20px;
+          align-items: center;
+          border-bottom: 2px solid #000;
+          padding-bottom: 15px;
+          margin-bottom: 20px;
+        }
+
+        .logo-section {
+          text-align: right;
+        }
+        
+        .company-info {
+          text-align: center;
+        }
+
+        .company-name {
+          font-size: 24pt;
+          font-weight: 900;
+          margin: 0;
+          line-height: 1.2;
+        }
+
+        .branch-name {
+          font-size: 14pt;
+          font-weight: 700;
+          margin-top: 5px;
+          color: #333;
+        }
+
+        .meta-info {
+          text-align: left;
+          font-size: 10pt;
+        }
+
+        .meta-item {
+          margin-bottom: 5px;
+          font-weight: 700;
+        }
+
+        /* Main Content Table */
+        .content-table {
+          width: 100%;
+          border-collapse: collapse;
+          flex-grow: 1;
+        }
+
+        .content-table th {
+          background-color: #f0f0f0;
+          border: 1px solid #000;
+          padding: 8px;
+          font-size: 14pt;
+          font-weight: 900;
+        }
+
+        .content-table td {
+          border: 1px solid #000;
+          padding: 12px 15px; /* Large padding as requested */
+          font-size: 14pt;
+          font-weight: 700;
+          vertical-align: middle;
+        }
+
+        /* Footer Grid */
+        .footer {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 30px;
+          margin-top: 20px;
+          border-top: 2px solid #000;
+          padding-top: 15px;
+        }
+
+        .totals-section {
+          display: flex;
+          gap: 20px;
+          align-items: center;
+          background: #f9f9f9;
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+        }
+
+        .total-item {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .total-label {
+          font-size: 10pt;
+          color: #555;
+          font-weight: 700;
+        }
+
+        .total-value {
+          font-size: 16pt;
+          font-weight: 900;
+        }
+
+        .signatures {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          text-align: center;
+        }
+
+        .signature-box {
+          border-top: 1px dashed #000;
+          width: 120px;
+          padding-top: 5px;
+          font-size: 10pt;
+          font-weight: 700;
+        }
+
+        @media print {
+           body {
+             width: 210mm;
+             height: 148mm;
+           }
+        }
+      </style>
+    </head>
+    <body onload="window.print()">
+      <div class="container">
+        
+        <!-- Header -->
+        <div class="header">
+          <div class="logo-section">
+            <!-- Simple SVG Logo for Print -->
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+          </div>
+          
+          <div class="company-info">
+            <h1 class="company-name">تارجت للخدمات الحكومية</h1>
+            <p class="branch-name">فرع: ${entry.branchId || 'الرئيسي'}</p>
+          </div>
+
+          <div class="meta-info">
+            <div class="meta-item">رقم الإيصال: #${entry.id.substring(entry.id.length - 6)}</div>
+            <div class="meta-item">التاريخ: ${entry.entryDate}</div>
+            <div class="meta-item">الوقت: ${new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div class="meta-item">الموظف: ${entry.recordedBy}</div>
+          </div>
         </div>
-        <div style="text-align: left;">
-           <p style="margin: 2px 0;"><strong>الموظف:</strong> ${entry.recordedBy}</p>
+
+        <!-- Content -->
+        <table class="content-table">
+          <thead>
+            <tr>
+              <th style="width: 40%">نوع الخدمة</th>
+              <th style="width: 30%">بيانات العميل</th>
+              <th style="width: 15%">الباركود</th>
+              <th style="width: 15%">المبلغ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                ${entry.serviceType}
+                <div style="font-size: 10pt; font-weight: normal; margin-top: 5px; color: #555;">${entry.notes || ''}</div>
+              </td>
+              <td>
+                <div style="font-size: 12pt;">${entry.clientName}</div>
+                <div style="font-size: 10pt; font-weight: normal; margin-top: 2px;">${entry.nationalId}</div>
+              </td>
+              <td style="font-family: monospace; text-align: center;">${entry.barcode || '-'}</td>
+              <td style="text-align: center;">${entry.serviceCost} ج.م</td>
+            </tr>
+             <!-- Empty rows to fill space if needed, or just let it expand -->
+          </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+          <div class="totals-section">
+            <div class="total-item">
+              <span class="total-label">إجمالي التكلفة</span>
+              <span class="total-value text-blue-600">${entry.serviceCost} EGP</span>
+            </div>
+            <div style="width: 1px; height: 30px; background: #ccc;"></div>
+            <div class="total-item">
+              <span class="total-label">المدفوع</span>
+              <span class="total-value text-green-600">${entry.amountPaid} EGP</span>
+            </div>
+            <div style="width: 1px; height: 30px; background: #ccc;"></div>
+            <div class="total-item">
+              <span class="total-label">المتبقي</span>
+              <span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${entry.remainingAmount} EGP</span>
+            </div>
+          </div>
+
+          <div class="signatures">
+            <div class="signature-box">ختم الشركة</div>
+            <div class="signature-box">توقيع المستلم</div>
+          </div>
         </div>
+
       </div>
-
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 10mm;">
-        <thead>
-          <tr style="background-color: #1e40af; color: white;">
-            <th style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">البيان</th>
-            <th style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">التفاصيل</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold;">اسم العميل</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center;">${entry.clientName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold;">الرقم القومي</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center;">${entry.nationalId}</td>
-          </tr>
-           <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold;">رقم الهاتف</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center;">${entry.phoneNumber}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold;">نوع الخدمة</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center;">${entry.serviceType}</td>
-          </tr>
-          ${entry.barcode ? `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold;">الباركود</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center; font-family: monospace;">${entry.barcode}</td>
-          </tr>` : ''}
-          <tr style="background-color: #f9fafb;">
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold;">إجمالي التكلفة</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center; font-weight: bold;">${entry.serviceCost} ج.م</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold; color: #065f46;">المبلغ المحصل</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center; font-weight: bold; color: #065f46;">${entry.amountPaid} ج.م</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: bold; color: #991b1b;">المتبقي</td>
-            <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center; font-weight: bold; color: #991b1b;">${entry.remainingAmount} ج.م</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div style="display: flex; justify-content: space-between; margin-top: 15mm; align-items: flex-end;">
-         <div style="text-align: center;">
-            <p style="margin-bottom: 10mm; font-weight: bold;">توقيع العميل</p>
-            <div style="border-top: 1px solid #374151; width: 40mm;"></div>
-         </div>
-         <div style="text-align: center;">
-            <p style="margin-bottom: 10mm; font-weight: bold;">ختم المكتب</p>
-            <div style="border: 2px dashed #d1d5db; width: 30mm; height: 30mm; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #d1d5db; font-size: 8pt;">Target Seal</div>
-         </div>
-      </div>
-
-      <p style="text-align: center; margin-top: 15mm; font-size: 10pt; color: #9ca3af;">شكراً لاختياركم تارجت للخدمات الحكومية</p>
-    </div>
+      
+      <script>
+        window.onload = function() {
+           // Provide a small buffer for fonts to render
+           setTimeout(function() {
+             // Print is triggered by parent, but backup here
+           }, 500);
+        }
+      </script>
+    </body>
+    </html>
   `;
+};
 
-  document.body.appendChild(container);
+export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
+  return new Promise((resolve) => {
+    // 1. Create invisible iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed'; // Fixed to avoid affecting layout
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden'; // Hide it
 
-  try {
-    // 3. Capture the element with html2canvas
-    const canvas = await html2canvas(container, {
-      scale: 2, // تم تقليل القشور لتقليل حجم الملف مع الحفاظ على الجودة
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff'
-    });
+    document.body.appendChild(iframe);
 
-    // استخدام JPEG بدلاً من PNG مع جودة 0.8 لتقليل الحجم بشكل كبير
-    const imgData = canvas.toDataURL('image/jpeg', 0.8);
+    // 2. Get the HTML
+    const htmlContent = generateReceiptHtml(entry);
 
-    // 4. Generate PDF
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a5',
-      compress: true // تفعيل الضغط الداخلي في jspdf
-    });
+    // 3. Write to iframe
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
 
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      // 4. Print logic
+      // We use a small timeout to let the iframe render content including fonts
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (e) {
+          console.error("Printing failed", e);
+        } finally {
+          // Resolve immediately so UI can unblock,
+          // but keep iframe for a moment to ensure print dialog grabs it?
+          // Actually, removing iframe immediately after print() calls might break it in some browsers
+          // if the dialog relies on the DOM.
+          // Safe to remove after a minute or reuse. 
+          // For simplicity in this task, let's remove it after a delay.
+          resolve();
 
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-    // 5. Save and Cleanup
-    pdf.save(`تارجت_إيصال_${entry.clientName}.pdf`);
-  } catch (error) {
-    console.error('PDF Generation Error:', error);
-  } finally {
-    document.body.removeChild(container);
-  }
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 10000); // 10 seconds should be enough for the spooler to pick it up or dialog to open
+        }
+      }, 500); // 500ms delay for rendering
+    } else {
+      resolve(); // Should not happen
+    }
+  });
 };

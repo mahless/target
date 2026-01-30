@@ -14,10 +14,11 @@ interface CustomSelectProps {
     placeholder?: string;
     icon?: React.ReactNode;
     accentColor?: 'blue' | 'emerald';
+    disabled?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
-    label, options, value, onChange, placeholder = 'اختر...', icon, accentColor = 'blue'
+    label, options, value, onChange, placeholder = 'اختر...', icon, accentColor = 'blue', disabled = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -56,8 +57,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             <div className="relative">
                 <button
                     type="button"
+                    disabled={disabled}
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`w-full p-4 bg-white rounded-2xl border-2 transition-all flex items-center justify-between text-sm font-bold ${isOpen ? activeClasses : `${baseBorder} hover:border-blue-400`}`}
+                    className={`w-full p-4 bg-white rounded-2xl border-2 transition-all flex items-center justify-between text-sm font-bold ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-75 border-gray-200' :
+                            isOpen ? activeClasses : `${baseBorder} hover:border-blue-400`
+                        }`}
                 >
                     <div className="flex items-center gap-3">
                         <span className="text-gray-400">{icon}</span>

@@ -10,7 +10,7 @@ interface HeaderProps {
   pageTitle: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, branch, date, username, pageTitle }) => {
+const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date, username, pageTitle }) => {
   return (
     <header className="bg-white h-16 shadow-sm flex items-center justify-between px-4 sticky top-0 z-10">
       <div className="flex items-center gap-4">
@@ -22,7 +22,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, branch, date, username, 
         </button>
         <h2 className="text-lg font-semibold text-gray-800 hidden sm:block">
           {pageTitle}
-          <span className="text-[9px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded ml-2 font-mono">v0.0.1</span>
         </h2>
       </div>
 
@@ -50,6 +49,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, branch, date, username, 
       </div>
     </header>
   );
-};
+});
 
 export default Header;

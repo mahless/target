@@ -4,7 +4,7 @@ import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory } 
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { generateReceipt } from '../services/pdfService';
 import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw } from 'lucide-react';
-import { toEnglishDigits } from '../utils';
+import { toEnglishDigits, normalizeArabic } from '../utils';
 import { useModal } from '../context/ModalContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -16,16 +16,16 @@ interface ServiceFormProps {
   currentDate: string;
   username: string;
   userRole: string;
+  isSubmitting?: boolean;
 }
 
-const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, entries, branchId, currentDate, username, userRole }) => {
-  const { showModal, showQuickStatus } = useModal();
+const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, entries, branchId, currentDate, username, userRole, isSubmitting = false }) => {
+  const { showModal, showQuickStatus, setIsProcessing } = useModal();
   // Client Lookup State
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Form State
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientName, setClientName] = useState('');
   const [nationalId, setNationalId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -33,6 +33,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [barcode, setBarcode] = useState('');
   const [speed, setSpeed] = useState<ServiceSpeed | ''>('');
   const [isFetchingBarcode, setIsFetchingBarcode] = useState(false);
+  const [barcodeNotFound, setBarcodeNotFound] = useState(false);
 
   // Financial State
   const [serviceCost, setServiceCost] = useState<number>(0);
@@ -64,14 +65,25 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   // Search Logic
   const matchingClients = useMemo(() => {
     if (clientSearchTerm.length < 2) return [];
-    const term = clientSearchTerm.toLowerCase();
+
+    // Normalize the search term:
+    // 1. Convert to English digits (for phone/ID search)
+    // 2. Normalize Arabic characters (for name search)
+    const rawTerm = toEnglishDigits(clientSearchTerm.toLowerCase());
+    const normalizedTerm = normalizeArabic(rawTerm);
+
     const uniqueClients: Record<string, { name: string, id: string, phone: string }> = {};
 
     entries.forEach(e => {
+      // Prepare entry fields for comparison
+      const normalizedName = normalizeArabic(e.clientName.toLowerCase());
+      const phone = e.phoneNumber || '';
+      const nid = e.nationalId || '';
+
       if (
-        e.clientName.toLowerCase().includes(term) ||
-        e.nationalId.includes(term) ||
-        e.phoneNumber.includes(term)
+        normalizedName.includes(normalizedTerm) ||
+        nid.includes(rawTerm) ||
+        phone.includes(rawTerm)
       ) {
         uniqueClients[e.nationalId] = {
           name: e.clientName,
@@ -102,6 +114,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     if (!branchId || isFetchingBarcode) return;
 
     setIsFetchingBarcode(true);
+    setBarcodeNotFound(false);
     setError(null);
 
     // التحويل ليكون مطابقاً لفئات المخزن الذكية
@@ -116,8 +129,10 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
     if (newBarcode) {
       setBarcode(newBarcode);
+      setBarcodeNotFound(false);
     } else {
       setBarcode('');
+      setBarcodeNotFound(true);
       setError(`عذراً، مخزن فرعك من النوع (${category}) فارغ، اتصل بالمسؤول.`);
     }
     setIsFetchingBarcode(false);
@@ -150,6 +165,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   useEffect(() => {
     setSpeed('');
     setBarcode('');
+    setBarcodeNotFound(false);
   }, [serviceType]);
 
   // Auto-fetch barcode when speed is selected for specific services
@@ -181,7 +197,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       return;
     }
 
-    setIsSubmitting(true);
+    // Removed setIsSubmitting(true) as it's handled globally in onAddEntry
     try {
       const entryId = Date.now().toString();
 
@@ -200,8 +216,6 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         thirdPartyName: hasThirdParty ? thirdPartyName : undefined,
         thirdPartyCost: hasThirdParty ? Number(thirdPartyCost) : undefined,
         isCostPaid: false,
-        costPaidDate: '',
-        costPaidBy: '',
         isElectronic,
         electronicAmount: isElectronic ? Number(electronicAmount) : 0,
         electronicMethod: isElectronic ? electronicMethod : undefined,
@@ -233,26 +247,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             branchId,
             date: currentDate,
             timestamp: Date.now(),
-            recordedBy: username,
-            relatedEntryId: entryId
+            recordedBy: username
           };
           await onAddExpense(electronicExpense);
-        }
-
-        // Automation: Record third-party cost as an expense
-        if (hasThirdParty && thirdPartyCost > 0) {
-          const tpExpense: Expense = {
-            id: `tp-${Date.now()}-${entryId}`,
-            category: 'طرف ثالث',
-            amount: Number(thirdPartyCost),
-            notes: `تكلفة مورد: ${thirdPartyName} | عميل: ${clientName} | ${serviceType}`,
-            branchId,
-            date: currentDate,
-            timestamp: Date.now(),
-            recordedBy: username,
-            relatedEntryId: entryId
-          };
-          await onAddExpense(tpExpense);
         }
 
         setLastEntry(newEntry);
@@ -277,9 +274,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     } catch (err) {
       showQuickStatus('حدث خطأ', 'error');
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
+    // Removed finally { setIsSubmitting(false) }
   };
 
   return (
@@ -364,9 +360,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                           readOnly
                           required
                           type="text"
-                          value={barcode}
-                          className={`${commonInputClass} border-2 ${isFetchingBarcode ? 'border-amber-200' : 'border-blue-100'} font-mono bg-gray-100 cursor-not-allowed`}
-                          placeholder={isFetchingBarcode ? 'جاري السحب...' : 'اختر السرعة أولاً'}
+                          value={barcodeNotFound ? 'لا يوجد باركود متاح' : barcode}
+                          className={`${commonInputClass} border-2 ${isFetchingBarcode ? 'border-amber-200' : (barcodeNotFound ? 'border-red-500 bg-red-50' : 'border-blue-100')} font-mono ${barcodeNotFound ? 'text-red-700' : 'bg-gray-100'} cursor-not-allowed`}
+                          placeholder={isFetchingBarcode ? 'جاري السحب...' : (barcodeNotFound ? 'لا يوجد أكواد' : 'اختر السرعة أولاً')}
                         />
                         {isFetchingBarcode && <RefreshCw className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 animate-spin" />}
                       </div>
@@ -430,7 +426,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">القيمة المحولة</label>
-                    <input required type="number" min="1" value={electronicAmount === 0 ? '' : electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-lg`} placeholder="0" />
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount === 0 ? '' : electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-lg`} placeholder="0" />
                   </div>
                 </div>
               )}
@@ -450,7 +446,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">تكلفة التوريد</label>
-                    <input required type="number" value={thirdPartyCost === 0 ? '' : thirdPartyCost} onChange={e => setThirdPartyCost(Number(toEnglishDigits(e.target.value)))} className={commonInputClass} placeholder="0" />
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={thirdPartyCost === 0 ? '' : thirdPartyCost} onChange={e => setThirdPartyCost(Number(toEnglishDigits(e.target.value)))} className={commonInputClass} placeholder="0" />
                   </div>
                 </div>
               )}
@@ -460,11 +456,11 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t pt-8">
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">سعر الخدمة (تارجت)</label>
-                <input required type="number" value={serviceCost === 0 ? '' : serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl`} placeholder="0" />
+                <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost === 0 ? '' : serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl`} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1 text-green-700">إجمالي المحصل (كاش + إلكتروني)</label>
-                <input required type="number" value={amountPaid === 0 ? '' : amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl text-green-700 border-2 border-green-50`} placeholder="0" />
+                <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid === 0 ? '' : amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl text-green-700 border-2 border-green-50`} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">المتبقي الآجل</label>
@@ -483,7 +479,27 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             {successMsg && (
               <div className="bg-green-50 text-green-700 p-5 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4 font-black border border-green-100">
                 <span>{successMsg}</span>
-                <button type="button" onClick={() => lastEntry && generateReceipt(lastEntry)} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-sm font-black shadow-lg shadow-green-600/20 transition-all active:scale-95">
+                <button type="button" onClick={async () => {
+                  if (lastEntry) {
+                    // Assuming setIsProcessing is available from useModal or context
+                    // If not, you'd need to define a local state for processing
+                    // For this change, we assume setIsProcessing is accessible.
+                    // If useModal is not in this file, this part of the instruction
+                    // might be out of scope for the provided snippet.
+                    // However, following the instruction to the letter:
+                    // The instruction implies setIsProcessing is now part of useModal.
+                    // If useModal is not in this snippet, this part of the change
+                    // would be applied if the full file were available.
+                    // For the purpose of this snippet, we'll assume setIsProcessing
+                    // is a valid function to call here.
+                    setIsProcessing(true);
+                    try {
+                      await generateReceipt(lastEntry);
+                    } finally {
+                      setIsProcessing(false);
+                    }
+                  }
+                }} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-sm font-black shadow-lg shadow-green-600/20 transition-all active:scale-95">
                   <Printer className="w-4 h-4" />
                   طباعة إيصال العميل
                 </button>
