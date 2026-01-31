@@ -15,10 +15,11 @@ interface CustomSelectProps {
     icon?: React.ReactNode;
     accentColor?: 'blue' | 'emerald';
     disabled?: boolean;
+    showAllOption?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
-    label, options, value, onChange, placeholder = 'اختر...', icon, accentColor = 'blue', disabled = false
+    label, options, value, onChange, placeholder = 'اختر...', icon, accentColor = 'blue', disabled = false, showAllOption = true
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +61,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     disabled={disabled}
                     onClick={() => setIsOpen(!isOpen)}
                     className={`w-full p-4 bg-white rounded-2xl border-2 transition-all flex items-center justify-between text-sm font-bold ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-75 border-gray-200' :
-                            isOpen ? activeClasses : `${baseBorder} hover:border-blue-400`
+                        isOpen ? activeClasses : `${baseBorder} hover:border-blue-400`
                         }`}
                 >
                     <div className="flex items-center gap-3">
@@ -76,14 +77,16 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     <div className="absolute z-[100] mt-2 w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scaleIn max-h-60 overflow-y-auto">
                         <div className="p-2 space-y-1">
                             {/* Option for 'All' */}
-                            <button
-                                type="button"
-                                onClick={() => { onChange('الكل'); setIsOpen(false); }}
-                                className={`w-full p-3 rounded-xl text-right text-xs font-black transition-all flex items-center justify-between ${value === 'الكل' ? selectedItemClasses : `text-gray-600 ${hoverItemClasses}`}`}
-                            >
-                                <span>{placeholder}</span>
-                                {value === 'الكل' && <Check className="w-3 h-3" />}
-                            </button>
+                            {showAllOption && (
+                                <button
+                                    type="button"
+                                    onClick={() => { onChange('الكل'); setIsOpen(false); }}
+                                    className={`w-full p-3 rounded-xl text-right text-xs font-black transition-all flex items-center justify-between ${value === 'الكل' ? selectedItemClasses : `text-gray-600 ${hoverItemClasses}`}`}
+                                >
+                                    <span>{placeholder}</span>
+                                    {value === 'الكل' && <Check className="w-3 h-3" />}
+                                </button>
+                            )}
 
                             {options.map((opt) => (
                                 <button

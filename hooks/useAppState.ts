@@ -114,7 +114,7 @@ export const useAppState = () => {
             serviceCost: Number(e.serviceCost || e['التكلفة'] || e['إجمالي التكلفة'] || 0),
             remainingAmount: Number(e.remainingAmount || e['المتبقي'] || 0),
             branchId: normalizeArabic(String(e.branchId || e['الفرع'] || '')),
-            status: (e.status || e['الحالة'] || 'active') as 'active' | 'cancelled',
+            status: (e.status || e['الحالة'] || e['الحاله'] || 'active') as 'active' | 'cancelled' | 'تم التسليم',
             timestamp: Number(e.timestamp || e['التوقيت'] || Date.now()),
             recordedBy: String(e.recordedBy || e['الموظف'] || e['سجل بواسطة'] || '').trim(),
             barcode: e.barcode || e['الباركود'],
@@ -127,7 +127,8 @@ export const useAppState = () => {
             costSettledBy: e.costSettledBy || e['سجل الدفع بواسطة'],
             isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
             electronicAmount: Number(e.electronicAmount || 0),
-            electronicMethod: e.electronicMethod
+            electronicMethod: e.electronicMethod,
+            deliveredDate: e.deliveredDate || e['تاريخ التسليم']
           };
         });
 
@@ -240,19 +241,18 @@ export const useAppState = () => {
 
   // Auto-assign branch and date on startup OR when user changes
   useEffect(() => {
-    if (user && user.assignedBranchId && (!branch || !currentDate)) {
+    // Auto-assignment for non-managers
+    if (user && user.assignedBranchId && (!branch || branch.id !== user.assignedBranchId)) {
       const assignedBranch = BRANCHES.find(b => b.id === user.assignedBranchId);
       if (assignedBranch) {
-        if (!branch) {
-          setBranch(assignedBranch);
-          localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
-        }
-        if (!currentDate) {
-          const today = new Date().toISOString().split('T')[0];
-          setCurrentDate(today);
-          localStorage.setItem('target_date', JSON.stringify(today));
-        }
+        setBranch(assignedBranch);
+        localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
       }
+    }
+    if (!currentDate) {
+      const today = new Date().toISOString().split('T')[0];
+      setCurrentDate(today);
+      localStorage.setItem('target_date', JSON.stringify(today));
     }
   }, [user, branch, currentDate]);
 

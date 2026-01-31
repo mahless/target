@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3,
-  MapPin, Calendar, Clock, Package, Wifi, WifiOff
+  Calendar, MapPin, Smartphone, User as UserIcon, Building2,
+  ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package
 } from 'lucide-react';
 import { BRANCHES } from '../constants';
 import { Branch, User } from '../types';
 import CustomSelect from './CustomSelect';
-import { useModal } from '../context/ModalContext'; // Added
-import { GoogleSheetsService } from '../services/googleSheetsService'; // Added
+import { useModal } from '../context/ModalContext';
+import { GoogleSheetsService } from '../services/googleSheetsService';
+import { normalizeArabic } from '../utils';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -45,16 +47,131 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   stopSubmitting
 }) => {
   const { showModal, showQuickStatus } = useModal();
-  const [ipAddress, setIpAddress] = useState<string>('جاري التحميل...');
+
+  const AttendanceModalContent: React.FC<{
+    attendanceStatus: 'checked-in' | 'checked-out';
+    onCheckIn: (name: string, id: string) => Promise<any>;
+    onCheckOut: (name: string, id: string) => Promise<any>;
+    user: User;
+    currentBranch: Branch;
+    userRole: string;
+    showHRReport: () => void;
+    onClose: () => void;
+    showQuickStatus: (message: string, type?: 'success' | 'error') => void;
+  }> = ({ attendanceStatus, onCheckIn, onCheckOut, user, currentBranch, userRole, showHRReport, onClose, showQuickStatus }) => {
+    const [ip, setIp] = useState('جاري التحميل...');
+
+    useEffect(() => {
+      let isMounted = true;
+      GoogleSheetsService.fetchClientIP().then(res => {
+        if (isMounted) setIp(res || '0.0.0.0');
+      });
+      return () => { isMounted = false; };
+    }, []);
+
+    return (
+      <div className="space-y-6 text-center">
+        {!currentBranch ? (
+          <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-3xl text-amber-700">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-3" />
+            <h3 className="text-lg font-black italic">تنبيه: الفرع غير محدد</h3>
+            <p className="text-xs font-bold mt-2">لا يمكنك تسجيل الحضور حالياً لعدم وجود بيانات فرع متصلة بحسابك. يرجى مراجعة الإدارة.</p>
+          </div>
+        ) : (
+          <div className={`p-6 rounded-3xl border-2 transition-all duration-500 ${attendanceStatus === 'checked-in' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 transition-colors ${attendanceStatus === 'checked-in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              {attendanceStatus === 'checked-in' ? <Wifi className="w-8 h-8 animate-pulse" /> : <WifiOff className="w-8 h-8" />}
+            </div>
+            <h3 className={`text-xl font-black ${attendanceStatus === 'checked-in' ? 'text-green-700' : 'text-red-700'}`}>
+              {attendanceStatus === 'checked-in' ? 'أنت متصل بالعمل' : 'غير مسجل حضور'}
+            </h3>
+            <p className="text-gray-500 font-bold text-sm mt-2">
+              {attendanceStatus === 'checked-in' ? 'نتمنى لك وردية موفقة' : 'برجاء تسجيل الحضور لفتح النظام'}
+            </p>
+          </div>
+        )}
+
+        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-right">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">بيانات الاتصال</p>
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-gray-800 flex items-center gap-2 text-sm">
+              <MapPin className="w-4 h-4 text-blue-500" />
+              {currentBranch?.name || <span className="text-amber-600 italic">فرع غير مخصص</span>}
+            </span>
+            <span className="text-xs font-mono font-bold text-blue-600">IP: {ip}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            disabled={attendanceStatus === 'checked-in' || !currentBranch}
+            onClick={async () => {
+              if (!currentBranch) return;
+              const result = await onCheckIn(user.name, currentBranch.id);
+              if (result.success) {
+                showQuickStatus('تم تسجيل الحضور بنجاح');
+                onClose();
+              } else {
+                showQuickStatus(result.message || 'فشل تسجيل الحضور', 'error');
+              }
+            }}
+            className={`py-4 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-in' || !currentBranch
+              ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
+              : 'bg-green-600 text-white shadow-green-100 hover:bg-green-700'
+              }`}
+          >
+            تسجيل حضور
+          </button>
+          <button
+            disabled={attendanceStatus === 'checked-out' || !currentBranch}
+            onClick={async () => {
+              if (!currentBranch) return;
+              const result = await onCheckOut(user.name, currentBranch.id);
+              if (result.success) {
+                showQuickStatus('تم تسجيل الانصراف بنجاح');
+                onClose();
+              } else {
+                showQuickStatus(result.message || 'فشل تسجيل الانصراف', 'error');
+              }
+            }}
+            className={`py-4 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-out' || !currentBranch
+              ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
+              : 'bg-red-600 text-white shadow-red-100 hover:bg-red-700'
+              }`}
+          >
+            تسجيل انصراف
+          </button>
+        </div>
+
+        {normalizeArabic(userRole) === normalizeArabic('مدير') && (
+          <button
+            onClick={showHRReport}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm bg-blue-600 text-white shadow-lg shadow-blue-100 mt-2 hover:bg-blue-700 transition-all active:scale-95"
+          >
+            <FileText className="w-5 h-5" />
+            عرض تقرير ساعات عمل الموظفين
+          </button>
+        )}
+
+        <button
+          onClick={onClose}
+          className="w-full py-3 mt-4 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all active:scale-[0.98]"
+        >
+          إغلاق النافذة
+        </button>
+      </div>
+    );
+  };
 
   const handleAttendanceClick = async () => {
-    if (userRole === 'مدير') {
-      // عرض تقرير HR للمدير
-      startSubmitting(); // إظهار الشاشة الزرقاء
+    const showHRReport = async () => {
+      startSubmitting();
       try {
         const reportData = await GoogleSheetsService.getHRReport();
         showModal({
           title: 'تقرير ساعات عمل الموظفين (الشهر الحالي)',
+          size: 'lg',
+          confirmText: 'رجوع',
           content: (
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-2xl border border-gray-100">
@@ -69,121 +186,50 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                       <th className="p-3 text-center bg-blue-50 text-blue-700">الإجمالي</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y font-bold">
+                  <tbody className="divide-y font-bold text-[10px]">
                     {reportData.length === 0 ? (
                       <tr><td colSpan={6} className="p-8 text-center text-gray-300 italic">لا توجد بيانات لهذا الشهر</td></tr>
                     ) : (
                       reportData.map((u, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="p-3 text-gray-800">{u.name}</td>
-                          <td className="p-3 text-center text-gray-500">{u.week1}</td>
-                          <td className="p-3 text-center text-gray-500">{u.week2}</td>
-                          <td className="p-3 text-center text-gray-500">{u.week3}</td>
-                          <td className="p-3 text-center text-gray-500">{u.week4}</td>
-                          <td className="p-3 text-center bg-blue-50/50 text-blue-700 font-black">{u.totalMonth}</td>
+                          <td className="p-2 text-center text-gray-500">{u.week1}</td>
+                          <td className="p-2 text-center text-gray-500">{u.week2}</td>
+                          <td className="p-2 text-center text-gray-500">{u.week3}</td>
+                          <td className="p-2 text-center text-gray-500">{u.week4}</td>
+                          <td className="p-2 text-center bg-blue-50/50 text-blue-700 font-black">{u.totalMonth}</td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
               </div>
-              <p className="text-[10px] text-gray-400 text-center font-bold">
-                * يتم تقسيم الأسابيع بناءً على أيام الشهر (1-7، 8-14، 15-21، 22-31)
-              </p>
             </div>
           ),
-          confirmText: 'إغلاق',
-          hideFooter: false,
-          size: 'lg'
+          onConfirm: () => handleAttendanceClick() // Back to main attendance modal
         });
       } finally {
         stopSubmitting();
       }
-      return;
-    }
-
-    // Fetch IP immediately when clicking the button
-    GoogleSheetsService.fetchClientIP().then(ip => setIpAddress(ip || 'غير معروف'));
+    };
 
     showModal({
       title: 'نظام الحضور والانصراف الذكي',
+      size: 'md',
       content: (
-        <div className="space-y-6 text-center">
-          <div className={`p-6 rounded-3xl border-2 transition-all duration-500 ${attendanceStatus === 'checked-in' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 transition-colors ${attendanceStatus === 'checked-in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-              {attendanceStatus === 'checked-in' ? <Wifi className="w-8 h-8 animate-pulse" /> : <WifiOff className="w-8 h-8" />}
-            </div>
-            <h3 className={`text-xl font-black ${attendanceStatus === 'checked-in' ? 'text-green-700' : 'text-red-700'}`}>
-              {attendanceStatus === 'checked-in' ? 'أنت متصل بالعمل' : 'غير مسجل حضور'}
-            </h3>
-            <p className="text-gray-500 font-bold text-sm mt-2">
-              {attendanceStatus === 'checked-in' ? 'نتمنى لك وردية موفقة' : 'برجاء تسجيل الحضور لفتح النظام'}
-            </p>
-          </div>
-
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-right">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">بيانات الاتصال</p>
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-gray-800 flex items-center gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-blue-500" />
-                {currentBranch?.name || 'غير محدد'}
-              </span>
-              <span className="text-[10px] font-mono text-gray-400">IP: {ipAddress}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              disabled={attendanceStatus === 'checked-in'}
-              onClick={async () => {
-                if (!user || !currentBranch) return;
-                const result = await onCheckIn(user.name, currentBranch.id);
-                if (result.success) {
-                  showQuickStatus('تم تسجيل الحضور بنجاح');
-                  showModal(null as any); // Close manually if needed or update content
-                } else {
-                  showQuickStatus(result.message || 'فشل تسجيل الحضور', 'error');
-                }
-              }}
-              className={`py-4 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-in'
-                ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-                : 'bg-green-600 text-white shadow-green-100 hover:bg-green-700'
-                }`}
-            >
-              تسجيل حضور
-            </button>
-            <button
-              disabled={attendanceStatus === 'checked-out'}
-              onClick={async () => {
-                if (!user || !currentBranch) return;
-                const result = await onCheckOut(user.name, currentBranch.id);
-                if (result.success) {
-                  showQuickStatus('تم تسجيل الانصراف بنجاح');
-                  showModal(null as any);
-                } else {
-                  showQuickStatus(result.message || 'فشل تسجيل الانصراف', 'error');
-                }
-              }}
-              className={`py-4 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-out'
-                ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-                : 'bg-red-600 text-white shadow-red-100 hover:bg-red-700'
-                }`}
-            >
-              تسجيل انصراف
-            </button>
-          </div>
-
-          <button
-            onClick={() => showModal(null as any)}
-            className="w-full py-3 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all active:scale-[0.98]"
-          >
-            إغلاق النافذة
-          </button>
-        </div>
+        <AttendanceModalContent
+          attendanceStatus={attendanceStatus}
+          onCheckIn={onCheckIn}
+          onCheckOut={onCheckOut}
+          user={user!}
+          currentBranch={currentBranch!}
+          userRole={userRole}
+          showHRReport={showHRReport}
+          onClose={() => showModal(null as any)}
+          showQuickStatus={showQuickStatus}
+        />
       ),
-      confirmText: '', // Remove default buttons
-      type: 'confirm',
-      hideFooter: true // We'll need to support this or just pass null to confirmText
+      hideFooter: true
     });
   };
 
@@ -235,7 +281,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                     if (b) onBranchChange(b);
                   }}
                   icon={<MapPin className="w-3 h-3 text-blue-600" />}
-                  disabled={userRole !== 'مدير'} // Locked for employees, open for Admin
+                  disabled={userRole === 'موظف'} // Locked for employees, open for Admin & Assistant
                 />
               </div>
 

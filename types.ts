@@ -51,8 +51,9 @@ export interface ServiceEntry {
   recordedBy: string; // Username of the employee
 
   // Cancellation
-  status: 'active' | 'cancelled';
+  status: 'active' | 'cancelled' | 'تم التسليم';
   cancellationReason?: string;
+  deliveredDate?: string; // YYYY-MM-DD
   adminFee?: number;
 
   // Link to original order for debt settlements

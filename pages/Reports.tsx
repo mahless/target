@@ -47,10 +47,12 @@ const Reports: React.FC<ReportsProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(
-    userRole === 'مدير' ? 'الكل' : branchId || 'الكل'
-  );
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    if (userRole === 'مدير') return 'الكل';
+    return branchId || (branches.length > 0 ? branches[0].id : 'الكل');
+  });
   const [selectedService, setSelectedService] = useState<string>('الكل');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('الكل');
   const [activeTab, setActiveTab] = useState<'entries' | 'expenses'>('entries');
 
   const { showModal, setIsProcessing } = useModal();
@@ -135,7 +137,8 @@ const Reports: React.FC<ReportsProps> = ({
       const matchesDate = d >= sDate && d <= eDate;
       const matchesBranch = selectedBranchId === 'الكل' || normalizeArabic(e.branchId) === normalizedSelectedBranch;
       const matchesService = selectedService === 'الكل' || e.serviceType === selectedService;
-      return matchesDate && matchesBranch && matchesService;
+      const matchesEmployee = selectedEmployee === 'الكل' || e.recordedBy === selectedEmployee;
+      return matchesDate && matchesBranch && matchesService && matchesEmployee;
     });
 
     const filteredExpenses = expenses.filter(ex => {
@@ -145,12 +148,13 @@ const Reports: React.FC<ReportsProps> = ({
 
       // منطق ذكي: إذا تم اختيار خدمة محددة، نظهر فقط المصروفات المرتبطة بها (عن طريق البحث في الملاحظات)
       const matchesService = selectedService === 'الكل' || (ex.notes && ex.notes.includes(selectedService));
+      const matchesEmployee = selectedEmployee === 'الكل' || ex.recordedBy === selectedEmployee;
 
-      return matchesDate && matchesBranch && matchesService;
+      return matchesDate && matchesBranch && matchesService && matchesEmployee;
     });
 
     return { entries: filteredEntries, expenses: filteredExpenses };
-  }, [entries, expenses, startDate, endDate, selectedBranchId, selectedService]);
+  }, [entries, expenses, startDate, endDate, selectedBranchId, selectedService, selectedEmployee]);
 
   const stats = useMemo(() => {
     const totalRevenue = filteredData.entries.reduce((sum, e) => sum + e.amountPaid, 0);
@@ -161,6 +165,13 @@ const Reports: React.FC<ReportsProps> = ({
   const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
   const serviceOptions = useMemo(() => SERVICE_TYPES.map(s => ({ id: s, name: s })), []);
 
+  const employeeOptions = useMemo(() => {
+    const names = new Set<string>();
+    entries.forEach(e => { if (e.recordedBy) names.add(e.recordedBy); });
+    expenses.forEach(ex => { if (ex.recordedBy) names.add(ex.recordedBy); });
+    return Array.from(names).map(name => ({ id: name, name }));
+  }, [entries, expenses]);
+
   return (
     <div className="p-3 md:p-5 space-y-4 text-right">
       {/* Filters Header */}
@@ -169,44 +180,60 @@ const Reports: React.FC<ReportsProps> = ({
           <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
           <h3 className="text-lg font-black text-gray-800">تخصيص عرض التقارير</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <CustomSelect
-            label="فرع البحث"
-            options={branchOptions}
-            value={selectedBranchId}
-            onChange={setSelectedBranchId}
-            placeholder="كل الفروع"
-            icon={<Filter className="w-3.5 h-3.5" />}
-            disabled={userRole !== 'مدير'}
-          />
-
-          <CustomSelect
-            label="نوع الخدمة"
-            options={serviceOptions}
-            value={selectedService}
-            onChange={setSelectedService}
-            placeholder="كل الخدمات"
-            icon={<Filter className="w-3.5 h-3.5" />}
-          />
-
-          <div className="space-y-1">
-            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">من تاريخ</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
-              className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <CustomSelect
+              label="فرع البحث"
+              options={branchOptions}
+              value={selectedBranchId}
+              onChange={setSelectedBranchId}
+              placeholder="كل الفروع"
+              icon={<Filter className="w-3.5 h-3.5" />}
+              disabled={userRole === 'موظف'}
+              showAllOption={userRole === 'مدير'}
             />
+
+            <CustomSelect
+              label="نوع الخدمة"
+              options={serviceOptions}
+              value={selectedService}
+              onChange={setSelectedService}
+              placeholder="كل الخدمات"
+              icon={<Filter className="w-3.5 h-3.5" />}
+            />
+
+            {userRole === 'مدير' && (
+              <CustomSelect
+                label="الموظف"
+                options={employeeOptions}
+                value={selectedEmployee}
+                onChange={setSelectedEmployee}
+                placeholder="كل الموظفين"
+                icon={<Search className="w-3.5 h-3.5" />}
+              />
+            )}
           </div>
 
-          <div className="space-y-1">
-            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">إلى تاريخ</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
-              className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
-            />
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-50">
+            <div className="space-y-1">
+              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">من تاريخ</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
+                className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">إلى تاريخ</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
+                className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -72,7 +72,83 @@ function doPost(e) {
     return handleAttendance(requestData);
   }
 
+  if (action === 'deliverOrder') {
+    return handleDeliverOrder(requestData);
+  }
+
   return createJSONResponse({ status: "error", message: "Invalid POST Action" });
+}
+
+/**
+ * 7. تسليم المعاملة وتحصيل المتبقي (Delivery & Collection)
+ */
+function handleDeliverOrder(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+    const ss = getSS();
+    const sheetEntries = ss.getSheetByName("Entries");
+    if (!sheetEntries) return createJSONResponse({ status: "error", message: "Entries sheet not found" });
+
+    const map = getHeaderMapping(sheetEntries, "Entries");
+    const idColIdx = map['id'] ?? map['معرف'];
+    const statusColIdx = map['status'] ?? map['الحاله'];
+    // البحث عن عمود تاريخ التسليم بشكل مرن
+    const deliveredDateColIdx = map['deliveredDate'] ?? map['تاريخ التسليم'];
+
+    if (idColIdx === undefined) return createJSONResponse({ status: "error", message: "ID Column not found" });
+
+    const dataRange = sheetEntries.getDataRange();
+    const values = dataRange.getValues();
+    
+    let rowIndex = -1;
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][idColIdx]) === String(data.orderId)) {
+        rowIndex = i;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) return createJSONResponse({ status: "error", message: "Order not found" });
+
+    const cairoTime = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+
+    // 1. تحديث حالة الطلب وتاريخ التسليم
+    if (statusColIdx !== undefined) {
+      sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue("تم التسليم");
+    }
+    if (deliveredDateColIdx !== undefined) {
+      sheetEntries.getRange(rowIndex + 1, deliveredDateColIdx + 1).setValue(cairoTime);
+    }
+
+    // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
+    if (data.remainingCollected > 0) {
+      const headerKeys = Object.keys(map).sort((a, b) => map[a] - map[b]);
+      const newRow = headerKeys.map(h => {
+        const key = h.toLowerCase();
+        if (key === 'id' || key === 'معرف') return Date.now().toString() + "-collect";
+        if (key === 'clientname' || key === 'العميل') return data.clientName;
+        if (key === 'servicetype' || key === 'نوع الخدمة') return "سداد مديونية";
+        if (key === 'amountpaid' || key === 'المدفوع') return data.remainingCollected;
+        if (key === 'servicecost' || key === 'التكلفه') return data.remainingCollected; // في السداد التكلفة = المدفوع
+        if (key === 'remainingamount' || key === 'المتبقي') return 0;
+        if (key === 'entrydate' || key === 'التاريخ') return cairoTime;
+        if (key === 'timestamp') return Date.now();
+        if (key === 'recordedby' || key === 'الموظف') return data.collectorName;
+        if (key === 'branchid' || key === 'الفرع') return data.branchId;
+        if (key === 'status' || key === 'الحاله') return "active";
+        if (key === 'parententryid') return data.orderId;
+        return "";
+      });
+      sheetEntries.appendRow(newRow);
+    }
+
+    return createJSONResponse({ status: "success" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**

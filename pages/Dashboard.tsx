@@ -5,6 +5,7 @@ import { generateReceipt } from '../services/pdfService';
 import { normalizeArabic, normalizeDate, toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import { GoogleSheetsService } from '../services/googleSheetsService';
 
 interface DashboardProps {
   allEntries: ServiceEntry[];
@@ -259,6 +260,73 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
     });
   };
 
+  const handleDeliver = async (entry: ServiceEntry) => {
+    const remaining = entry.remainingAmount;
+    let amountToCollect = remaining;
+
+    const performDelivery = async (collectedAmount: number) => {
+      setIsProcessing(true);
+      try {
+        const success = await GoogleSheetsService.deliverOrder(
+          entry.id,
+          collectedAmount,
+          entry.clientName,
+          username,
+          branchId
+        );
+
+        if (success) {
+          showQuickStatus('تم تسليم المعاملة وتحديث البيانات بنجاح');
+          onRefresh();
+        } else {
+          showQuickStatus('فشل تحديث البيانات على السيرفر', 'error');
+        }
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    if (remaining === 0) {
+      showModal({
+        title: 'تأكيد التسليم',
+        content: (
+          <div className="text-right p-2">
+            <p className="font-bold text-gray-700">هل أنت متأكد من إتمام عملية التسليم؟</p>
+            <p className="text-[10px] text-gray-400 mt-2 italic">لا توجد مديونية متبقية على هذه المعاملة.</p>
+          </div>
+        ),
+        confirmText: 'تأكيد التسليم',
+        onConfirm: () => performDelivery(0)
+      });
+    } else {
+      showModal({
+        title: 'تحصيل المتبقي وتسليم المعاملة',
+        content: (
+          <div className="space-y-4 text-right">
+            <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+              <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest mb-1">المبلغ المتبقي</p>
+              <p className="text-2xl font-black text-amber-600">{remaining} ج.م</p>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المبلغ المستلم الآن</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                defaultValue={remaining}
+                onChange={(e) => amountToCollect = Number(toEnglishDigits(e.target.value))}
+                className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
+              />
+              <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>
+            </div>
+          </div>
+        ),
+        confirmText: 'تأكيد التحصيل والتسليم',
+        onConfirm: () => performDelivery(amountToCollect)
+      });
+    }
+  };
+
   const filteredEntries = dailyEntries.filter(entry => {
     const term = searchTerm.toLowerCase();
     return (
@@ -344,13 +412,22 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
                     <td className="py-3 px-6 text-center">
                       <div className="flex justify-center gap-2">
                         {entry.status === 'active' && entry.serviceType !== 'سداد مديونية' && (
-                          <button
-                            onClick={() => handleCancelService(entry)}
-                            disabled={isSubmitting}
-                            className={`bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[10px] font-black transition-all border border-red-100 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100'}`}
-                          >
-                            إلغاء
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleDeliver(entry)}
+                              disabled={isSubmitting}
+                              className={`bg-green-50 text-green-600 px-2 py-1 rounded-lg text-[10px] font-black transition-all border border-green-100 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-100'}`}
+                            >
+                              تسليم
+                            </button>
+                            <button
+                              onClick={() => handleCancelService(entry)}
+                              disabled={isSubmitting}
+                              className={`bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[10px] font-black transition-all border border-red-100 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100'}`}
+                            >
+                              إلغاء
+                            </button>
+                          </>
                         )}
                         {entry.status === 'active' && entry.hasThirdParty && !entry.isCostPaid && (
                           <button
@@ -363,6 +440,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
                         )}
                         {entry.status === 'cancelled' && (
                           <span className="text-[10px] text-gray-400 font-black px-2 py-1 bg-gray-100 rounded-lg">ملغاة</span>
+                        )}
+                        {entry.status === 'تم التسليم' && (
+                          <span className="text-[10px] text-green-600 font-black px-2 py-1 bg-green-50 rounded-lg">تم التسليم</span>
                         )}
                       </div>
                     </td>
