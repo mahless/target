@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { StockItem, Branch, StockCategory, StockStatus } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
-import { BRANCHES } from '../constants';
-import { PlusCircle, Package, AlertCircle, CheckCircle2, Search, Filter, History, Trash2, Edit, ChevronDown } from 'lucide-react';
+import { SERVICE_TYPES } from '../constants';
+import { PlusCircle, Package, AlertCircle, CheckCircle2, Filter, History, Trash2, Edit, ChevronDown } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { toEnglishDigits } from '../utils';
 import CustomSelect from '../components/CustomSelect';
+import SearchInput from '../components/SearchInput';
 
 interface AdminInventoryProps {
     stock: StockItem[];
@@ -15,22 +16,21 @@ interface AdminInventoryProps {
     isSubmitting?: boolean;
     startSubmitting: () => void;
     stopSubmitting: () => void;
+    branches: Branch[];
 }
 
-const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyncing, userRole, isSubmitting = false, startSubmitting, stopSubmitting }) => {
+const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyncing, userRole, isSubmitting = false, startSubmitting, stopSubmitting, branches }) => {
     const { showModal, hideModal, showQuickStatus } = useModal();
-    // Removed local isSubmitting state
     const [newBarcodes, setNewBarcodes] = useState('');
-    const [selectedBranch, setSelectedBranch] = useState('الملكه');
+    const [selectedBranch, setSelectedBranch] = useState(branches.length > 0 ? branches[0].id : '');
     const [selectedCategory, setSelectedCategory] = useState<StockCategory>('عادي');
 
-    const isManager = userRole === 'مدير';
     const canAddStock = userRole === 'مدير' || userRole === 'مساعد';
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
 
-    const branchOptions = useMemo(() => BRANCHES.map(b => ({ id: b.id, name: b.name })), []);
+    const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
     const categoryOptions = useMemo(() => [
         { id: 'عادي', name: 'عادي' },
         { id: 'مستعجل', name: 'مستعجل' },
@@ -49,7 +49,8 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
         userRole: string;
         startSubmitting: () => void;
         stopSubmitting: () => void;
-    }> = ({ item, onClose, onRefresh, userRole, startSubmitting, stopSubmitting }) => {
+        branches: Branch[];
+    }> = ({ item, onClose, onRefresh, userRole, startSubmitting, stopSubmitting, branches }) => {
         const barcode = item.barcode || (item as any).Barcode;
         const branchId = item.branch || (item as any).Branch;
 
@@ -57,7 +58,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
         const [newBranchId, setNewBranchId] = useState(branchId);
         const [isPickingBranch, setIsPickingBranch] = useState(false);
 
-        const currentBranchName = BRANCHES.find(b => b.id === newBranchId)?.name || 'اختر الفرع';
+        const currentBranchName = branches.find(b => b.id === newBranchId)?.name || 'اختر الفرع';
 
         if (isPickingBranch) {
             return (
@@ -73,7 +74,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                         <span className="font-black text-gray-700">اختر الفرع</span>
                     </div>
                     <div className="grid grid-cols-1 gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar p-1">
-                        {BRANCHES.map(b => (
+                        {branches.map(b => (
                             <button
                                 key={b.id}
                                 onClick={() => {
@@ -183,17 +184,17 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                     userRole={userRole}
                     startSubmitting={startSubmitting}
                     stopSubmitting={stopSubmitting}
+                    branches={branches}
                 />
             ),
             hideFooter: true
         });
     };
 
-    // إحصائيات المخزن
     const stats = useMemo(() => {
         const summary: Record<string, Record<string, number>> = {};
 
-        BRANCHES.forEach(b => {
+        branches.forEach(b => {
             summary[b.id] = {
                 'عادي': 0,
                 'مستعجل': 0,
@@ -202,7 +203,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
         });
 
         stock.forEach(item => {
-            // توحيد الحقول للحماية من اختلاف حالة الأحرف في الشيت
             const branch = item.branch || (item as any).Branch;
             const status = item.status || (item as any).Status;
             const category = item.category || (item as any).Category;
@@ -215,7 +215,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
         });
 
         return summary;
-    }, [stock]);
+    }, [stock, branches]);
 
     const handleAddStock = async () => {
         const list = newBarcodes.split(/[\n, ]+/).filter(b => b.trim().length > 0);
@@ -300,7 +300,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                 </button>
             </div>
 
-            {/* Adding Stock Card */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-1 bg-white p-6 rounded-3xl border border-blue-100 shadow-sm space-y-6">
                     <h3 className="font-black text-blue-900 flex items-center gap-2">
@@ -347,10 +346,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                     </div>
                 </div>
 
-                {/* Inventory Summary Dashboard */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {BRANCHES.map(b => (
+                        {branches.map(b => (
                             <div key={b.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                                 <p className="text-[10px] font-black text-gray-400 mb-4 border-b pb-2">{b.name}</p>
                                 <div className="grid grid-cols-3 gap-2">
@@ -371,7 +369,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                         ))}
                     </div>
 
-                    {/* Audit Log Table */}
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="p-5 border-b flex justify-between items-center bg-gray-50/50">
                             <h4 className="font-black text-sm text-gray-800 flex items-center gap-2">
@@ -386,16 +383,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                                         placeholder="الكل"
                                     />
                                 </div>
-                                <div className="relative">
-                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="بحث..."
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(toEnglishDigits(e.target.value))}
-                                        className="bg-white border-2 border-blue-200 rounded-2xl pr-9 pl-3 py-2 text-xs font-bold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all"
-                                    />
-                                </div>
+                                <SearchInput
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    placeholder="بحث بالباركود..."
+                                />
                             </div>
                         </div>
 
@@ -440,7 +432,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                                                     {item.category || (item as any).Category}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-center">{BRANCHES.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
+                                            <td className="py-3 px-4 text-center">{branches.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
                                             <td className="py-3 px-4 text-center">
                                                 <span className={`px-2 py-1 rounded-md ${(item.status || (item as any).Status) === 'Used' ? 'bg-green-100 text-green-700' :
                                                     (item.status || (item as any).Status) === 'Error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'

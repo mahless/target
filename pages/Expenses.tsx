@@ -16,9 +16,11 @@ interface ExpensesProps {
     currentDate: string;
     username: string;
     isSubmitting?: boolean;
+    branches: import('../types').Branch[];
 }
 
-const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, onAddExpense, branchId, currentDate, username, isSubmitting = false }) => {
+
+const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, onAddExpense, branchId, currentDate, username, isSubmitting = false, branches }) => {
     const { showModal, showQuickStatus, setIsProcessing } = useModal();
     // Removed local isSubmitting state
     const [category, setCategory] = useState<ExpenseCategory>(EXPENSE_CATEGORIES[0] as ExpenseCategory);
@@ -29,6 +31,10 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, onAddExpense, br
 
     const todaysExpenses = expenses.filter(e => e.branchId === branchId && e.date === currentDate);
     const totalExpenses = todaysExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const currentBranch = branches.find(b => b.id === branchId);
+    const currentBalance = currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0;
+
 
     const showCustomerDetails = (entry: ServiceEntry) => {
         showModal({
@@ -100,6 +106,11 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, onAddExpense, br
         e.preventDefault();
         if (amount <= 0 || isSubmitting) return;
 
+        if (amount > currentBalance) {
+            showQuickStatus('لا يوجد كاش كافٍ في الفرع لإتمام العملية', 'error');
+            return;
+        }
+
         // No local setIsSubmitting(true) needed
         try {
             const newExpense: Expense = {
@@ -165,6 +176,9 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, onAddExpense, br
                                     className={`${inputClasses} text-xl text-red-600`}
                                     placeholder="0.00"
                                 />
+                                <p className="text-[10px] text-gray-400 mt-1 font-bold">
+                                    الرصيد المتاح: <span className="text-blue-600 dir-ltr">{currentBalance.toLocaleString()}</span> ج.م
+                                </p>
                             </div>
                         </div>
 

@@ -145,11 +145,8 @@ const Reports: React.FC<ReportsProps> = ({
       const d = normalizeDate(ex.date);
       const matchesDate = d >= sDate && d <= eDate;
       const matchesBranch = selectedBranchId === 'الكل' || normalizeArabic(ex.branchId) === normalizedSelectedBranch;
-
-      // منطق ذكي: إذا تم اختيار خدمة محددة، نظهر فقط المصروفات المرتبطة بها (عن طريق البحث في الملاحظات)
       const matchesService = selectedService === 'الكل' || (ex.notes && ex.notes.includes(selectedService));
       const matchesEmployee = selectedEmployee === 'الكل' || ex.recordedBy === selectedEmployee;
-
       return matchesDate && matchesBranch && matchesService && matchesEmployee;
     });
 
@@ -174,6 +171,21 @@ const Reports: React.FC<ReportsProps> = ({
 
   return (
     <div className="p-3 md:p-5 space-y-4 text-right">
+      {/* Welcome Message for Non-Managers */}
+      {userRole !== 'مدير' && (
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-3xl border-2 border-blue-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-2xl">👤</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">عرض التقارير الخاصة بك</p>
+              <p className="text-lg font-black text-blue-900">{username}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters Header */}
       <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
         <div className="flex items-center gap-3 border-b border-gray-50 pb-3 mb-1">
@@ -181,28 +193,28 @@ const Reports: React.FC<ReportsProps> = ({
           <h3 className="text-lg font-black text-gray-800">تخصيص عرض التقارير</h3>
         </div>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <CustomSelect
-              label="فرع البحث"
-              options={branchOptions}
-              value={selectedBranchId}
-              onChange={setSelectedBranchId}
-              placeholder="كل الفروع"
-              icon={<Filter className="w-3.5 h-3.5" />}
-              disabled={userRole === 'موظف'}
-              showAllOption={userRole === 'مدير'}
-            />
+          {/* Manager-only filters */}
+          {userRole === 'مدير' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <CustomSelect
+                label="فرع البحث"
+                options={branchOptions}
+                value={selectedBranchId}
+                onChange={setSelectedBranchId}
+                placeholder="كل الفروع"
+                icon={<Filter className="w-3.5 h-3.5" />}
+                showAllOption={true}
+              />
 
-            <CustomSelect
-              label="نوع الخدمة"
-              options={serviceOptions}
-              value={selectedService}
-              onChange={setSelectedService}
-              placeholder="كل الخدمات"
-              icon={<Filter className="w-3.5 h-3.5" />}
-            />
+              <CustomSelect
+                label="نوع الخدمة"
+                options={serviceOptions}
+                value={selectedService}
+                onChange={setSelectedService}
+                placeholder="كل الخدمات"
+                icon={<Filter className="w-3.5 h-3.5" />}
+              />
 
-            {userRole === 'مدير' && (
               <CustomSelect
                 label="الموظف"
                 options={employeeOptions}
@@ -211,10 +223,11 @@ const Reports: React.FC<ReportsProps> = ({
                 placeholder="كل الموظفين"
                 icon={<Search className="w-3.5 h-3.5" />}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-50">
+          {/* Date filters for all users */}
+          <div className={`grid grid-cols-2 gap-3 ${userRole === 'مدير' ? 'pt-3 border-t border-gray-50' : ''}`}>
             <div className="space-y-1">
               <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">من تاريخ</label>
               <input

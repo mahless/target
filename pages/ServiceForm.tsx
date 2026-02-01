@@ -3,7 +3,7 @@ import { SERVICE_TYPES, ID_CARD_SPEEDS, PASSPORT_SPEEDS, ELECTRONIC_METHODS } fr
 import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { generateReceipt } from '../services/pdfService';
-import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw } from 'lucide-react';
+import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw, Check } from 'lucide-react';
 import { toEnglishDigits, normalizeArabic } from '../utils';
 import { useModal } from '../context/ModalContext';
 import CustomSelect from '../components/CustomSelect';
@@ -34,6 +34,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [speed, setSpeed] = useState<ServiceSpeed | ''>('');
   const [isFetchingBarcode, setIsFetchingBarcode] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
+  const [isExternalBarcode, setIsExternalBarcode] = useState(false);
 
   // Financial State
   const [serviceCost, setServiceCost] = useState<number>(0);
@@ -111,7 +112,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
   // منطق جلب الباركود تلقائياً
   const fetchBarcode = async (targetCategory?: StockCategory) => {
-    if (!branchId || isFetchingBarcode) return;
+    if (!branchId || isFetchingBarcode || isExternalBarcode) return;
 
     setIsFetchingBarcode(true);
     setBarcodeNotFound(false);
@@ -170,10 +171,10 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
   // Auto-fetch barcode when speed is selected for specific services
   useEffect(() => {
-    if (serviceType === 'بطاقة رقم قومي' && speed) {
+    if (serviceType === 'بطاقة رقم قومي' && speed && !isExternalBarcode) {
       fetchBarcode();
     }
-  }, [speed, serviceType]);
+  }, [speed, serviceType, isExternalBarcode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,6 +198,14 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       return;
     }
 
+    if (isExternalBarcode && barcode) {
+      const duplicate = entries.find(e => e.barcode === barcode);
+      if (duplicate) {
+        setError(`هذا الباركود (${barcode}) مسجل مسبقاً للعميل ${duplicate.clientName}`);
+        return;
+      }
+    }
+
     // Removed setIsSubmitting(true) as it's handled globally in onAddEntry
     try {
       const entryId = Date.now().toString();
@@ -208,6 +217,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         phoneNumber,
         serviceType,
         barcode: serviceType === 'بطاقة رقم قومي' ? barcode : undefined,
+        Barcode_Source: serviceType === 'بطاقة رقم قومي' ? (isExternalBarcode ? 'خارجي' : 'داخلي') : undefined,
         speed: (speed as ServiceSpeed) || undefined,
         serviceCost: Number(serviceCost),
         amountPaid: Number(amountPaid),
@@ -232,8 +242,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       if (success) {
         showQuickStatus('تم بنجاح');
 
-        // تسجيل استخدام الباركود في المخزن
-        if (serviceType === 'بطاقة رقم قومي' && barcode) {
+        // تسجيل استخدام الباركود في المخزن (فقط إذا كان داخلي)
+        if (serviceType === 'بطاقة رقم قومي' && barcode && !isExternalBarcode) {
           GoogleSheetsService.updateStockStatus(barcode, 'Used', username, userRole, entryId);
         }
 
@@ -267,6 +277,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         setElectronicAmount(0);
         setSpeed('');
         setNotes('');
+        setIsExternalBarcode(false);
       } else {
         showQuickStatus('خطأ في الاتصال', 'error');
         setError('فشل حفظ البيانات في السيرفر، يرجى المحاولة لاحقاً');
@@ -301,7 +312,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   setShowSearchResults(true);
                 }}
                 placeholder="ابحث هنا لاسترجاع البيانات تلقائياً..."
-                className="w-full pr-12 pl-4 py-4 border-2 border-blue-50 rounded-2xl bg-gray-50 text-black font-black placeholder-gray-400 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all"
+                className="w-full pr-12 pl-4 py-4 border-2 border-blue-600 rounded-2xl bg-white shadow-inner text-black font-black placeholder-gray-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
               />
               {showSearchResults && matchingClients.length > 0 && (
                 <div className="absolute top-full right-0 left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
@@ -352,21 +363,51 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   />
                 </div>
                 {serviceType === 'بطاقة رقم قومي' && (
-                  <div className="animate-slideIn">
-                    <label className="block text-xs font-black text-blue-700 mb-2 mr-1">الباركود (يتم تخصيصه تلقائياً)</label>
+                  <div className="animate-slideIn space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-black text-blue-700 mr-1">الباركود</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="extBarcode"
+                          checked={isExternalBarcode}
+                          onChange={(e) => {
+                            setIsExternalBarcode(e.target.checked);
+                            setBarcode('');
+                            if (!e.target.checked) setBarcodeNotFound(false);
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" // Tailwind checkbox style
+                        />
+                        <label htmlFor="extBarcode" className="text-[10px] font-black text-gray-600 cursor-pointer select-none">
+                          استمارة خارجية (إدخال يدوي)
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <input
-                          readOnly
+                          readOnly={!isExternalBarcode}
                           required
                           type="text"
-                          value={barcodeNotFound ? 'لا يوجد باركود متاح' : barcode}
-                          className={`${commonInputClass} border-2 ${isFetchingBarcode ? 'border-amber-200' : (barcodeNotFound ? 'border-red-500 bg-red-50' : 'border-blue-100')} font-mono ${barcodeNotFound ? 'text-red-700' : 'bg-gray-100'} cursor-not-allowed`}
-                          placeholder={isFetchingBarcode ? 'جاري السحب...' : (barcodeNotFound ? 'لا يوجد أكواد' : 'اختر السرعة أولاً')}
+                          value={(!isExternalBarcode && barcodeNotFound) ? 'لا يوجد باركود متاح' : barcode}
+                          onChange={(e) => isExternalBarcode && setBarcode(toEnglishDigits(e.target.value))}
+                          className={`${commonInputClass} border-2 ${!isExternalBarcode && isFetchingBarcode ? 'border-amber-200' :
+                            (!isExternalBarcode && barcodeNotFound) ? 'border-red-500 bg-red-50' :
+                              (isExternalBarcode ? 'border-blue-300 bg-white ring-2 ring-blue-50' :
+                                (barcode ? 'border-green-500 ring-2 ring-green-50 bg-green-50/20' : 'border-blue-100 bg-gray-100 cursor-not-allowed')
+                              )
+                            } font-mono ${(!isExternalBarcode && barcodeNotFound) ? 'text-red-700' : (barcode && !isExternalBarcode ? 'text-green-700 font-black' : '')}`}
+                          placeholder={
+                            isExternalBarcode ? 'اكتب رقم الباركود هنا...' :
+                              (isFetchingBarcode ? 'جاري السحب...' : (barcodeNotFound ? 'لا يوجد أكواد' : 'اختر السرعة أولاً'))
+                          }
                         />
-                        {isFetchingBarcode && <RefreshCw className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 animate-spin" />}
+                        {!isExternalBarcode && isFetchingBarcode && <RefreshCw className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 animate-spin" />}
+                        {!isExternalBarcode && barcode && !isFetchingBarcode && <Check className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />}
                       </div>
-                      {barcode && !isFetchingBarcode && (
+
+                      {!isExternalBarcode && barcode && !isFetchingBarcode && (
                         <button
                           type="button"
                           onClick={handleSkipBarcode}

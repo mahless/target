@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { ServiceEntry, Expense } from '../types';
-import { Search, DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ServiceEntry, Expense, Branch } from '../types';
+import TransferForm from '../components/TransferForm';
+import SearchInput from '../components/SearchInput';
+import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { generateReceipt } from '../services/pdfService';
-import { normalizeArabic, normalizeDate, toEnglishDigits } from '../utils';
+import { normalizeArabic, normalizeDate, searchMultipleFields, useDebounce, toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { GoogleSheetsService } from '../services/googleSheetsService';
@@ -18,32 +20,37 @@ interface DashboardProps {
   isSubmitting?: boolean;
   username: string;
   onAddExpense: (expense: Expense) => Promise<boolean>;
+  branches: Branch[];
+  onBranchTransfer: (data: { fromBranch: string, toBranch: string, amount: number }) => Promise<{ success: boolean; message?: string }>;
+  userRole: string;
 }
 
 const StatCard = React.memo(({ title, value, icon, color, footer }: any) => {
   const colorClasses: any = {
     blue: 'border-blue-600 text-blue-600 bg-blue-50',
     red: 'border-red-500 text-red-600 bg-red-50',
-    amber: 'border-amber-500 text-amber-600 bg-amber-50'
+    amber: 'border-amber-500 text-amber-600 bg-amber-50',
+    emerald: 'border-emerald-500 text-emerald-600 bg-emerald-50'
   };
   return (
-    <div className={`bg-white p-4 rounded-3xl shadow-sm border-r-8 ${colorClasses[color].split(' ')[0]} transition-all hover:translate-y-[-4px] hover:shadow-lg`}>
+    <div className={`bg-white p-4 rounded-3xl shadow-sm border-r-8 ${colorClasses[color]?.split(' ')[0] || ''} transition-all hover:translate-y-[-4px] hover:shadow-lg`}>
       <div className="flex justify-between items-start">
         <div>
           <p className="text-[10px] text-gray-900 font-black uppercase tracking-widest mb-1">{title}</p>
-          <p className="text-2xl font-black text-gray-900">{value.toLocaleString()}</p>
+          <p className="text-2xl font-black text-gray-900">{value?.toLocaleString()}</p>
         </div>
-        <div className={`p-2.5 rounded-2xl shadow-inner ${colorClasses[color].split(' ').slice(1).join(' ')}`}>{icon}</div>
+        <div className={`p-2.5 rounded-2xl shadow-inner ${colorClasses[color]?.split(' ').slice(1).join(' ') || ''}`}>{icon}</div>
       </div>
       <div className="mt-3 pt-3 border-t border-gray-50 text-[10px] text-gray-500 font-bold leading-relaxed">{footer}</div>
     </div>
   );
 });
 
-const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpenses, currentDate, branchId, onUpdateEntry, isSyncing, onRefresh, isSubmitting = false, username, onAddExpense }) => {
+const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpenses, currentDate, branchId, onUpdateEntry, isSyncing, onRefresh, isSubmitting = false, username, onAddExpense, branches, onBranchTransfer, userRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   /* Update destructuring */
-  const { showModal, showQuickStatus, setIsProcessing } = useModal();
+  const { showModal, hideModal, showQuickStatus, setIsProcessing } = useModal();
 
   // الفلترة الداخلية الحيوية والموحدة
   const dailyEntries = useMemo(() => {
@@ -67,6 +74,13 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
   }, [allExpenses, branchId, currentDate]);
 
   const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
+
+  const currentBranch = useMemo(() => {
+    const normId = normalizeArabic(branchId);
+    return branches.find(b => normalizeArabic(b.id) === normId);
+  }, [branches, branchId]);
+
+  const currentBranchBalance = currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0;
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
@@ -110,7 +124,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
               <span className="text-[10px] text-gray-400 font-black block mb-0.5">طريقة الدفع/التحصيل</span>
               <p className="font-bold text-gray-800 text-[10px]">
-                {entry.isElectronic ? `إلكتروني (${entry.electronicMethod} - ${entry.electronicAmount})` : 'نقدي'}
+                {entry.isElectronic ? `إلكتروني(${entry.electronicMethod} - ${entry.electronicAmount})` : 'نقدي'}
               </p>
             </div>
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
@@ -128,7 +142,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
             {entry.hasThirdParty && (
               <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[10px] text-blue-400 font-black block mb-0.5">المورد/الطرف الثالث</span>
+                  <span className="text-[10px] text-blue-400 font-black block mb-0.5">الطرف الثالث</span>
                   <p className="font-black text-blue-800 text-xs">{entry.thirdPartyName}</p>
                 </div>
                 <div>
@@ -137,8 +151,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
                 </div>
                 <div className="col-span-2 pt-1 border-t border-blue-100 flex justify-between items-center">
                   <span className="text-[10px] font-black text-blue-500">حالة تسوية المصاريف:</span>
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${entry.isCostPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {entry.isCostPaid ? `تم الدفع (${entry.costPaidDate}) بواسطة ${entry.costSettledBy || 'غير مسجل'}` : 'لم يتم الدفع بعد'}
+                  <span className={`text - [10px] font - black px - 2 py - 0.5 rounded - full ${entry.isCostPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} `}>
+                    {entry.isCostPaid ? `تم الدفع(${entry.costPaidDate}) بواسطة ${entry.costSettledBy || 'غير مسجل'} ` : 'لم يتم الدفع بعد'}
                   </span>
                 </div>
               </div>
@@ -201,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
           status: 'cancelled',
           amountPaid: isFullRefund ? 0 : expenseAmount,
           remainingAmount: 0,
-          notes: `[ملغاة] ${isFullRefund ? 'استرداد كامل' : 'خصم مصروفات ' + expenseAmount} | ${entry.notes || ''}`
+          notes: `[ملغاة] ${isFullRefund ? 'استرداد كامل' : 'خصم مصروفات ' + expenseAmount} | ${entry.notes || ''} `
         };
 
         const result = await onUpdateEntry(updatedEntry);
@@ -229,6 +243,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
       ),
       confirmText: 'تأكيد الصرف والتسوية',
       onConfirm: async () => {
+        if ((entry.thirdPartyCost || 0) > currentBranchBalance) {
+          showQuickStatus('لا يوجد كاش كافٍ في الفرع لإتمام التسوية', 'error');
+          return;
+        }
+
         const updatedEntry: ServiceEntry = {
           ...entry,
           isCostPaid: true,
@@ -240,10 +259,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
         if (result) {
           // جلب بيانات الطرف الثالث لتسجيل المصروف
           const thirdPartyExpense: Expense = {
-            id: `tp-${Date.now()}-${entry.id}`,
+            id: `tp - ${Date.now()} -${entry.id} `,
             category: 'طرف ثالث',
             amount: entry.thirdPartyCost || 0,
-            notes: `تسوية للمورد: ${entry.thirdPartyName} | العميل: ${entry.clientName} | ${entry.serviceType}`,
+            notes: `تسوية للمورد: ${entry.thirdPartyName} | العميل: ${entry.clientName} | ${entry.serviceType} `,
             branchId: entry.branchId,
             date: currentDate,
             timestamp: Date.now(),
@@ -327,23 +346,42 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
     }
   };
 
-  const filteredEntries = dailyEntries.filter(entry => {
-    const term = searchTerm.toLowerCase();
-    return (
-      entry.clientName.toLowerCase().includes(term) ||
-      entry.nationalId.includes(term) ||
-      entry.phoneNumber.includes(term)
+  const handleTransfer = () => {
+    showModal({
+      title: 'تحويل مالي بين الفروع',
+      content: (
+        <TransferForm
+          branches={branches}
+          currentBalance={currentBranchBalance}
+          fromBranchId={branchId}
+          onTransfer={onBranchTransfer}
+          onClose={hideModal}
+          onSuccess={onRefresh}
+          showQuickStatus={showQuickStatus}
+        />
+      ),
+      hideFooter: true
+    });
+  };
+
+  const filteredEntries = useMemo(() => {
+    return dailyEntries.filter(entry =>
+      searchMultipleFields(debouncedSearchTerm, [
+        entry.clientName,
+        entry.nationalId,
+        entry.phoneNumber
+      ])
     );
-  });
+  }, [dailyEntries, debouncedSearchTerm]);
 
   return (
     <div className="p-3 md:p-5 space-y-4">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="كاش الخزنة اليومي" value={stats.netCash} icon={<DollarSign className="w-6 h-6" />} color="blue" footer="التحصيل - المصروفات - المسدد للمورد" />
-        <StatCard title="مصروفات اليوم" value={stats.expenses} icon={<DollarSign className="w-6 h-6" />} color="red" footer="بند المصروفات النثرية" />
-        <StatCard title="مبالغ آجلة اليوم" value={stats.remaining} icon={<Users className="w-6 h-6" />} color="amber" footer="مديونيات جديدة" />
-        <StatCard title="التزامات لم تخرج" value={stats.pendingThirdParty || 0} icon={<AlertTriangle className="w-6 h-6" />} color="red" footer="مستحقات أطراف ثالثة" />
+        <StatCard title="كاش الخزنة" value={currentBranchBalance} icon={<DollarSign className="w-6 h-6" />} color="blue" footer="صافي المبلغ المتوفر بالدرج حالياً" />
+        <StatCard title="مصروفات اليوم" value={stats.expenses} icon={<AlertTriangle className="w-6 h-6" />} color="red" footer="إجمالي ما تم صرفه اليوم" />
+        <StatCard title="إجمالي مبالغ آجلة" value={stats.remaining} icon={<Users className="w-6 h-6" />} color="amber" footer="مديونيات اليوم الجديدة" />
+        <StatCard title="طرف ثالث (معلق)" value={stats.pendingThirdParty} icon={<Clock className="w-6 h-6" />} color="blue" footer="تكاليف معلقة للموردين" />
       </div>
 
       {/* Main Table */}
@@ -357,27 +395,33 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
-            <div className="relative w-full lg:w-[320px]">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(toEnglishDigits(e.target.value))}
-                placeholder="بحث سريع للعمليات..."
-                className="w-full pr-11 pl-4 py-3 text-sm rounded-2xl bg-white shadow-inner border-2 border-blue-200 text-black font-black focus:border-blue-600 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
-              />
-            </div>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="ابحث بالاسم، رقم قومي، أو هاتف..."
+              className="w-full lg:w-[320px]"
+            />
             <button
               onClick={onRefresh}
               disabled={isSyncing || isSubmitting}
-              className={`flex items-center gap-2 py-3 px-5 rounded-2xl font-black transition-all shadow-sm active:scale-95 whitespace-nowrap ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-800 text-white hover:bg-blue-900'}`}
+              className={`flex items - center gap - 2 py - 3 px - 5 rounded - 2xl font - black transition - all shadow - sm active: scale - 95 whitespace - nowrap ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-800 text-white hover:bg-blue-900'} `}
             >
-              <Clock className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <Clock className={`w - 4 h - 4 ${isSyncing ? 'animate-spin' : ''} `} />
               <div className="flex flex-col items-start leading-tight text-right">
                 <span className="text-[10px]">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
                 <span className="text-[9px] opacity-70">السجلات: {allEntries.length}</span>
               </div>
             </button>
+            {userRole === 'مدير' && (
+              <button
+                onClick={handleTransfer}
+                disabled={isSyncing || isSubmitting}
+                className="flex items-center gap-2 py-3 px-5 rounded-2xl font-black bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm active:scale-95"
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>تحويل مالي</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -452,8 +496,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 });
 

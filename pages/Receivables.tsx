@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { ServiceEntry } from '../types';
 import { SERVICE_TYPES } from '../constants';
-import { Search, Wallet, Clock, Printer, ArrowLeftRight, Filter } from 'lucide-react';
+import SearchInput from '../components/SearchInput';
+import { Wallet, Clock, Printer, ArrowLeftRight, Filter } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
-import { normalizeArabic, toEnglishDigits } from '../utils';
+import { searchMultipleFields, useDebounce, toEnglishDigits } from '../utils';
 import { generateReceipt } from '../services/pdfService';
 import CustomSelect from '../components/CustomSelect';
 
@@ -24,6 +25,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
 }) => {
   /* Update destructuring */
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [filterService, setFilterService] = useState<string>('الكل');
   const { showModal, showQuickStatus, setIsProcessing } = useModal();
 
@@ -153,15 +155,17 @@ const Receivables: React.FC<ReceivablesProps> = ({
   const serviceOptions = useMemo(() => SERVICE_TYPES.map(s => ({ id: s, name: s })), []);
 
   const filteredEntries = useMemo(() => {
-    const normalizedSelectedBranch = normalizeArabic(selectedBranch);
     return entries.filter(e => {
-      const matchesBranch = selectedBranch === 'الكل' || normalizeArabic(e.branchId) === normalizedSelectedBranch;
       const matchesService = filterService === 'الكل' || e.serviceType === filterService;
       const isUnpaid = (e.remainingAmount || 0) > 0;
-      const isSearchMatch = e.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || e.nationalId.includes(searchTerm);
-      return matchesBranch && matchesService && isUnpaid && isSearchMatch && e.status === 'active';
+      const isSearchMatch = searchMultipleFields(debouncedSearchTerm, [
+        e.clientName,
+        e.nationalId,
+        e.phoneNumber
+      ]);
+      return matchesService && isUnpaid && isSearchMatch && e.status === 'active';
     });
-  }, [entries, selectedBranch, filterService, searchTerm]);
+  }, [entries, filterService, debouncedSearchTerm]);
 
   return (
     <div className="p-3 md:p-5 space-y-4 text-right">
@@ -173,16 +177,11 @@ const Receivables: React.FC<ReceivablesProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
             <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">بحث الاسم/الرقم</label>
-            <div className="relative">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(toEnglishDigits(e.target.value))}
-                placeholder="بحث..."
-                className="w-full pr-10 pl-4 py-3 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 font-bold text-xs outline-none transition-all"
-              />
-            </div>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="ابحث بالاسم، رقم قومي، أو هاتف..."
+            />
           </div>
 
           <CustomSelect

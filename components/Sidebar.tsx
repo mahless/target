@@ -3,9 +3,8 @@ import { NavLink } from 'react-router-dom';
 import {
   Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3,
   Calendar, MapPin, Smartphone, User as UserIcon, Building2,
-  ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package
+  ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package, Lock
 } from 'lucide-react';
-import { BRANCHES } from '../constants';
 import { Branch, User } from '../types';
 import CustomSelect from './CustomSelect';
 import { useModal } from '../context/ModalContext';
@@ -28,6 +27,7 @@ interface SidebarProps {
   user: User | null;
   startSubmitting: () => void;
   stopSubmitting: () => void;
+  branches: Branch[];
 }
 
 const Sidebar: React.FC<SidebarProps> = React.memo(({
@@ -44,7 +44,8 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   onCheckOut,
   user,
   startSubmitting,
-  stopSubmitting
+  stopSubmitting,
+  branches
 }) => {
   const { showModal, showQuickStatus } = useModal();
 
@@ -240,7 +241,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
     }`;
 
   const controlInputClass = "w-full p-2.5 mt-1 border-2 border-blue-200 rounded-lg bg-white text-black font-bold text-xs focus:ring-4 focus:ring-blue-50 focus:border-blue-600 outline-none transition-all shadow-sm";
-  const branchOptions = useMemo(() => BRANCHES.map(b => ({ id: b.id, name: b.name })), []);
+  const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
 
   return (
     <>
@@ -273,28 +274,35 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             <div className="space-y-3">
               <div>
                 <CustomSelect
-                  label="الفرع"
+                  label="الفرع الحالي"
                   options={branchOptions}
                   value={currentBranch?.id || ''}
                   onChange={(val) => {
-                    const b = BRANCHES.find(br => br.id === val);
-                    if (b) onBranchChange(b);
+                    const selected = branches.find(b => b.id === val);
+                    if (selected) onBranchChange(selected);
                   }}
                   icon={<MapPin className="w-3 h-3 text-blue-600" />}
-                  disabled={userRole === 'موظف'} // Locked for employees, open for Admin & Assistant
+                  placeholder="اختر الفرع..."
+                  disabled={userRole === 'موظف'}
                 />
               </div>
 
               <div>
-                <label className="flex items-center gap-1 text-xs font-bold text-gray-600 px-1">
-                  <Calendar className="w-3 h-3 text-secondary" />
-                  التاريخ
+                <label className="flex items-center justify-between gap-1 text-xs font-bold text-gray-600 px-1">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-secondary" />
+                    التاريخ
+                  </div>
+                  <span className="text-[9px] text-amber-600 flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" />
+                    مثبت تلقائياً
+                  </span>
                 </label>
                 <input
                   type="date"
                   value={currentDate || ''}
-                  onChange={(e) => onDateChange(e.target.value)}
-                  className={controlInputClass}
+                  readOnly
+                  className={`${controlInputClass} bg-gray-50 border-gray-100 cursor-not-allowed opacity-80`}
                 />
               </div>
             </div>
@@ -332,17 +340,33 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
 
             <div className="border-t border-gray-100 my-2"></div>
 
-            {/* Attendance Button */}
-            <button
-              onClick={handleAttendanceClick}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border-2 ${attendanceStatus === 'checked-in'
-                ? 'bg-green-50 border-green-200 text-green-700'
-                : 'bg-white border-red-100 text-gray-500 hover:bg-red-50 hover:text-red-600'
-                }`}
-            >
-              <div className={`w-2.5 h-2.5 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-              <span className="font-black text-sm">الحضور والانصراف</span>
-            </button>
+            {/* Attendance Button/Link */}
+            {userRole === 'مدير' ? (
+              <NavLink
+                to="/admin/attendance"
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border-2 ${isActive
+                    ? 'bg-blue-800 border-blue-800 text-white shadow-md'
+                    : 'bg-white border-blue-100 text-blue-600 hover:bg-blue-50'
+                  }`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                <Clock className="w-5 h-5" />
+                <span className="font-black text-sm">الحضور والانصراف</span>
+              </NavLink>
+            ) : (
+              <button
+                onClick={handleAttendanceClick}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border-2 ${attendanceStatus === 'checked-in'
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-white border-red-100 text-gray-500 hover:bg-red-50 hover:text-red-600'
+                  }`}
+              >
+                <div className={`w-2.5 h-2.5 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                <span className="font-black text-sm">الحضور والانصراف</span>
+              </button>
+            )}
           </nav>
 
           {/* Logout Button */}

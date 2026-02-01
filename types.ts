@@ -22,6 +22,7 @@ export interface ServiceEntry {
   phoneNumber: string;
   serviceType: string;
   barcode?: string;
+  Barcode_Source?: 'خارجي' | 'داخلي' | '-';
   speed?: ServiceSpeed;
 
   // Financials

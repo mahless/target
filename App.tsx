@@ -9,10 +9,10 @@ import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import Receivables from './pages/Receivables';
 import AdminInventory from './pages/AdminInventory';
+import AttendanceDashboard from './pages/AttendanceDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ModalProvider } from './context/ModalContext';
 import { useAppState } from './hooks/useAppState';
-import { BRANCHES } from './constants';
 
 const AppContent: React.FC = () => {
   const {
@@ -20,7 +20,7 @@ const AppContent: React.FC = () => {
     handleLogin, handleLogout,
     addEntry, updateEntry, addExpense, setBranch, setCurrentDate,
     isSyncing, syncAll, isSubmitting, startSubmitting, stopSubmitting,
-    attendanceStatus, checkIn, checkOut // Added
+    attendanceStatus, checkIn, checkOut, branchTransfer, branches // Added
   } = useAppState();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,6 +34,7 @@ const AppContent: React.FC = () => {
       case '/expenses': return 'إدارة المصروفات';
       case '/reports': return 'تقارير الأداء المالي';
       case '/admin/inventory': return 'إدارة المخزن';
+      case '/admin/attendance': return 'لوحة الحضور والانصراف';
       default: return 'تارجت للخدمات';
     }
   }, [location.pathname]);
@@ -74,6 +75,7 @@ const AppContent: React.FC = () => {
               user={user}
               startSubmitting={startSubmitting}
               stopSubmitting={stopSubmitting}
+              branches={branches}
             />
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
               <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} branch={branch} date={currentDate} username={user?.name || ''} pageTitle={pageTitle} />
@@ -105,6 +107,9 @@ const AppContent: React.FC = () => {
                         isSubmitting={isSubmitting}
                         username={user?.name || ''}
                         onAddExpense={addExpense}
+                        branches={branches}
+                        onBranchTransfer={branchTransfer}
+                        userRole={userRole}
                       />
                     } />
                     <Route path="/new-service" element={
@@ -141,13 +146,14 @@ const AppContent: React.FC = () => {
                         currentDate={currentDate || ''}
                         username={user?.name || ''}
                         isSubmitting={isSubmitting}
+                        branches={branches}
                       />
                     } />
                     <Route path="/reports" element={
                       <Reports
                         entries={entries}
                         expenses={expenses}
-                        branches={BRANCHES}
+                        branches={branches}
                         manualDate={currentDate || ''}
                         branchId={branch?.id || ''}
                         onUpdateEntry={updateEntry}
@@ -168,7 +174,11 @@ const AppContent: React.FC = () => {
                         isSubmitting={isSubmitting}
                         startSubmitting={startSubmitting}
                         stopSubmitting={stopSubmitting}
+                        branches={branches}
                       />
+                    } />
+                    <Route path="/admin/attendance" element={
+                      userRole === 'مدير' ? <AttendanceDashboard /> : <Navigate to="/dashboard" />
                     } />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>

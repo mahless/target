@@ -1,7 +1,7 @@
 import { ServiceEntry, Expense, Branch, User, LoginResponse } from '../types';
 
 // سنقوم بتحديث هذا الرابط "Web App URL" لاحقاً
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZPcN93a8EcbxVsFfaxI8XexGRAl5p6Wlhkb5N5sWVnBWQc2hhclq7WpspzcuioT3H/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFyH6OZOSv0Ae52icC1DQXAIwCDtH5fAFkqW3NzoW-w5ue6hZAAV_MRqUSzeH9gacK/exec';
 
 export const GoogleSheetsService = {
     /**
@@ -34,16 +34,20 @@ export const GoogleSheetsService = {
     },
 
     /**
-     * جلب البيانات من ورقة محددة
+     * جلب البيانات من ورقة محددة (مع دعم الفلترة بناءً على الصلاحية)
      */
-    async getData<T>(sheetName: string): Promise<T[]> {
+    async getData<T>(sheetName: string, role?: string, username?: string): Promise<T[]> {
         if (!GOOGLE_SCRIPT_URL) {
             console.warn('Google Script URL is missing');
             return [];
         }
 
         try {
-            const response = await this.fetchWithTimeout(`${GOOGLE_SCRIPT_URL}?action=getData&sheetName=${sheetName}&t=${Date.now()}`);
+            let url = `${GOOGLE_SCRIPT_URL}?action=getData&sheetName=${sheetName}&t=${Date.now()}`;
+            if (role) url += `&role=${encodeURIComponent(role)}`;
+            if (username) url += `&username=${encodeURIComponent(username)}`;
+
+            const response = await this.fetchWithTimeout(url);
             const json = await response.json();
 
             if (json && !json.status) {
@@ -76,8 +80,8 @@ export const GoogleSheetsService = {
     /**
      * حفظ صف جديد في ورقة محددة
      */
-    async addRow(sheetName: string, data: any, role: string): Promise<boolean> {
-        if (!GOOGLE_SCRIPT_URL) return false;
+    async addRow(sheetName: string, data: any, role: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
 
         try {
             const response = await this.fetchWithTimeout(`${GOOGLE_SCRIPT_URL}?action=addRow&sheetName=${sheetName}&role=${encodeURIComponent(role)}`, {
@@ -87,10 +91,10 @@ export const GoogleSheetsService = {
             });
 
             const json = await response.json();
-            return json.status === 'success';
+            return { success: json.status === 'success', message: json.message };
         } catch (error) {
             console.error('Save Error:', error);
-            return false;
+            return { success: false, message: 'خطأ في الاتصال' };
         }
     },
 
@@ -257,6 +261,56 @@ export const GoogleSheetsService = {
         } catch (error) {
             console.error('Deliver Order Error:', error);
             return false;
+        }
+    },
+
+    /**
+     * جلب سجلات الحضور التفصيلية لموظف معين
+     */
+    async getUserLogs(username: string): Promise<any[]> {
+        if (!GOOGLE_SCRIPT_URL) return [];
+        try {
+            const response = await this.fetchWithTimeout(`${GOOGLE_SCRIPT_URL}?action=getUserLogs&username=${encodeURIComponent(username)}&t=${Date.now()}`);
+            const json = await response.json();
+            if (json && !json.status) return json;
+            return [];
+        } catch (error) {
+            console.error('Get User Logs Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * جلب قائمة الفروع وإعداداتها (بما في ذلك الرصيد)
+     */
+    async getBranches(): Promise<any[]> {
+        if (!GOOGLE_SCRIPT_URL) return [];
+        try {
+            const response = await this.fetchWithTimeout(`${GOOGLE_SCRIPT_URL}?action=getBranches&t=${Date.now()}`);
+            const json = await response.json();
+            if (json && !json.status) return json;
+            return [];
+        } catch (error) {
+            console.error('Get Branches Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * إجراء عملية تحويل مالي بين فرعين
+     */
+    async branchTransfer(data: { fromBranch: string, toBranch: string, amount: number, recordedBy: string }): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithTimeout(`${GOOGLE_SCRIPT_URL}?action=branchTransfer`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            });
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            return { success: false, message: 'خطأ في الاتصال' };
         }
     }
 };

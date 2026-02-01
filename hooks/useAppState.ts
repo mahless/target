@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { ServiceEntry, Expense, Branch, StockItem, User } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic, normalizeDate } from '../utils';
-import { BRANCHES } from '../constants';
 import { useModal } from '../context/ModalContext';
 
 export const useAppState = () => {
@@ -19,10 +18,18 @@ export const useAppState = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [currentDate, setCurrentDate] = useState<string>(() => {
-    // دائماً اجعل التاريخ الافتراضي هو اليوم عند فتح التطبيق
-    return new Date().toISOString().split('T')[0];
+  const [currentDate] = useState<string>(() => {
+    // دائماً اجعل التاريخ هو اليوم الحقيقي ولا يمكن تغييره لضمان الانضباط المالي
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   });
+
+  const setCurrentDate = (_date: string) => {
+    // تعطيل تغيير التاريخ برمجياً لضمان الانضباط المالي
+  };
 
   const [entries, setEntries] = useState<ServiceEntry[]>(() => {
     const saved = localStorage.getItem('target_entries');
@@ -36,6 +43,11 @@ export const useAppState = () => {
 
   const [stock, setStock] = useState<StockItem[]>(() => {
     const saved = localStorage.getItem('target_stock');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [branches, setBranches] = useState<Branch[]>(() => {
+    const saved = localStorage.getItem('target_branches');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -67,10 +79,11 @@ export const useAppState = () => {
     setIsSyncing(true);
     try {
       // تنفيذ كافة طلبات الجلب في وقت واحد (Promise.all) للتسريع
-      const [remoteEntries, remoteExpenses, remoteStock] = await Promise.all([
-        GoogleSheetsService.getData<any>('Entries'),
-        GoogleSheetsService.getData<any>('Expenses'),
-        GoogleSheetsService.getData<StockItem>('Stock')
+      const [remoteEntries, remoteExpenses, remoteStock, remoteBranches] = await Promise.all([
+        GoogleSheetsService.getData<any>('Entries', user?.role, user?.name),
+        GoogleSheetsService.getData<any>('Expenses', user?.role, user?.name),
+        GoogleSheetsService.getData<StockItem>('Stock'),
+        GoogleSheetsService.getBranches()
       ]);
 
       // 1. معالجة العمليات (Entries)
@@ -199,6 +212,18 @@ export const useAppState = () => {
         setStock(remoteStock);
         localStorage.setItem('target_stock', JSON.stringify(remoteStock));
       }
+
+      // 4. معالجة الفروع (Branches)
+      if (remoteBranches && remoteBranches.length > 0) {
+        const mappedBranches: Branch[] = remoteBranches.map((b: any) => ({
+          id: b.Branch_Name || b.name || b.id,
+          name: b.Branch_Name || b.name || b.id,
+          Current_Balance: Number(b.Current_Balance || 0),
+          currentBalance: Number(b.Current_Balance || 0)
+        }));
+        setBranches(mappedBranches);
+        localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
+      }
     } catch (error) {
       console.error("Sync Error:", error);
     } finally {
@@ -243,7 +268,7 @@ export const useAppState = () => {
   useEffect(() => {
     // Auto-assignment for non-managers
     if (user && user.assignedBranchId && (!branch || branch.id !== user.assignedBranchId)) {
-      const assignedBranch = BRANCHES.find(b => b.id === user.assignedBranchId);
+      const assignedBranch = branches.find(b => b.id === user.assignedBranchId);
       if (assignedBranch) {
         setBranch(assignedBranch);
         localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
@@ -263,7 +288,7 @@ export const useAppState = () => {
 
     // Auto-assign branch if configured
     if (userData.assignedBranchId) {
-      const assignedBranch = BRANCHES.find(b => b.id === userData.assignedBranchId);
+      const assignedBranch = branches.find(b => b.id === userData.assignedBranchId);
       if (assignedBranch) {
         setBranch(assignedBranch);
         localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
@@ -305,11 +330,17 @@ export const useAppState = () => {
       // إضافة محلية فورية
       setEntries(prev => [entry, ...prev]);
 
-      const success = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || 'موظف');
-      if (!success) {
-        console.error("Failed to sync entry to server");
+      const result = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || 'موظف');
+
+      if (!result.success) {
+        console.error("Failed to sync entry to server:", result.message);
+        // إعادة الحالة السابقة عند الفشل (اختياري، لكن مفيد إذا كان العميل ينتظر تحديث الرصيد)
+        setEntries(prev => prev.filter(e => e.id !== entry.id));
+      } else {
+        // تحديث أرصدة الفروع محلياً لتسريع الواجهة
+        syncAll(); // أو تحديث يدوي للمصفوفة
       }
-      return success;
+      return result.success;
     } finally {
       stopSubmitting();
     }
@@ -370,7 +401,16 @@ export const useAppState = () => {
       };
 
       setExpenses(prev => [{ ...expense, recordedBy: user?.name || '' }, ...prev]);
-      return await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || 'موظف');
+      const result = await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || 'موظف');
+
+      if (!result.success) {
+        // التراجع عن الإضافة المحلية في حالة الفشل (مثلاً رصيد غير كافٍ)
+        setExpenses(prev => prev.filter(e => e.id !== expense.id));
+        alert(result.message || 'فشل تسجيل المصروف');
+      } else {
+        syncAll();
+      }
+      return result.success;
     } finally {
       stopSubmitting();
     }
@@ -472,7 +512,18 @@ export const useAppState = () => {
     addExpense,
     checkIn, // Added
     checkOut, // Added
+    branchTransfer: async (data: { fromBranch: string, toBranch: string, amount: number }) => {
+      startSubmitting();
+      try {
+        const res = await GoogleSheetsService.branchTransfer({ ...data, recordedBy: user?.name || '' });
+        if (res.success) syncAll();
+        return res;
+      } finally {
+        stopSubmitting();
+      }
+    },
     setBranch,
-    setCurrentDate
+    setCurrentDate,
+    branches
   };
 };

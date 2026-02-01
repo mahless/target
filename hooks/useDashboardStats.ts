@@ -1,40 +1,43 @@
 import { useMemo } from 'react';
 import { ServiceEntry, Expense } from '../types';
+import { normalizeDate } from '../utils';
 
 export const useDashboardStats = (entries: ServiceEntry[], expenses: Expense[], currentDate: string) => {
   return useMemo(() => {
-    // 1. حساب المحصل الفعلي اليوم (Cash In):
-    // نجمع كل الـ amountPaid لأي حركة (سواء خدمة جديدة أو سداد قديم) تمت في تاريخ اليوم
-    const dailyEntries = entries.filter(e => e.entryDate === currentDate && e.status === 'active');
-    const totalCollectedToday = dailyEntries.reduce((acc, curr) => acc + curr.amountPaid, 0);
+    const normDate = normalizeDate(currentDate);
 
-    // 2. حساب إجمالي رسوم الإلغاء (في حال وجودها اليوم)
-    const cancelledToday = entries.filter(e => e.entryDate === currentDate && e.status === 'cancelled');
-    const adminFeesToday = cancelledToday.reduce((acc, curr) => acc + (curr.adminFee || 0), 0);
+    // 1. حساب المحصل الفعلي اليوم (Cash In):
+    // نستخدم الـ entries الممررة مباشرة لأنها مفلترة فعلاً في الـ Dashboard
+    const activeToday = entries.filter(e => e.status === 'active' || !e.status);
+    const totalCollectedToday = activeToday.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
+
+    // 2. حساب إجمالي رسوم الإلغاء (لليوم)
+    const cancelledToday = entries.filter(e => e.status === 'cancelled');
+    const adminFeesToday = cancelledToday.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
 
     const totalRevenueToday = totalCollectedToday + adminFeesToday;
 
     // 3. حساب مبالغ آجلة لخدمات بدأت اليوم (Market Debt Today)
-    const newServicesToday = dailyEntries.filter(e => !e.parentEntryId);
-    const paymentsToday = dailyEntries.filter(e => e.parentEntryId);
+    const newServicesToday = activeToday.filter(e => !e.parentEntryId);
+    const paymentsToday = activeToday.filter(e => e.parentEntryId);
 
-    // الدفعات التي تمت اليوم لخدمات بدأت أيضاً اليوم
+    // الدفعات التي تمت اليوم لخدمات بدأت أيضاً اليوم (سداد فوري أو جزئي)
     const paymentsAgainstTodayServices = paymentsToday.filter(p =>
       newServicesToday.some(ns => ns.id === p.parentEntryId)
     );
 
-    const initialRemainingToday = newServicesToday.reduce((acc, curr) => acc + curr.remainingAmount, 0);
-    const settledTodayFromTodayNew = paymentsAgainstTodayServices.reduce((acc, curr) => acc + curr.amountPaid, 0);
+    const initialRemainingToday = newServicesToday.reduce((acc, curr) => acc + (Number(curr.remainingAmount) || 0), 0);
+    const settledTodayFromTodayNew = paymentsAgainstTodayServices.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
 
     const netRemainingToday = initialRemainingToday - settledTodayFromTodayNew;
 
-    const pendingThirdPartyToday = dailyEntries.reduce((acc, curr) => {
-      return acc + (!curr.isCostPaid ? (curr.thirdPartyCost || 0) : 0);
+    // 4. مبالغ الطرف الثالث المعلقة
+    const pendingThirdPartyToday = activeToday.reduce((acc, curr) => {
+      return acc + (!curr.isCostPaid ? (Number(curr.thirdPartyCost) || 0) : 0);
     }, 0);
 
     // 5. إجمالي المصروفات اليوم
-    const dailyExpenses = expenses.filter(ex => ex.date === currentDate);
-    const totalExpensesToday = dailyExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalExpensesToday = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
     return {
       revenue: totalRevenueToday,
