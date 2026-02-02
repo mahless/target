@@ -10,6 +10,9 @@ interface ModalOptions {
     cancelText?: string;
     type?: 'info' | 'danger' | 'success';
     hideFooter?: boolean;
+    confirmClose?: boolean;
+    confirmIcon?: ReactNode;
+    cancelIcon?: ReactNode;
     size?: 'md' | 'lg' | 'xl';
 }
 
@@ -82,19 +85,23 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                             <div className="flex gap-3 mt-2">
                                 <button
                                     onClick={hideModal}
-                                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 font-black transition-colors"
+                                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 font-black transition-colors flex items-center justify-center gap-2"
                                 >
+                                    {modal.cancelIcon}
                                     {modal.cancelText || 'تراجع'}
                                 </button>
                                 {modal.onConfirm && (
                                     <button
                                         onClick={() => {
                                             modal.onConfirm?.();
-                                            hideModal();
+                                            if (modal.confirmClose !== false) {
+                                                hideModal();
+                                            }
                                         }}
-                                        className={`flex-1 px-4 py-3 text-white rounded-xl font-black shadow-lg transition-all active:scale-95 ${modal.type === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' : 'bg-blue-700 hover:bg-blue-800 shadow-blue-700/20'
+                                        className={`flex-1 px-4 py-3 text-white rounded-xl font-black shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${modal.type === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' : 'bg-blue-700 hover:bg-blue-800 shadow-blue-700/20'
                                             }`}
                                     >
+                                        {modal.confirmIcon}
                                         {modal.confirmText || 'تأكيد'}
                                     </button>
                                 )}

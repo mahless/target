@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3,
   Calendar, MapPin, Smartphone, User as UserIcon, Building2,
-  ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package, Lock
+  ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package, Lock, Users
 } from 'lucide-react';
 import { Branch, User } from '../types';
 import CustomSelect from './CustomSelect';
@@ -329,6 +329,10 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             <NavLink to="/reports" className={linkClass} onClick={() => setIsOpen(false)}>
               <BarChart3 className="w-5 h-5" />
               <span>التقارير والأداء</span>
+            </NavLink>
+            <NavLink to="/third-party-settlements" className={linkClass} onClick={() => setIsOpen(false)}>
+              <Users className="w-5 h-5" />
+              <span>تسويات الموردين</span>
             </NavLink>
 
             {(userRole === 'مدير' || userRole === 'مساعد') && (

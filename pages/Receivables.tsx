@@ -59,6 +59,10 @@ const Receivables: React.FC<ReceivablesProps> = ({
                 {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
+            <div className="col-span-2 bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">ملاحظات</span>
+              <p className="font-bold text-gray-600 text-[10px] whitespace-pre-wrap leading-tight">{entry.notes || 'لا توجد ملاحظات'}</p>
+            </div>
             {entry.hasThirdParty && (
               <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-2">
                 <div>
@@ -78,24 +82,20 @@ const Receivables: React.FC<ReceivablesProps> = ({
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              setIsProcessing(true);
-              try {
-                await generateReceipt(entry);
-              } finally {
-                setIsProcessing(false);
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-1 transition-all text-sm"
-          >
-            <Printer className="w-4 h-4" />
-            طباعة إيصال العميل
-          </button>
         </div>
       ),
-      confirmText: 'إغلاق'
+      confirmText: 'طباعة إيصال',
+      confirmIcon: <Printer className="w-4 h-4" />,
+      confirmClose: false,
+      onConfirm: async () => {
+        setIsProcessing(true);
+        try {
+          await generateReceipt(entry);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      cancelText: 'تراجع'
     });
   };
 
@@ -207,34 +207,55 @@ const Receivables: React.FC<ReceivablesProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEntries.length === 0 ? (
-          <div className="col-span-full py-20 text-center text-gray-300 font-black">لا توجد مديونيات تطابق بحثك</div>
-        ) : (
-          filteredEntries.map(entry => (
-            <div key={entry.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4 transition-all hover:shadow-md group">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 onClick={() => showCustomerDetails(entry)} className="font-black text-lg text-gray-800 cursor-pointer hover:text-blue-600 transition-colors">{entry.clientName}</h4>
-                  <p className="text-xs text-blue-600 font-bold">{entry.serviceType}</p>
-                </div>
-                <div className="bg-red-50 p-2 rounded-xl"><Wallet className="w-5 h-5 text-red-500" /></div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-2xl flex justify-between items-center group-hover:bg-red-50 transition-colors">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-red-400">المتبقي</span>
-                <span className="text-xl font-black text-red-600">{entry.remainingAmount}</span>
-              </div>
-              <button
-                onClick={() => handleCollect(entry)}
-                disabled={isSubmitting}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${isSubmitting ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/10 group-hover:translate-y-[-2px]'}`}
-              >
-                <ArrowLeftRight className="w-4 h-4" />
-                تحصيل الآن
-              </button>
-            </div>
-          ))
-        )}
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto text-right">
+          <table className="w-full">
+            <thead className="bg-gray-50/50 text-gray-400 text-[10px] font-black tracking-widest border-b border-gray-100">
+              <tr>
+                <th className="py-3 px-6 text-right">بيان الحركة</th>
+                <th className="py-3 px-6 text-center">المبلغ المتبقي</th>
+                <th className="py-3 px-6 text-center">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 text-sm font-bold">
+              {filteredEntries.length === 0 ? (
+                <tr><td colSpan={3} className="py-16 text-center text-gray-300 font-black">لا توجد مديونيات تطابق بحثك</td></tr>
+              ) : (
+                filteredEntries.map((entry) => (
+                  <tr key={entry.id} className="hover:bg-blue-50/20 transition-all group">
+                    <td className="py-3 px-6 font-black">
+                      <span
+                        onClick={() => showCustomerDetails(entry)}
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                      >
+                        {entry.clientName}
+                      </span>
+                      <br />
+                      <span className="text-[10px] text-blue-600 font-bold">{entry.serviceType}</span>
+                      <div className="text-[9px] text-gray-400 font-medium mt-0.5">{entry.entryDate}</div>
+                    </td>
+                    <td className="py-3 px-6 text-center text-red-600 font-black">
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm">{entry.remainingAmount} ج.م</span>
+                        <span className="text-[9px] text-gray-400 font-bold">من أصل {entry.serviceCost}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <button
+                        onClick={() => handleCollect(entry)}
+                        disabled={isSubmitting}
+                        className={`bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[11px] font-black transition-all border border-emerald-100 shadow-sm flex items-center gap-2 mx-auto ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-600 hover:text-white hover:shadow-emerald-200'}`}
+                      >
+                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                        تحصيل الآن
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

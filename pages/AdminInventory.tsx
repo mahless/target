@@ -149,7 +149,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
 
                     <button
                         onClick={async () => {
-                            if (!window.confirm('هل أنت متأكد من حذف هذا الباركود نهائياً؟')) return;
+                            if (!window.confirm('متأكد من حذف هذا الباركود نهائياً؟')) return;
                             startSubmitting();
                             try {
                                 const success = await GoogleSheetsService.deleteStockItem(barcode, userRole);
@@ -287,9 +287,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                 <div>
                     <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
                         <Package className="text-blue-600 w-8 h-8" />
-                        إدارة مخزن الباركودات
+                        إدارة مخزن باركود الأستمارات
                     </h2>
-                    <p className="text-sm text-gray-400 font-bold">تحكم في توزيع الأرقام ومراقبة الاستهلاك</p>
+                    <p className="text-sm text-gray-400 font-bold">توزيع الأستمارات ومراقبة الاستهلاك</p>
                 </div>
                 <button
                     onClick={onRefresh}
@@ -372,7 +372,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, isSyn
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="p-5 border-b flex justify-between items-center bg-gray-50/50">
                             <h4 className="font-black text-sm text-gray-800 flex items-center gap-2">
-                                <History className="w-4 h-4" /> سجل الرقابة
+                                <History className="w-4 h-4" />  الأستمارات المسجله
                             </h4>
                             <div className="flex gap-2 items-center">
                                 <div className="w-32">

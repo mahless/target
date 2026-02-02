@@ -177,8 +177,8 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
           <h1 class="company-name">تارجت للخدمات الحكومية</h1>
           <p class="branch-name">فرع: ${entry.branchId || 'الرئيسي'}</p>
           <div class="meta-info">
-            <div class="meta-item">رقم: #${entry.id.substring(entry.id.length - 6)}</div>
             <div class="meta-item">التاريخ: ${entry.entryDate}</div>
+            <div class="meta-item">رقم: #${entry.id.substring(entry.id.length - 6)}</div>
             <div class="meta-item">الوقت: ${new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
             <div class="meta-item">الموظف: ${entry.recordedBy}</div>
           </div>
@@ -186,29 +186,40 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
 
         <!-- Content Table - Single Column -->
         <table class="content-table">
-          <thead>
-            <tr>
-              <th>بيانات الخدمة والعميل</th>
-            </tr>
-          </thead>
           <tbody>
             <tr>
-              <td>
-                <span class="label">نوع الخدمة:</span>
-                <span class="value">${entry.serviceType}</span>
-                
-                <span class="label" style="margin-top: 10px;">اسم العميل:</span>
+              <td colspan="2">
+                <span class="label">اسم العميل:</span>
                 <span class="value">${entry.clientName}</span>
-                
-                <span class="label" style="margin-top: 8px;">الرقم القومي:</span>
-                <span class="value" style="font-size: 9pt;">${entry.nationalId}</span>
-                
-                <span class="label" style="margin-top: 8px;">الباركود:</span>
-                <span class="value" style="font-family: monospace; font-size: 9pt;">${entry.barcode || '-'}</span>
-                
-                ${entry.notes ? `<span class="label" style="margin-top: 8px;">ملاحظات:</span><span class="value" style="font-size: 9pt;">${entry.notes}</span>` : ''}
               </td>
             </tr>
+            <tr>
+              <td style="width: 50%;">
+                <span class="label">رقم الهاتف:</span>
+                <span class="value" style="font-size: 9pt;">${entry.phoneNumber || '-'}</span>
+              </td>
+              <td style="width: 50%;">
+                <span class="label">الرقم القومي:</span>
+                <span class="value" style="font-size: 9pt;">${entry.nationalId}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 50%;">
+                <span class="label">نوع الخدمة:</span>
+                <span class="value">${entry.serviceType}</span>
+              </td>
+              <td style="width: 50%;">
+                <span class="label">الباركود:</span>
+                <span class="value" style="font-family: monospace; font-size: 9pt;">${entry.barcode || '-'}</span>
+              </td>
+            </tr>
+            ${entry.notes ? `
+            <tr>
+              <td colspan="2">
+                <span class="label">ملاحظات:</span>
+                <span class="value" style="font-size: 9pt;">${entry.notes}</span>
+              </td>
+            </tr>` : ''}
           </tbody>
         </table>
 

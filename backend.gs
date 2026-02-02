@@ -406,6 +406,9 @@ function handleGetData(sheetName, role, username) {
           const normalizedKey = header.toLowerCase();
           obj[header] = val;
           if (!obj[normalizedKey]) obj[normalizedKey] = val; // نسخة بديلة لتسهيل الوصول
+          // ربط إضافي للملاحظات لضمان التوافق مع الفرونت إند
+          if (normalizedKey === 'ملاحظات') obj['notes'] = val;
+          if (normalizedKey === 'notes') obj['ملاحظات'] = val;
         });
         return obj;
       });
@@ -963,7 +966,7 @@ function createJSONResponse(data) {
 function getHeaderMapping(sheet, sheetName) {
   const cache = CacheService.getScriptCache();
   // تغيير المفتاح لإجبار تحديث الكاش في حالة تغير الأعمدة مؤخراً
-  const cacheKey = "headers_v3_" + sheetName;
+  const cacheKey = "headers_v4_" + sheetName; // تم ترقية النسخة إلى v4 لكافة الشيتات
   const cached = cache.get(cacheKey);
   
   if (cached) return JSON.parse(cached);

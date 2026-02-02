@@ -141,7 +141,8 @@ export const useAppState = () => {
             isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
             electronicAmount: Number(e.electronicAmount || 0),
             electronicMethod: e.electronicMethod,
-            deliveredDate: e.deliveredDate || e['تاريخ التسليم']
+            deliveredDate: e.deliveredDate || e['تاريخ التسليم'],
+            notes: e.notes || e['ملاحظات'] || ''
           };
         });
 

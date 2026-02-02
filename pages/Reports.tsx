@@ -87,6 +87,10 @@ const Reports: React.FC<ReportsProps> = ({
                 {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
+            <div className="col-span-2 bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">ملاحظات</span>
+              <p className="font-bold text-gray-600 text-[10px] whitespace-pre-wrap leading-tight">{entry.notes || 'لا توجد ملاحظات'}</p>
+            </div>
             {entry.hasThirdParty && (
               <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-2">
                 <div>
@@ -106,24 +110,20 @@ const Reports: React.FC<ReportsProps> = ({
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              setIsProcessing(true);
-              try {
-                await generateReceipt(entry);
-              } finally {
-                setIsProcessing(false);
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-1 transition-all text-sm"
-          >
-            <Printer className="w-4 h-4" />
-            طباعة إيصال العميل
-          </button>
         </div>
       ),
-      confirmText: 'إغلاق'
+      confirmText: 'طباعة إيصال',
+      confirmIcon: <Printer className="w-4 h-4" />,
+      confirmClose: false,
+      onConfirm: async () => {
+        setIsProcessing(true);
+        try {
+          await generateReceipt(entry);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      cancelText: 'تراجع'
     });
   };
 

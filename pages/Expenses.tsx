@@ -107,7 +107,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, onAddExpense, br
         if (amount <= 0 || isSubmitting) return;
 
         if (amount > currentBalance) {
-            showQuickStatus('لا يوجد كاش كافٍ في الفرع لإتمام العملية', 'error');
+            showQuickStatus('لا يوجد كاش كافى لإتمام العملية', 'error');
             return;
         }
 

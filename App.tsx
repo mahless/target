@@ -10,6 +10,7 @@ import Reports from './pages/Reports';
 import Receivables from './pages/Receivables';
 import AdminInventory from './pages/AdminInventory';
 import AttendanceDashboard from './pages/AttendanceDashboard';
+import ThirdPartySettlements from './pages/ThirdPartySettlements';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ModalProvider } from './context/ModalContext';
 import { useAppState } from './hooks/useAppState';
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
       case '/reports': return 'تقارير الأداء المالي';
       case '/admin/inventory': return 'إدارة المخزن';
       case '/admin/attendance': return 'لوحة الحضور والانصراف';
+      case '/third-party-settlements': return 'تسويات الموردين المتأخرة';
       default: return 'تارجت للخدمات';
     }
   }, [location.pathname]);
@@ -163,6 +165,20 @@ const AppContent: React.FC = () => {
                         username={user?.name || ''}
                         userRole={userRole}
                         isSubmitting={isSubmitting}
+                      />
+                    } />
+                    <Route path="/third-party-settlements" element={
+                      <ThirdPartySettlements
+                        entries={entries}
+                        onUpdateEntry={updateEntry}
+                        onAddExpense={addExpense}
+                        branchId={branch?.id || ''}
+                        currentDate={currentDate || ''}
+                        username={user?.name || ''}
+                        isSyncing={isSyncing}
+                        onRefresh={syncAll}
+                        isSubmitting={isSubmitting}
+                        branches={branches}
                       />
                     } />
                     <Route path="/admin/inventory" element={

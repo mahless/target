@@ -117,22 +117,22 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
               <span className="text-[10px] text-gray-400 font-black block mb-0.5">المتبقي</span>
               <p className="font-black text-red-600 text-xs">{entry.remainingAmount} ج.م</p>
             </div>
-            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100 font-mono">
-              <span className="text-[10px] text-gray-400 font-black block mb-0.5">الباركود</span>
-              <p className="font-black text-gray-800 text-xs">{entry.barcode || '-'}</p>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">السرعة</span>
+              <p className="font-black text-gray-800 text-xs">{entry.speed || '-'}</p>
             </div>
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-0.5">طريقة الدفع/التحصيل</span>
-              <p className="font-bold text-gray-800 text-[10px]">
-                {entry.isElectronic ? `إلكتروني(${entry.electronicMethod} - ${entry.electronicAmount})` : 'نقدي'}
-              </p>
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">مصدر الباركود</span>
+              <p className="font-black text-gray-800 text-xs">{entry.Barcode_Source || '-'}</p>
             </div>
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
-              <span className="text-[10px] text-gray-400 font-black block mb-0.5">تاريخ العملية</span>
-              <p className="font-black text-gray-800 text-xs" dir="ltr">
-                {entry.entryDate}
-                <span className="text-gray-400 mx-1">|</span>
-                {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">الموظف المسؤول</span>
+              <p className="font-black text-gray-800 text-xs">{entry.recordedBy}</p>
+            </div>
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black block mb-0.5">حالة المعاملة</span>
+              <p className={`font-black text-xs ${entry.status === 'active' ? 'text-blue-600' : entry.status === 'cancelled' ? 'text-red-500' : 'text-green-600'}`}>
+                {entry.status}
               </p>
             </div>
             <div className="col-span-2 bg-gray-50 p-2 rounded-xl border border-gray-100">
@@ -158,25 +158,20 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              setIsProcessing(true);
-              try {
-                await generateReceipt(entry);
-              } finally {
-                setIsProcessing(false);
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-black shadow-lg shadow-blue-600/20 active:scale-95 mt-1 transition-all text-sm"
-          >
-            <Printer className="w-4 h-4" />
-            طباعة إيصال العميل
-          </button>
         </div>
       ),
-
-      confirmText: 'إغلاق'
+      confirmText: 'طباعة إيصال',
+      confirmIcon: <Printer className="w-4 h-4" />,
+      confirmClose: false,
+      onConfirm: async () => {
+        setIsProcessing(true);
+        try {
+          await generateReceipt(entry);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      cancelText: 'تراجع'
     });
   };
 
@@ -235,9 +230,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
       type: 'info',
       content: (
         <div className="space-y-3 text-right">
-          <p className="text-gray-600 font-bold">هل أنت متأكد من دفع مبلغ <span className="text-blue-600 font-black">{entry.thirdPartyCost} ج.م</span> للمورد <span className="text-blue-600 font-black">{entry.thirdPartyName}</span>؟</p>
+          <p className="text-gray-600 font-bold">متأكد من دفع مبلغ <span className="text-blue-600 font-black">{entry.thirdPartyCost} ج.م</span> للمورد <span className="text-blue-600 font-black">{entry.thirdPartyName}</span>؟</p>
           <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
-            <p className="text-[10px] text-blue-700 leading-relaxed font-bold">سيتم خصم هذا المبلغ من رصيد الخزنة الفعلي فور التأكيد، وسيتم تسجيل العملية باسمك.</p>
+            <p className="text-[10px] text-blue-700 leading-relaxed font-bold">سيتم خصم هذا المبلغ من رصيد الخزنة، وسيتم تسجيل العملية باسمك.</p>
           </div>
         </div>
       ),
@@ -310,7 +305,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
         title: 'تأكيد التسليم',
         content: (
           <div className="text-right p-2">
-            <p className="font-bold text-gray-700">هل أنت متأكد من إتمام عملية التسليم؟</p>
+            <p className="font-bold text-gray-700">متأكد من إتمام عملية التسليم؟</p>
             <p className="text-[10px] text-gray-400 mt-2 italic">لا توجد مديونية متبقية على هذه المعاملة.</p>
           </div>
         ),
@@ -390,7 +385,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ allEntries, allExpense
           <div className="flex items-center gap-2">
             <div className="w-2 h-6 bg-blue-600 rounded-full shadow-sm shadow-blue-200"></div>
             <div>
-              <h3 className="text-lg font-black text-gray-800">سجل عمليات الخزنة اليومي</h3>
+              <h3 className="text-lg font-black text-gray-800">سجل العمليات اليومي</h3>
               <p className="text-[10px] text-gray-900 font-black uppercase tracking-widest mt-0.5">{currentDate}</p>
             </div>
           </div>

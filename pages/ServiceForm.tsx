@@ -49,7 +49,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   // Electronic Payment State
   const [isElectronic, setIsElectronic] = useState(false);
   const [electronicAmount, setElectronicAmount] = useState<number>(0);
-  const [electronicMethod, setElectronicMethod] = useState<ElectronicMethod>('انستا باي');
+  const [electronicMethod, setElectronicMethod] = useState<ElectronicMethod | ''>('');
 
   const [notes, setNotes] = useState('');
 
@@ -193,6 +193,11 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       return;
     }
 
+    if (isElectronic && (!electronicMethod || electronicMethod === '')) {
+      setError("يرجى اختيار وسيلة التحصيل الإلكتروني");
+      return;
+    }
+
     if (isElectronic && electronicAmount > amountPaid) {
       setError("خطأ: مبلغ التحصيل الإلكتروني لا يمكن أن يكون أكبر من إجمالي المبلغ المحصل.");
       return;
@@ -228,7 +233,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         isCostPaid: false,
         isElectronic,
         electronicAmount: isElectronic ? Number(electronicAmount) : 0,
-        electronicMethod: isElectronic ? electronicMethod : undefined,
+        electronicMethod: isElectronic ? (electronicMethod as ElectronicMethod) : undefined,
         notes,
         branchId,
         entryDate: currentDate,
@@ -362,10 +367,10 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                     placeholder="اختر الخدمة..."
                   />
                 </div>
-                {serviceType === 'بطاقة رقم قومي' && (
-                  <div className="animate-slideIn space-y-3">
+                {serviceType === 'بطاقة رقم قومي' ? (
+                  <div className="animate-slideIn space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="block text-xs font-black text-blue-700 mr-1">الباركود</label>
+                      <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الباركود</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -392,7 +397,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                           type="text"
                           value={(!isExternalBarcode && barcodeNotFound) ? 'لا يوجد باركود متاح' : barcode}
                           onChange={(e) => isExternalBarcode && setBarcode(toEnglishDigits(e.target.value))}
-                          className={`${commonInputClass} border-2 ${!isExternalBarcode && isFetchingBarcode ? 'border-amber-200' :
+                          className={`${commonInputClass} !p-4 !rounded-2xl border-2 ${!isExternalBarcode && isFetchingBarcode ? 'border-amber-200' :
                             (!isExternalBarcode && barcodeNotFound) ? 'border-red-500 bg-red-50' :
                               (isExternalBarcode ? 'border-blue-300 bg-white ring-2 ring-blue-50' :
                                 (barcode ? 'border-green-500 ring-2 ring-green-50 bg-green-50/20' : 'border-blue-100 bg-gray-100 cursor-not-allowed')
@@ -418,6 +423,17 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                         </button>
                       )}
                     </div>
+                  </div>
+                ) : (
+                  <div className="animate-slideIn space-y-1">
+                    <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">ملاحظات إضافية</label>
+                    <input
+                      type="text"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className={`${commonInputClass} !p-4 !rounded-2xl !border !border-yellow-400`}
+                      placeholder="سجل ملاحظة صغيرة هنا..."
+                    />
                   </div>
                 )}
               </div>
@@ -463,6 +479,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                       value={electronicMethod}
                       onChange={(v) => setElectronicMethod(v as ElectronicMethod)}
                       placeholder="اختر الوسيلة..."
+                      showAllOption={false}
                     />
                   </div>
                   <div>
