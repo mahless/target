@@ -62,6 +62,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [lastEntry, setLastEntry] = useState<ServiceEntry | null>(null);
 
+  const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
+
   const commonInputClass = "w-full p-2.5 border-2 border-blue-200 rounded-xl bg-white text-black font-black placeholder-gray-400 focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-50 outline-none transition-all shadow-sm";
 
   // Search Logic
@@ -168,6 +170,11 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     setSpeed('');
     setBarcode('');
     setBarcodeNotFound(false);
+    if (isOtherService) {
+      setClientName('كاش');
+    } else if (clientName === 'كاش') {
+      setClientName('');
+    }
   }, [serviceType]);
 
   // Auto-fetch barcode when speed is selected for specific services
@@ -184,7 +191,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     setError(null);
     setSuccessMsg(null);
 
-    if (nationalId.length !== 14) {
+    if (!isOtherService && nationalId.length !== 14) {
       setError("الرقم القومي يجب أن يكون 14 رقم");
       return;
     }
@@ -194,7 +201,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       return;
     }
 
-    if (!phoneNumber.startsWith('0')) {
+    if (!isOtherService && !phoneNumber.startsWith('0')) {
       setError(" رقم الهاتف يجب أن يبدأ بصفر (0)");
       return;
     }
@@ -229,9 +236,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
       const newEntry: ServiceEntry = {
         id: entryId,
-        clientName,
-        nationalId,
-        phoneNumber,
+        clientName: clientName || (isOtherService ? 'كاش' : ''),
+        nationalId: nationalId || (isOtherService ? '-' : ''),
+        phoneNumber: phoneNumber || (isOtherService ? '-' : ''),
         serviceType,
         barcode: serviceType === 'بطاقة رقم قومي' ? barcode : undefined,
         Barcode_Source: serviceType === 'بطاقة رقم قومي' ? (isExternalBarcode ? 'خارجي' : 'داخلي') : undefined,
@@ -354,16 +361,16 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             {/* Section: Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-2">
-                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">الاسم بالكامل</label>
-                <input required type="text" value={clientName} onChange={e => setClientName(e.target.value)} className={commonInputClass} placeholder="الاسم رباعي" />
+                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">الاسم بالكامل {!isOtherService && <span className="text-red-500">*</span>}</label>
+                <input required={!isOtherService} type="text" value={clientName} onChange={e => setClientName(e.target.value)} className={commonInputClass} placeholder="الاسم رباعي" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">الرقم القومي</label>
-                <input required type="text" maxLength={14} value={nationalId} onChange={e => setNationalId(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="14 رقم" />
+                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">الرقم القومي {!isOtherService && <span className="text-red-500">*</span>}</label>
+                <input required={!isOtherService} type="text" maxLength={14} value={nationalId} onChange={e => setNationalId(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="14 رقم" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">رقم الهاتف</label>
-                <input required type="tel" value={phoneNumber} onChange={e => setPhoneNumber(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="01xxxxxxxxx" />
+                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">رقم الهاتف {!isOtherService && <span className="text-red-500">*</span>}</label>
+                <input required={!isOtherService} type="tel" value={phoneNumber} onChange={e => setPhoneNumber(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="01xxxxxxxxx" />
               </div>
             </div>
 
@@ -513,7 +520,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">اسم المكتب</label>
-                    <input required type="text" value={thirdPartyName} onChange={e => setThirdPartyName(e.target.value)} className={commonInputClass}/>
+                    <input required type="text" value={thirdPartyName} onChange={e => setThirdPartyName(e.target.value)} className={commonInputClass} />
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">تكلفة المكتب الخارجي</label>
