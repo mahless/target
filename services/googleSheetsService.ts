@@ -1,0 +1,409 @@
+import { ServiceEntry, Expense, Branch, User, LoginResponse } from '../types';
+
+// "Web App URL"
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDb9AtsaM1Oq7r9fRZbzudZG4qQT1uWqFdh90sd9L-OYRrC2O_Q-MrleW21KIiJuPZ/exec';
+
+export const GoogleSheetsService = {
+    /**
+     * Helper for fetch with timeout and retry logic
+     */
+    async fetchWithRetry(url: string, options: any = {}, timeout: number = 25000, retries: number = 3) {
+        const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        for (let i = 0; i < retries; i++) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(id);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response;
+            } catch (error: any) {
+                clearTimeout(id);
+                const isLastAttempt = i === retries - 1;
+                if (isLastAttempt) throw error;
+
+                // Exponential backoff: 1s, 2s, 4s...
+                const delay = 1000 * Math.pow(2, i);
+                console.warn(`Fetch failed (attempt ${i + 1}/${retries}), retrying in ${delay}ms...`, error.message);
+                await wait(delay);
+            }
+        }
+        throw new Error('All fetch attempts failed');
+    },
+
+    /**
+     * تسجيل الدخول والتحقق من الهوية
+     */
+    async login(id: string, password: string): Promise<LoginResponse> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=login&id=${id}&password=${password}`);
+            return await response.json();
+        } catch (error) {
+            return { success: false, message: 'فشل الاتصال بالسيرفر' };
+        }
+    },
+
+    /**
+     * جلب البيانات من ورقة محددة (مع دعم الفلترة بناءً على الصلاحية)
+     */
+    async getData<T>(sheetName: string, role?: string, username?: string): Promise<T[]> {
+        if (!GOOGLE_SCRIPT_URL) {
+            console.warn('Google Script URL is missing');
+            return [];
+        }
+
+        try {
+            let url = `${GOOGLE_SCRIPT_URL}?action=getData&sheetName=${sheetName}&t=${Date.now()}`;
+            if (role) url += `&role=${encodeURIComponent(role)}`;
+            if (username) url += `&username=${encodeURIComponent(username)}`;
+
+            const response = await this.fetchWithRetry(url);
+            const json = await response.json();
+
+            if (json && !json.status) {
+                return json as T[];
+            }
+            console.error('Sheet API Error:', json.message);
+            return [];
+        } catch (error) {
+            console.error('Network Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * جلب تقرير HR (ساعات الموظفين) للمدير
+     */
+    async getHRReport(month?: string): Promise<any[]> {
+        if (!GOOGLE_SCRIPT_URL) return [];
+        try {
+            let url = `${GOOGLE_SCRIPT_URL}?action=getHRReport&t=${Date.now()}`;
+            if (month) url += `&month=${month}`;
+            const response = await this.fetchWithRetry(url);
+            const json = await response.json();
+            if (json && !json.status) return json;
+            return [];
+        } catch (error) {
+            console.error('HR Report Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * حفظ صف جديد في ورقة محددة
+     */
+    async addRow(sheetName: string, data: any, role: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=addRow&sheetName=${sheetName}&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            }, 30000);
+
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            console.error('Save Error:', error);
+            return { success: false, message: 'خطأ في الاتصال' };
+        }
+    },
+
+    /**
+     * جلب أقدم باركود متاح لفرع وفئة محددة
+     */
+    async getAvailableBarcode(branchId: string, category: string): Promise<string | null> {
+        if (!GOOGLE_SCRIPT_URL) return null;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=getAvailableBarcode&branch=${branchId}&category=${category}&t=${Date.now()}`);
+            const json = await response.json();
+            return json.status === 'success' ? json.barcode : null;
+        } catch (error) {
+            console.error('Fetch Barcode Error:', error);
+            return null;
+        }
+    },
+
+    /**
+     * إضافة دفعة باركودات جديدة للمخزن
+     */
+    async addStockBatch(items: any[], role: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=addStockBatch&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(items)
+            });
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Add Stock Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * تحديث حالة الباركود (مستخدم، خطأ، إلخ)
+     */
+    async updateStockStatus(barcode: string, status: string, usedBy: string, role: string, orderId?: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=updateStockStatus&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ barcode, status, usedBy, orderId })
+            }, 30000);
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Update Stock Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * تحديث بيانات معاملة موجودة (مثل الإلغاء)
+     */
+    async updateEntry(sheetName: string, data: any, role: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=updateEntry&sheetName=${sheetName}&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            }, 30000);
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Update Entry Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * تحديث بيانات باركود (الرقم أو الفرع)
+     */
+    async updateStockItem(oldBarcode: string, newBarcode: string, newBranch: string, role: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=updateStockItem&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ oldBarcode, newBarcode, newBranch })
+            });
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Update Stock Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * حذف باركود من المخزن
+     */
+    async deleteStockItem(barcode: string, role: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=deleteStockItem&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ barcode })
+            });
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Delete Stock Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * جلب عنوان IP العميل (Frontend)
+     */
+    async fetchClientIP(): Promise<string | null> {
+        try {
+            const response = await this.fetchWithRetry('https://api.ipify.org?format=json', {}, 3000);
+            const data = await response.json();
+            return data.ip;
+        } catch (error) {
+            console.error("Error fetching IP:", error);
+            return '0.0.0.0';
+        }
+    },
+
+    /**
+     * تسجيل الحضور أو الانصراف
+     */
+    async recordAttendance(users_ID: string, username: string, branchId: string, type: 'check-in' | 'check-out', ip: string): Promise<{ success: boolean; message?: string; timestamp?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=attendance`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ users_ID, username, branchId, type, ip })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                return { success: true, timestamp: data.timestamp };
+            } else {
+                return { success: false, message: data.message || 'فشل تسجيل الحضور' };
+            }
+        } catch (error) {
+            console.error("Error recording attendance:", error);
+            return { success: false, message: 'خطأ في الاتصال' };
+        }
+    },
+
+    /**
+     * تسليم المعاملة وتحصيل المتبقي
+     */
+    async deliverOrder(orderId: string, remainingCollected: number, clientName: string, collectorName: string, branchId: string): Promise<boolean> {
+        if (!GOOGLE_SCRIPT_URL) return false;
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=deliverOrder`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ orderId, remainingCollected, clientName, collectorName, branchId })
+            });
+            const json = await response.json();
+            return json.status === 'success';
+        } catch (error) {
+            console.error('Deliver Order Error:', error);
+            return false;
+        }
+    },
+
+    /**
+     * جلب سجلات الحضور التفصيلية لموظف معين
+     */
+    async getUserLogs(username: string, month?: string): Promise<any[]> {
+        if (!GOOGLE_SCRIPT_URL) return [];
+        try {
+            let url = `${GOOGLE_SCRIPT_URL}?action=getUserLogs&username=${encodeURIComponent(username)}&t=${Date.now()}`;
+            if (month) url += `&month=${month}`;
+            const response = await this.fetchWithRetry(url);
+            const json = await response.json();
+            if (json && !json.status) return json;
+            return [];
+        } catch (error) {
+            console.error('Get User Logs Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * جلب قائمة الفروع وإعداداتها (بما في ذلك الرصيد)
+     */
+    async getBranches(): Promise<any[]> {
+        if (!GOOGLE_SCRIPT_URL) return [];
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=getBranches&t=${Date.now()}`);
+            const json = await response.json();
+            if (json && !json.status) return json;
+            return [];
+        } catch (error) {
+            console.error('Get Branches Error:', error);
+            return [];
+        }
+    },
+
+    /**
+     * إجراء عملية تحويل مالي بين فرعين
+     */
+    async branchTransfer(data: { fromBranch: string, toBranch: string, amount: number, recordedBy: string }, role?: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            let url = `${GOOGLE_SCRIPT_URL}?action=branchTransfer`;
+            if (role) url += `&role=${encodeURIComponent(role)}`;
+
+            const response = await this.fetchWithRetry(url, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            }, 30000);
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            console.error('Transfer Error:', error);
+            return { success: false, message: 'فشل عملية التحويل' };
+        }
+    },
+
+    /**
+     * حذف مصروف وإرجاع قيمته للخزنة
+     */
+    async deleteExpense(id: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=deleteExpense`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ id })
+            }, 30000);
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            console.error('Delete Expense Error:', error);
+            return { success: false, message: 'فشل حذف المصروف' };
+        }
+    },
+
+    /**
+     * إدارة الموظفين (إضافة، تعديل، حذف)
+     */
+    async manageUsers(data: { type: 'add' | 'update' | 'delete', user?: Partial<User>, id?: string }, role: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=manageUsers&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            }, 30000);
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            return { success: false, message: 'خطأ في الاتصال بالسيرفر' };
+        }
+    },
+
+    /**
+     * إدارة الفروع (إضافة، حذف)
+     */
+    async manageBranches(data: { type: 'add' | 'delete', branch?: { name: string, ip?: string }, name?: string }, role: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=manageBranches&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            }, 30000);
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            return { success: false, message: 'خطأ في الاتصال بالسيرفر' };
+        }
+    },
+
+    /**
+     * تحديث إعدادات القوائم (خدمات ومصروفات)
+     */
+    async updateSettings(data: { serviceList: string, expenseList: string }, role: string): Promise<{ success: boolean; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=updateSettings&role=${encodeURIComponent(role)}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(data)
+            }, 30000);
+            const json = await response.json();
+            return { success: json.status === 'success', message: json.message };
+        } catch (error) {
+            return { success: false, message: 'خطأ في الاتصال بالسيرفر' };
+        }
+    }
+};
