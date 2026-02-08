@@ -33,7 +33,7 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
           max-width: 148mm;
           margin: 0 auto;
           border: 2px solid #000;
-          padding: 60px;
+          padding: 25px;
           position: relative;
           overflow: hidden;
         }
@@ -58,9 +58,8 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         /* Header */
         .header {
           text-align: center;
-          border-bottom: 2px solid #000;
-          padding-top: 20px;
-          padding-bottom: 15px;
+          padding-top: 10px;
+          padding-bottom: 10px;
           margin-bottom: 5px;
         }
 
@@ -131,9 +130,8 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
 
         /* Footer */
         .footer {
-          border-top: 2px solid #000;
           padding-top: 8px;
-          margin-top: 10px;
+          margin-top: 5px;
         }
 
         .totals-section {
@@ -165,21 +163,26 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
           margin-top: 2px;
         }
 
-        /* Compact Signatures - Horizontal */
-        .signatures {
-          display: flex;
-          justify-content: space-between;
-          gap: 20px;
-          margin-top: 10px;
+        /* Company Contact Info Footer */
+        .contact-info {
+          margin-top: 15px;
+          text-align: center;
+          font-size: 8pt;
+          font-weight: 700;
+          color: #333;
+          line-height: 1.6;
+          border-top: 1px solid #eee;
+          padding-top: 10px;
         }
 
-        .signature-box {
-          flex: 1;
-          border-top: 1px dashed #000;
-          padding-top: 3px;
-          text-align: center;
+        .footer-line {
+          display: block;
+        }
+
+        .website-link {
+          color: #1e40af;
+          font-weight: 900;
           font-size: 9pt;
-          font-weight: 700;
         }
 
         @media print {
@@ -235,9 +238,12 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
             <div class="total-item"><span class="total-label">المدفوع</span><span class="total-value" style="color: green;">${entry.amountPaid} EGP</span></div>
             <div class="total-item"><span class="total-label">المتبقي</span><span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${entry.remainingAmount} EGP</span></div>
           </div>
-          <div class="signatures">
-            <div class="signature-box">ختم الشركة</div>
-            <div class="signature-box">توقيع المستلم</div>
+          
+          <div class="contact-info">
+            <div class="footer-line">target868@yahoo.com | https://www.facebook.com/Target868</div>
+            <div class="footer-line">01005757346 - 01154344029</div>
+            <div class="footer-line" style="margin-top: 5px;">يمكنكم طلب ومتابعة الخدمة من خلال موقعنا</div>
+            <div class="footer-line website-link">www.target4gov.com</div>
           </div>
         </div>
       </div>
