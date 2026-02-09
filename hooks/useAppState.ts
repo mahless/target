@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ServiceEntry, Expense, Branch, StockItem, User } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic, normalizeDate } from '../utils';
@@ -7,6 +7,8 @@ import { SERVICE_TYPES, EXPENSE_CATEGORIES } from '../constants';
 
 export const useAppState = () => {
   const { setIsProcessing } = useModal();
+  const hasAutoAssigned = useRef(false);
+  const lastUserId = useRef<string | null>(null);
 
   // Initialize state from localStorage if available
   const [user, setUser] = useState<User | null>(() => {
@@ -324,22 +326,29 @@ export const useAppState = () => {
     localStorage.setItem('target_stock', JSON.stringify(stock));
   }, [stock]);
 
+
   // Auto-assign branch and date on startup OR when user changes
   useEffect(() => {
+    // Reset auto-assign flag if user changes
+    if (user?.id !== lastUserId.current) {
+      hasAutoAssigned.current = false;
+      lastUserId.current = user?.id || null;
+    }
+
     // Auto-assignment for non-managers
-    if (user && user.assignedBranchId && (!branch || branch.id !== user.assignedBranchId)) {
-      const assignedBranch = branches.find(b => b.id === user.assignedBranchId);
+    // Only auto-assign if branch is NOT selected AND we haven't auto-assigned in this session yet
+    if (user && user.assignedBranchId && !branch && !hasAutoAssigned.current && branches.length > 0) {
+      const assignedBranch = branches.find(b =>
+        normalizeArabic(b.id) === normalizeArabic(user.assignedBranchId!)
+      );
       if (assignedBranch) {
         setBranch(assignedBranch);
         localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
+        hasAutoAssigned.current = true;
       }
     }
-    if (!currentDate) {
-      const today = new Date().toISOString().split('T')[0];
-      setCurrentDate(today);
-      localStorage.setItem('target_date', JSON.stringify(today));
-    }
-  }, [user, branch, currentDate]);
+  }, [user, branch, branches]);
+
 
   const handleLogin = (userData: User) => {
     setUser(userData);
