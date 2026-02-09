@@ -274,9 +274,9 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                     label="الفرع الحالي"
                     labelClassName="text-white/60"
                     options={branchOptions}
-                    value={currentBranch?.id || 'all'}
+                    value={currentBranch?.id || ''}
                     onChange={(val) => {
-                      if (val === 'all') {
+                      if (val === 'all' || !val) {
                         onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
                         return;
                       }
@@ -284,7 +284,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                       if (selected) onBranchChange(selected);
                     }}
                     icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
-                    placeholder="اختر الفرع..."
+                    placeholder="اختر فرع"
                     disabled={userRole === 'موظف'}
                     dark={true}
                   />
