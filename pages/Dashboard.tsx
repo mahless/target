@@ -91,8 +91,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     return allEntries.filter(e => {
       const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
       const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
-      const matchesUser = isManager || normalizeArabic(e.recordedBy || '') === normalizedUsername;
-      return matchesBranch && matchesDate && matchesUser;
+      // في لوحة التحكم، الموظف يرى كل عمليات الفرع المختار
+      return matchesBranch && matchesDate;
     });
   }, [allEntries, branchId, currentDate, userRole, username]);
 
@@ -107,8 +107,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     return allExpenses.filter(e => {
       const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
       const matchesDate = normalizeDate(e.date) === normalizedDateToday;
-      const matchesUser = isManager || normalizeArabic(e.recordedBy || '') === normalizedUsername;
-      return matchesBranch && matchesDate && matchesUser;
+      // في لوحة التحكم، الموظف يرى كل مصروفات الفرع المختار
+      return matchesBranch && matchesDate;
     });
   }, [allExpenses, branchId, currentDate, userRole, username]);
 
@@ -425,9 +425,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           e.nationalId,
           e.phoneNumber
         ]);
-        const matchesUser = isManager || normalizeArabic(e.recordedBy || '') === normalizedUsername;
 
-        return matchesBranch && matchesSearch && matchesUser;
+        // في البحث بالرئيسية، يرى كل عمليات الفرع
+        return matchesBranch && matchesSearch;
       });
     }
 
