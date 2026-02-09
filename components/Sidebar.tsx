@@ -279,8 +279,17 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                     options={branchOptions}
                     value={currentBranch?.id || ''}
                     onChange={(val) => {
-                      if (val === 'all' || !val) {
+                      if (val === 'all') {
                         onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                        return;
+                      }
+                      if (!val) {
+                        const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+                        if (isManager) {
+                          onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                        } else {
+                          onBranchChange(null as any);
+                        }
                         return;
                       }
                       const selected = branches.find(b => b.id === val);

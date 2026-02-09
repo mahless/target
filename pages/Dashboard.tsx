@@ -80,9 +80,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
   // الفلترة الداخلية الحيوية والموحدة
   const dailyEntries = useMemo(() => {
+    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+    // إذا لم يكنديراً ولم يختر فرعاً، لا تظهر أي بيانات
+    if (!isManager && (!branchId || branchId === 'all')) return [];
+
     const normalizedBranch = normalizeArabic(branchId);
     const normalizedDateToday = normalizeDate(currentDate);
-    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
     const normalizedUsername = normalizeArabic(username);
 
     return allEntries.filter(e => {
@@ -94,9 +97,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [allEntries, branchId, currentDate, userRole, username]);
 
   const dailyExpenses = useMemo(() => {
+    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+    if (!isManager && (!branchId || branchId === 'all')) return [];
+
     const normalizedBranch = normalizeArabic(branchId);
     const normalizedDateToday = normalizeDate(currentDate);
-    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
     const normalizedUsername = normalizeArabic(username);
 
     return allExpenses.filter(e => {
@@ -115,9 +120,14 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     return branches.find(b => normalizeArabic(b.id) === normId);
   }, [branches, branchId]);
 
-  const currentBranchBalance = branchId === 'all'
-    ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
-    : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
+  const currentBranchBalance = useMemo(() => {
+    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+    if (!isManager && (!branchId || branchId === 'all')) return 0;
+
+    return branchId === 'all'
+      ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
+      : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
+  }, [branchId, userRole, branches, currentBranch]);
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
@@ -401,8 +411,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const filteredEntries = useMemo(() => {
     // حالة البحث: البحث في كل عمليات الفرع (تاريخ مفتوح)
     if (debouncedSearchTerm) {
-      const normalizedBranch = normalizeArabic(branchId);
       const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+      // إذا لم يكن مديراً ولم يختر فرعاً، لا تظهر نتائج بحث عامة
+      if (!isManager && (!branchId || branchId === 'all')) return [];
+
+      const normalizedBranch = normalizeArabic(branchId);
       const normalizedUsername = normalizeArabic(username);
 
       return allEntries.filter(e => {
