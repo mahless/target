@@ -10,8 +10,8 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
         
         @page {
-          size: A5 portrait;
-          margin: 5mm;
+          size: 210mm 297mm; /* A4 size to accommodate 210mm width */
+          margin: 0; /* Hide browser headers/footers */
         }
         
         * {
@@ -30,10 +30,10 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         }
 
         .container {
-          max-width: 148mm;
+          max-width: 210mm;
           margin: 0 auto;
-          border: 2px solid #000;
-          padding: 25px;
+          /* border: 2px solid #000; Removed external border as requested */
+          padding: 20px 80px;
           position: relative;
           overflow: hidden;
         }
@@ -58,9 +58,9 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         /* Header */
         .header {
           text-align: center;
-          padding-top: 10px;
-          padding-bottom: 10px;
-          margin-bottom: 5px;
+          padding-top: 2px;
+          padding-bottom: 5px;
+          margin-bottom: 2px;
         }
 
         .company-name {
@@ -95,19 +95,19 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
           width: 100%;
           border-collapse: collapse;
           margin: 10px 0;
-          border: 2px solid #000;
+          border: 1px solid #000;
         }
 
         .content-table th {
           background-color: #f0f0f0;
-          border: 2px solid #000;
+          border: 1px solid #000;
           padding: 5px;
           font-size: 12pt;
           font-weight: 900;
         }
 
         .content-table td {
-          border: 2px solid #000;
+          border: 1px solid #000;
           padding: 8px;
           font-size: 10pt;
           font-weight: 700;
@@ -130,8 +130,8 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
 
         /* Footer */
         .footer {
-          padding-top: 8px;
-          margin-top: 5px;
+          padding-top: 2px;
+          margin-top: 2px;
         }
 
         .totals-section {
@@ -186,7 +186,7 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         }
 
         @media print {
-           body { width: 148mm; }
+           body { width: 210mm; }
            .watermark { -webkit-filter: grayscale(100%); filter: grayscale(100%); }
         }
       </style>
