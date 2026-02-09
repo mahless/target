@@ -1,6 +1,7 @@
 export type ServiceSpeed = 'عادي' | 'مستعجل' | 'فوري' | 'سوبر فوري';
 
-export type ExpenseCategory = 'كهرباء' | 'إيجار' | 'سلف' | 'بوفيه' | 'أدوات مكتبية' | 'طرف ثالث' | 'تحصيل إلكتروني' | 'أخرى';
+// ExpenseCategory is now dynamic and loaded from Google Sheets
+export type ExpenseCategory = string;
 
 export type ElectronicMethod = 'انستا باي' | 'محفظة إلكترونية';
 

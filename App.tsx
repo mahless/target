@@ -12,9 +12,9 @@ import AdminInventory from './pages/AdminInventory';
 import AttendanceDashboard from './pages/AttendanceDashboard';
 import ThirdPartySettlements from './pages/ThirdPartySettlements';
 import ErrorBoundary from './components/ErrorBoundary';
-import { ModalProvider } from './context/ModalContext';
 import { normalizeArabic } from './utils';
 import { useAppState } from './hooks/useAppState';
+import { ModalProvider, useModal } from './context/ModalContext';
 import AdminDashboard from './pages/AdminDashboard';
 
 const AppContent: React.FC = () => {
@@ -30,6 +30,12 @@ const AppContent: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { setIsProcessing } = useModal();
+
+  // Sync isSubmitting with global Processing Overlay
+  React.useEffect(() => {
+    setIsProcessing(isSubmitting);
+  }, [isSubmitting, setIsProcessing]);
 
   const pageTitle = useMemo(() => {
     switch (location.pathname) {
@@ -66,7 +72,7 @@ const AppContent: React.FC = () => {
   const isAccessLocked = userRole !== 'مدير' && userRole !== 'مشاهد' && attendanceStatus !== 'checked-in';
 
   return (
-    <div className="flex min-h-screen bg-gray-50 text-right">
+    <div className="flex min-h-screen bg-[#F2E3D5] text-right overflow-hidden">
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} />
         <Route path="/*" element={
@@ -173,6 +179,7 @@ const AppContent: React.FC = () => {
                         entries={entries}
                         expenses={expenses}
                         serviceTypes={serviceTypes}
+                        expenseCategories={expenseCategories}
                         branches={branches}
                         manualDate={currentDate || ''}
                         branchId={branch?.id || ''}

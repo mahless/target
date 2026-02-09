@@ -23,7 +23,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
                 value={value}
                 onChange={(e) => onChange(toEnglishDigits(e.target.value))}
                 placeholder={placeholder}
-                className="w-full pr-11 pl-10 py-3 text-sm rounded-2xl bg-white shadow-inner border-2 border-blue-600 text-black font-black focus:border-blue-600 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                className="w-full pr-11 pl-10 py-3 text-sm rounded-2xl bg-white shadow-inner border-2 border-[#00A6A6] text-black font-black focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/10 outline-none transition-all"
             />
             {value && (
                 <button

@@ -14,33 +14,42 @@ interface CustomSelectProps {
     placeholder?: string;
     icon?: React.ReactNode;
     accentColor?: 'blue' | 'emerald';
-    disabled?: boolean;
     showAllOption?: boolean;
+    dark?: boolean;
+    labelClassName?: string;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
-    label, options, value, onChange, placeholder = 'اختر...', icon, accentColor = 'blue', disabled = false, showAllOption = true
+    label, options, value, onChange, placeholder = 'اختر...', icon, accentColor = 'blue', disabled = false, showAllOption = true, dark = false, labelClassName = ''
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const selectedOption = options.find(opt => opt.id === value) || (value === 'الكل' ? { id: 'الكل', name: placeholder } : null);
 
-    const activeClasses = accentColor === 'blue'
-        ? 'border-blue-600 ring-4 ring-blue-50'
-        : 'border-emerald-500 ring-4 ring-emerald-50';
+    const activeClasses = dark
+        ? 'border-[#00A6A6] ring-4 ring-[#00A6A6]/10 shadow-[0_0_20px_rgba(0,166,166,0.1)]'
+        : accentColor === 'blue'
+            ? 'border-[#036564] ring-4 ring-[#036564]/5 shadow-[0_0_20px_rgba(3,101,100,0.1)]'
+            : 'border-emerald-500 ring-4 ring-emerald-50';
 
-    const baseBorder = accentColor === 'blue'
-        ? 'border-blue-200'
-        : 'border-emerald-200';
+    const baseBorder = dark
+        ? 'border-white/10'
+        : accentColor === 'blue'
+            ? 'border-[#033649]/10'
+            : 'border-emerald-200';
 
-    const hoverItemClasses = accentColor === 'blue'
-        ? 'hover:bg-blue-50 hover:text-blue-700'
-        : 'hover:bg-emerald-50 hover:text-emerald-700';
+    const hoverItemClasses = dark
+        ? 'hover:bg-white/5 hover:text-[#00A6A6]'
+        : accentColor === 'blue'
+            ? 'hover:bg-[#036564]/5 hover:text-[#036564]'
+            : 'hover:bg-emerald-50 hover:text-emerald-700';
 
-    const selectedItemClasses = accentColor === 'blue'
-        ? 'bg-blue-600 text-white'
-        : 'bg-emerald-600 text-white';
+    const selectedItemClasses = dark
+        ? 'bg-[#00A6A6] text-white'
+        : accentColor === 'blue'
+            ? 'bg-[#036564] text-white'
+            : 'bg-emerald-600 text-white';
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -54,27 +63,27 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
     return (
         <div className="space-y-1 w-full text-right" ref={containerRef}>
-            {label && <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">{label}</label>}
+            {label && <label className={`block text-[10px] font-black uppercase tracking-widest mr-1 ${dark ? 'text-white/40' : 'text-[#033649]/60'} ${labelClassName}`}>{label}</label>}
             <div className="relative">
                 <button
                     type="button"
                     disabled={disabled}
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`w-full p-4 bg-white rounded-2xl border-2 transition-all flex items-center justify-between text-sm font-bold ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-75 border-gray-200' :
-                        isOpen ? activeClasses : `${baseBorder} hover:border-blue-400`
+                    className={`w-full p-4 transition-all flex items-center justify-between text-sm font-bold rounded-2xl border-2 ${disabled ? (dark ? 'bg-black/20 text-white/20 border-white/5' : 'bg-gray-100 cursor-not-allowed opacity-75 border-gray-200') :
+                        isOpen ? activeClasses : `${dark ? 'bg-black/20 text-white' : 'bg-white text-[#033649]'} ${baseBorder} hover:border-[#00A6A6]`
                         }`}
                 >
                     <div className="flex items-center gap-3">
-                        <span className="text-gray-400">{icon}</span>
-                        <span className={selectedOption ? 'text-gray-900' : 'text-gray-400'}>
+                        <span className={dark ? 'text-white/20' : 'text-gray-400'}>{icon}</span>
+                        <span className={selectedOption ? (dark ? 'text-white' : 'text-[#033649]') : (dark ? 'text-white/30' : 'text-gray-400')}>
                             {selectedOption ? selectedOption.name : placeholder}
                         </span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${dark ? 'text-white/30' : 'text-gray-400'} ${isOpen ? 'rotate-180 text-[#00A6A6]' : ''}`} />
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-[100] mt-2 w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scaleIn max-h-60 overflow-y-auto">
+                    <div className={`absolute z-[500] mt-2 w-full border overflow-hidden animate-scaleIn max-h-60 overflow-y-auto rounded-2xl shadow-2xl ${dark ? 'bg-[#01404E] border-white/10' : 'bg-white border-[#033649]/5'}`}>
                         <div className="p-2 space-y-1">
                             {/* Option for 'All' */}
                             {showAllOption && (
@@ -93,7 +102,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                     key={opt.id}
                                     type="button"
                                     onClick={() => { onChange(opt.id); setIsOpen(false); }}
-                                    className={`w-full p-3 rounded-xl text-right text-xs font-black transition-all flex items-center justify-between ${value === opt.id ? selectedItemClasses : `text-gray-600 ${hoverItemClasses}`}`}
+                                    className={`w-full p-3 rounded-xl text-right text-xs font-black transition-all flex items-center justify-between ${value === opt.id ? selectedItemClasses : `${dark ? 'text-white/70' : 'text-[#033649]/80'} ${hoverItemClasses}`}`}
                                 >
                                     <span>{opt.name}</span>
                                     {value === opt.id && <Check className="w-3 h-3" />}

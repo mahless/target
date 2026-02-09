@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StockItem, Branch, StockCategory, StockStatus } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
-import { PlusCircle, Package, AlertCircle, CheckCircle2, Filter, History, Trash2, Edit, ChevronDown } from 'lucide-react';
+import { PlusCircle, Package, AlertCircle, CheckCircle2, Filter, History, Trash2, Edit, ChevronDown, RefreshCw } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { toEnglishDigits } from '../utils';
 import CustomSelect from '../components/CustomSelect';
@@ -319,27 +319,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
     };
 
     return (
-        <div className={`p-4 md:p-8 space-y-8 animate-fadeIn transition-opacity ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
-            {/* Header */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
-                        <Package className="text-blue-600 w-8 h-8" />
-                        إدارة مخزن باركود الأستمارات
-                    </h2>
-                    <p className="text-sm text-gray-400 font-bold">توزيع الأستمارات ومراقبة الاستهلاك</p>
-                </div>
-                <button
-                    onClick={onRefresh}
-                    disabled={isSyncing}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-50"
-                >
-                    {isSyncing ? 'جاري التحديث...' : 'تحديث المخزن'}
-                </button>
-            </div>
+        <div className={`p-4 md:p-8 space-y-8 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 bg-white p-6 rounded-3xl border border-blue-100 shadow-sm space-y-6">
+                {/* Expense Form */}
+                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20 shadow-premium space-y-8 relative z-30 animate-slideIn">
                     <h3 className="font-black text-blue-900 flex items-center gap-2">
                         <PlusCircle className="w-5 h-5" /> إضافة باركود جديد
                     </h3>
@@ -364,12 +348,12 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black text-gray-400 block mb-2 mr-1">الباركودات (رقم في كل سطر أو مفصولة بفاصلة)</label>
+                            <label className="text-[10px] font-black text-[#033649]/40 block mb-3 mr-1 uppercase tracking-widest">الباركودات (رقم في كل سطر)</label>
                             <textarea
                                 value={newBarcodes}
                                 onChange={e => setNewBarcodes(toEnglishDigits(e.target.value))}
-                                rows={5}
-                                className="w-full bg-white border-2 border-blue-200 rounded-xl py-3 px-4 font-mono text-xs outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 shadow-sm"
+                                rows={6}
+                                className="w-full bg-[#033649]/5 border-2 border-[#00A6A6]/10 rounded-2xl py-4 px-5 font-mono text-xs outline-none focus:bg-white focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] shadow-inner transition-all"
                                 placeholder="أدخل الأرقام هنا..."
                             />
                         </div>
@@ -377,71 +361,73 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         <button
                             onClick={handleAddStock}
                             disabled={!canAddStock}
-                            className={`w-full py-4 rounded-2xl font-black text-sm transition-all shadow-lg ${canAddStock ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
+                            className={`w-full py-5 rounded-2xl font-black text-sm transition-all shadow-lux active:scale-[0.98] ${canAddStock ? 'bg-gradient-to-r from-[#033649] to-[#01404E] text-white hover:from-[#00A6A6] hover:to-[#036564]' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
                         >
                             {canAddStock ? 'تأكيد إضافة المخزون' : 'لا تملك صلاحية الإضافة'}
                         </button>
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {branches.map(b => (
-                            <div key={b.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
-                                <p className="text-[10px] font-black text-gray-400 mb-4 border-b pb-2">{b.name}</p>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="text-center">
-                                        <p className="text-[8px] font-bold text-gray-500 mb-1">عادي</p>
-                                        <p className="text-xl font-black text-blue-600">{stats[b.id]?.['عادي'] || 0}</p>
+                            <div key={b.id} className="relative overflow-hidden bg-white/60 p-6 rounded-[2rem] border border-white flex flex-col gap-4 shadow-premium group">
+                                <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
+                                <p className="text-[10px] font-black text-[#033649]/40 mb-2 border-b border-[#033649]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="text-center group-hover:scale-110 transition-transform">
+                                        <p className="text-[8px] font-black text-[#033649]/40 mb-1">عادي</p>
+                                        <p className="text-2xl font-black text-[#033649]">{stats[b.id]?.['عادي'] || 0}</p>
                                     </div>
-                                    <div className="text-center border-x">
-                                        <p className="text-[8px] font-bold text-gray-500 mb-1">مستعجل</p>
-                                        <p className="text-xl font-black text-amber-600">{stats[b.id]?.['مستعجل'] || 0}</p>
+                                    <div className="text-center border-x border-[#033649]/5 group-hover:scale-110 transition-transform">
+                                        <p className="text-[8px] font-black text-[#036564]/60 mb-1">مستعجل</p>
+                                        <p className="text-2xl font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-[8px] font-bold text-gray-500 mb-1">فوري</p>
-                                        <p className="text-xl font-black text-red-600">{stats[b.id]?.['فوري'] || 0}</p>
+                                    <div className="text-center group-hover:scale-110 transition-transform">
+                                        <p className="text-[8px] font-black text-[#00A6A6]/60 mb-1">فوري</p>
+                                        <p className="text-2xl font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="p-5 border-b flex justify-between items-center bg-gray-50/50">
-                            <h4 className="font-black text-sm text-gray-800 flex items-center gap-2">
-                                <History className="w-4 h-4" />  الأستمارات المسجله
+                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+                        <div className="p-6 md:p-8 border-b border-[#033649]/5 flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-gradient-to-l from-[#033649]/5 to-transparent">
+                            <h4 className="font-black text-xl text-[#033649] flex items-center gap-3">
+                                <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
                             </h4>
-                            <div className="flex gap-2 items-center">
-                                <div className="w-32">
+                            <div className="flex flex-col sm:flex-row gap-4 items-center">
+                                <div className="w-full sm:w-48">
                                     <CustomSelect
                                         options={statusOptions}
                                         value={statusFilter}
                                         onChange={(v) => setStatusFilter(v as any)}
-                                        placeholder="الكل"
+                                        placeholder="كل الحالات"
                                     />
                                 </div>
                                 <SearchInput
                                     value={searchTerm}
                                     onChange={setSearchTerm}
                                     placeholder="بحث بالباركود..."
+                                    className="w-full sm:w-64"
                                 />
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-right text-[10px]">
-                                <thead className="bg-gray-50 text-gray-400 font-black tracking-widest uppercase">
-                                    <tr>
-                                        <th className="py-4 px-4 text-center">الباركود</th>
-                                        <th className="py-4 px-4 text-center">الفئة</th>
-                                        <th className="py-4 px-4 text-center">الفرع</th>
-                                        <th className="py-4 px-4 text-center">الحالة</th>
-                                        <th className="py-4 px-4 text-center">الموظف / الطلب</th>
-                                        {userRole !== 'مشاهد' && <th className="py-4 px-4 text-center">إجراءات</th>}
+                        <div className="overflow-x-auto text-right">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                        <th className="py-5 px-6 text-center first:rounded-tr-[2rem]">الباركود</th>
+                                        <th className="py-5 px-6 text-center">الفئة</th>
+                                        <th className="py-5 px-6 text-center">الفرع</th>
+                                        <th className="py-5 px-6 text-center">الحالة</th>
+                                        <th className="py-5 px-6 text-center">الموظف / الطلب</th>
+                                        {userRole !== 'مشاهد' && <th className="py-5 px-6 text-center last:rounded-tl-[2rem]">إجراءات</th>}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y font-bold relative">
+                                <tbody className="divide-y divide-[#033649]/5 font-bold relative">
                                     {isSyncing && (
                                         <tr className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 backdrop-blur-[2px]">
                                             <td colSpan={6} className="py-20 text-center">
@@ -453,33 +439,33 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         </tr>
                                     )}
                                     {filteredStock.slice(0, 50).map(item => (
-                                        <tr key={item.id || item.barcode || (item as any).Barcode} className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-3 px-4 text-center font-mono">
+                                        <tr key={item.id || item.barcode || (item as any).Barcode} className="hover:bg-[#036564]/5 transition-all group">
+                                            <td className="py-5 px-6 text-center font-mono">
                                                 {userRole === 'مشاهد' ? (
-                                                    <span className="font-bold text-gray-700">
+                                                    <span className="font-black text-[#033649]">
                                                         {item.barcode || (item as any).Barcode}
                                                     </span>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleEditBarcode(item)}
-                                                        className="text-blue-600 hover:underline font-bold"
+                                                        className="text-[#00A6A6] hover:underline font-black group-hover:scale-110 transition-transform inline-block"
                                                         title="تعديل الباركود"
                                                     >
                                                         {item.barcode || (item as any).Barcode}
                                                     </button>
                                                 )}
                                             </td>
-                                            <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 rounded-md ${(item.category || (item as any).Category) === 'فوري' ? 'bg-red-50 text-red-600' :
-                                                    (item.category || (item as any).Category) === 'مستعجل' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                                            <td className="py-5 px-6 text-center">
+                                                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${(item.category || (item as any).Category) === 'فوري' ? 'bg-red-50 text-red-600' :
+                                                    (item.category || (item as any).Category) === 'مستعجل' ? 'bg-[#036564]/10 text-[#036564]' : 'bg-[#00A6A6]/10 text-[#00A6A6]'
                                                     }`}>
                                                     {item.category || (item as any).Category}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-center">{branches.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
-                                            <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 rounded-md ${(item.status || (item as any).Status) === 'Used' ? 'bg-green-100 text-green-700' :
-                                                    (item.status || (item as any).Status) === 'Error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
+                                            <td className="py-5 px-6 text-center text-[#033649] font-black">{branches.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
+                                            <td className="py-5 px-6 text-center">
+                                                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${(item.status || (item as any).Status) === 'Used' ? 'bg-green-50 text-green-600' :
+                                                    (item.status || (item as any).Status) === 'Error' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-500'
                                                     }`}>
                                                     {(item.status || (item as any).Status) === 'Used' ? 'مستخدم' : (item.status || (item as any).Status) === 'Error' ? 'خطأ' : 'متاح'}
                                                 </span>

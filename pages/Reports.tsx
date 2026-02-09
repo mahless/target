@@ -10,6 +10,7 @@ interface ReportsProps {
   entries: ServiceEntry[];
   expenses: Expense[];
   serviceTypes: string[];
+  expenseCategories: string[];
   branches: Branch[];
   manualDate: string;
   branchId: string;
@@ -21,28 +22,39 @@ interface ReportsProps {
   userRole: string;
 }
 
+
+
 const StatCard = ({ title, value, icon, color, footer }: any) => {
-  const colorClasses: any = {
-    blue: 'border-blue-600 text-blue-600 bg-blue-50',
-    red: 'border-red-500 text-red-600 bg-red-50',
-    emerald: 'border-emerald-500 text-emerald-600 bg-emerald-50'
+  const colorMap: any = {
+    blue: { bg: 'from-blue-600 to-blue-900', icon: 'text-blue-500', shadow: 'shadow-blue-900/20' },
+    red: { bg: 'from-red-600 to-red-900', icon: 'text-red-500', shadow: 'shadow-red-900/20' },
+    emerald: { bg: 'from-[#00A6A6] to-[#036564]', icon: 'text-[#00A6A6]', shadow: 'shadow-[#036564]/20' }
   };
+  const theme = colorMap[color] || colorMap.blue;
+
   return (
-    <div className={`bg-white p-4 rounded-3xl shadow-sm border-r-8 ${colorClasses[color].split(' ')[0]} transition-all hover:translate-y-[-4px] hover:shadow-lg w-full`}>
-      <div className="flex justify-between items-start text-right">
-        <div className="flex-1">
-          <p className="text-[10px] text-gray-900 font-black uppercase tracking-widest mb-1">{title}</p>
-          <p className="text-2xl font-black text-gray-900">{value.toLocaleString()}</p>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-5 rounded-[2.5rem] ${theme.shadow} shadow-premium group transition-all duration-500 hover:scale-[1.02]`}>
+      <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
+      <div className="relative z-10 flex flex-col h-full justify-between gap-3">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-white/40 uppercase tracking-[0.3em] mb-2">{title}</span>
+            <span className="text-4xl font-black text-white tracking-tighter">{value.toLocaleString()}<span className="text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
+          </div>
+          <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
+            {React.cloneElement(icon, { className: 'w-7 h-7' })}
+          </div>
         </div>
-        <div className={`p-2.5 rounded-2xl shadow-inner ${colorClasses[color].split(' ').slice(1).join(' ')}`}>{icon}</div>
+        <div className="pt-3 border-t border-white/5 text-[10px] text-white/40 font-black tracking-widest uppercase">
+          {footer}
+        </div>
       </div>
-      <div className="mt-3 pt-3 border-t border-gray-50 text-[10px] text-gray-500 font-bold leading-relaxed">{footer}</div>
     </div>
   );
 };
 
 const Reports: React.FC<ReportsProps> = ({
-  entries, expenses, serviceTypes, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
+  entries, expenses, serviceTypes, expenseCategories, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(today);
@@ -52,6 +64,7 @@ const Reports: React.FC<ReportsProps> = ({
     return branchId || (branches.length > 0 ? branches[0].id : 'الكل');
   });
   const [selectedService, setSelectedService] = useState<string>('الكل');
+  const [selectedExpenseType, setSelectedExpenseType] = useState<string>('الكل'); // New Filter State
   const [selectedEmployee, setSelectedEmployee] = useState<string>(() => {
     return userRole === 'مدير' ? 'الكل' : username;
   });
@@ -135,37 +148,12 @@ const Reports: React.FC<ReportsProps> = ({
     const normalizedSelectedBranch = normalizeArabic(selectedBranchId);
     const normalizedSelectedEmployee = normalizeArabic(selectedEmployee);
 
-    console.log('Filter Debug:', {
-      selectedBranchId,
-      selectedEmployee,
-      normalizedSelectedEmployee,
-      selectedService,
-      startDate,
-      endDate,
-      totalEntries: entries.length
-    });
-
     const filteredEntries = entries.filter(e => {
       const d = normalizeDate(e.entryDate);
       const matchesDate = d >= sDate && d <= eDate;
       const matchesBranch = selectedBranchId === 'الكل' || normalizeArabic(e.branchId) === normalizedSelectedBranch;
       const matchesService = selectedService === 'الكل' || e.serviceType === selectedService;
       const matchesEmployee = selectedEmployee === 'الكل' || normalizeArabic(e.recordedBy || '') === normalizedSelectedEmployee;
-
-      if (selectedBranchId === 'الكل') {
-        console.log('Entry check:', {
-          entryDate: e.entryDate,
-          branchId: e.branchId,
-          recordedBy: e.recordedBy,
-          normalizedRecordedBy: normalizeArabic(e.recordedBy || ''),
-          matchesDate,
-          matchesBranch,
-          matchesService,
-          matchesEmployee,
-          finalResult: matchesDate && matchesBranch && matchesService && matchesEmployee
-        });
-      }
-
       return matchesDate && matchesBranch && matchesService && matchesEmployee;
     });
 
@@ -174,17 +162,13 @@ const Reports: React.FC<ReportsProps> = ({
       const matchesDate = d >= sDate && d <= eDate;
       const matchesBranch = selectedBranchId === 'الكل' || normalizeArabic(ex.branchId) === normalizedSelectedBranch;
       const matchesService = selectedService === 'الكل' || (ex.notes && ex.notes.includes(selectedService));
+      const matchesExpenseType = selectedExpenseType === 'الكل' || ex.category === selectedExpenseType; // New Filter Logic
       const matchesEmployee = selectedEmployee === 'الكل' || normalizeArabic(ex.recordedBy || '') === normalizedSelectedEmployee;
-      return matchesDate && matchesBranch && matchesService && matchesEmployee;
-    });
-
-    console.log('Filtered Results:', {
-      filteredEntries: filteredEntries.length,
-      filteredExpenses: filteredExpenses.length
+      return matchesDate && matchesBranch && matchesService && matchesExpenseType && matchesEmployee;
     });
 
     return { entries: filteredEntries, expenses: filteredExpenses };
-  }, [entries, expenses, startDate, endDate, selectedBranchId, selectedService, selectedEmployee]);
+  }, [entries, expenses, startDate, endDate, selectedBranchId, selectedService, selectedExpenseType, selectedEmployee]);
 
   const stats = useMemo(() => {
     const totalRevenue = filteredData.entries.reduce((sum, e) => sum + e.amountPaid, 0);
@@ -194,6 +178,7 @@ const Reports: React.FC<ReportsProps> = ({
 
   const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
   const serviceOptions = useMemo(() => serviceTypes.map(s => ({ id: s, name: s })), [serviceTypes]);
+  const expenseTypeOptions = useMemo(() => expenseCategories.map(c => ({ id: c, name: c })), [expenseCategories]); // New Options
 
   const employeeOptions = useMemo(() => {
     const names = new Set<string>();
@@ -202,110 +187,132 @@ const Reports: React.FC<ReportsProps> = ({
     return Array.from(names).map(name => ({ id: name, name }));
   }, [entries, expenses]);
 
+  const inputClasses = "w-full p-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
+
   return (
-    <div className="p-3 md:p-5 space-y-4 text-right">
-      {/* Welcome Message for Non-Managers */}
-      {userRole !== 'مدير' && (
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-3xl border-2 border-blue-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl">👤</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">عرض التقارير الخاصة بك</p>
-              <p className="text-lg font-black text-blue-900">{username}</p>
-            </div>
+    <div className="p-3 md:p-5 space-y-4 text-right animate-premium-in">
+      {/* Header */}
+      <div className="bg-[#033649] p-3 md:p-4 rounded-[2rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-white/5 text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#00A6A6]/20 rounded-xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
+            <Receipt className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black tracking-tight">التقارير التحليلية</h2>
+            <p className="text-white/40 text-[9px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الأداء والتدفقات النقدية</p>
           </div>
         </div>
-      )}
+        {userRole !== 'مدير' && (
+          <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
+            <div>
+              <p className="text-[9px] text-white/40 font-black uppercase">الموظف الحالي</p>
+              <p className="text-xs font-black text-white">{username}</p>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Filters Header */}
-      <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
-        <div className="flex items-center gap-3 border-b border-gray-50 pb-3 mb-1">
-          <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-          <h3 className="text-lg font-black text-gray-800">تحديد فترة محددة</h3>
-        </div>
-        <div className="space-y-4">
-          {/* All filters in one row */}
-          <div className={`grid ${userRole === 'مدير' ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'} gap-3`}>
-            {/* Date filters first */}
-            <div className="space-y-1">
-              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">من تاريخ</label>
+      {/* Filters */}
+      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-premium border border-white/20 space-y-8 relative z-30">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-[#033649]/5">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
+            <h3 className="font-black text-[#033649] text-xl">تخصيص البحث والفترة</h3>
+          </div>
+
+          <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-2 rounded-2xl border border-white/40 shadow-inner">
+            <div className="flex items-center gap-2 flex-1 md:flex-initial">
+              <span className="text-[10px] font-black text-[#033649]/40 whitespace-nowrap px-2">من:</span>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
-                className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
+                className="w-full bg-transparent border-none text-xs font-black text-[#033649] focus:ring-0 p-0"
               />
             </div>
-
-            <div className="space-y-1">
-              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">إلى تاريخ</label>
+            <div className="w-px h-4 bg-[#033649]/10"></div>
+            <div className="flex items-center gap-2 flex-1 md:flex-initial">
+              <span className="text-[10px] font-black text-[#033649]/40 whitespace-nowrap px-2">إلى:</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
-                className="w-full p-3.5 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold text-xs outline-none transition-all"
+                className="w-full bg-transparent border-none text-xs font-black text-[#033649] focus:ring-0 p-0"
               />
             </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
 
-            {/* Branch filter */}
+          <div className="space-y-3">
             <CustomSelect
               label="فرع البحث"
               options={branchOptions}
               value={selectedBranchId}
               onChange={setSelectedBranchId}
               placeholder="كل الفروع"
-              icon={<Filter className="w-3.5 h-3.5" />}
               showAllOption={true}
             />
+          </div>
 
-            {/* Service filter */}
+          <div className="space-y-3">
             <CustomSelect
               label="نوع الخدمة"
               options={serviceOptions}
               value={selectedService}
               onChange={setSelectedService}
               placeholder="كل الخدمات"
-              icon={<Filter className="w-3.5 h-3.5" />}
             />
+          </div>
 
-            {/* Employee filter only for managers */}
-            {userRole === 'مدير' && (
+          <div className="space-y-3">
+            <CustomSelect
+              label="نوع المصروف"
+              options={expenseTypeOptions}
+              value={selectedExpenseType}
+              onChange={setSelectedExpenseType}
+              placeholder="كل المصروفات"
+            />
+          </div>
+
+          {userRole === 'مدير' && (
+            <div className="space-y-3">
               <CustomSelect
                 label="الموظف"
                 options={employeeOptions}
                 value={selectedEmployee}
                 onChange={setSelectedEmployee}
                 placeholder="كل الموظفين"
-                icon={<Search className="w-3.5 h-3.5" />}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="إجمالي الإيرادات" value={stats.revenue} icon={<TrendingUp className="w-6 h-6" />} color="blue" footer="حصيلة العمليات وسداد المديونيات" />
-        <StatCard title="إجمالي المصروفات" value={stats.expenses} icon={<Wallet className="w-6 h-6" />} color="red" footer="المصروفات النثرية والمكافآت" />
-        <StatCard title="صافي الربح" value={stats.net} icon={<DollarSign className="w-6 h-6" />} color="emerald" footer="الإيرادات مطروحاً منها المصروفات" />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <StatCard title="إجمالي الإيرادات" value={stats.revenue} icon={<TrendingUp />} color="blue" footer="حصيلة العمليات وسداد المديونيات" />
+        <StatCard title="إجمالي المصروفات" value={stats.expenses} icon={<Wallet />} color="red" footer="المصروفات النثرية والمكافآت" />
+        <StatCard title="صافي الربح" value={stats.net} icon={<DollarSign />} color="emerald" footer="الإيرادات مطروحاً منها المصروفات" />
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
-        <div className="bg-gray-50/50 p-2 border-b border-gray-100">
-          <div className="flex bg-white rounded-2xl p-1 gap-1 shadow-sm border border-gray-100">
+      {/* Tabs and Table */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+        <div className="bg-[#033649]/5 p-4 border-b border-[#033649]/5">
+          <div className="flex bg-[#033649]/10 rounded-2xl p-1.5 gap-2 shadow-inner">
             <button
               onClick={() => setActiveTab('entries')}
-              className={`flex-1 py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'entries' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 ${activeTab === 'entries' ? 'bg-[#033649] text-white shadow-premium scale-[1.02]' : 'text-[#033649]/40 hover:text-[#033649] hover:bg-white/50'}`}
             >
-              <ListChecks className="w-4 h-4" />
+              <ListChecks className="w-5 h-5" />
               سجل العمليات ({filteredData.entries.length})
             </button>
             <button
               onClick={() => setActiveTab('expenses')}
-              className={`flex-1 py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'expenses' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 ${activeTab === 'expenses' ? 'bg-red-600 text-white shadow-premium scale-[1.02]' : 'text-red-400/40 hover:text-red-600 hover:bg-white/50'}`}
             >
-              <Receipt className="w-4 h-4" />
+              <Receipt className="w-5 h-5" />
               سجل المصروفات ({filteredData.expenses.length})
             </button>
           </div>
@@ -314,31 +321,47 @@ const Reports: React.FC<ReportsProps> = ({
         <div className="p-0">
           {activeTab === 'entries' ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-right font-bold">
-                <thead className="bg-gray-50 text-gray-400 text-[10px] font-black tracking-widest uppercase">
-                  <tr>
-                    <th className="py-3 px-6 text-right">الحركة</th>
-                    <th className="py-3 px-6 text-center">المبلغ</th>
-                    <th className="py-3 px-6 text-center">الفرع</th>
-                    <th className="py-3 px-6 text-center">التاريخ</th>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                    <th className="py-5 px-8 text-right">بيان الحركة والعميل</th>
+                    <th className="py-5 px-6 text-center">المبلغ</th>
+                    <th className="py-5 px-6 text-center">الفرع</th>
+                    <th className="py-5 px-6 text-center">الموظف</th>
+                    <th className="py-5 px-8 text-center">التاريخ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm font-bold">
+                <tbody className="divide-y divide-[#033649]/5 font-bold relative text-right">
                   {filteredData.entries.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-16 text-center text-gray-300 font-black italic">لا توجد عمليات تطابق البحث</td>
+                      <td colSpan={5} className="py-20 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 bg-[#033649]/5 rounded-full flex items-center justify-center text-[#033649]/20">
+                            <ListChecks className="w-8 h-8" />
+                          </div>
+                          <span className="text-gray-300 font-black italic">لا توجد عمليات تطابق البحث</span>
+                        </div>
+                      </td>
                     </tr>
                   ) : (
                     filteredData.entries.map(e => (
-                      <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-6 text-right">
-                          <span onClick={() => showCustomerDetails(e)} className="cursor-pointer hover:text-blue-600 transition-colors">{e.clientName}</span>
-                          <br />
-                          <span className="text-[10px] text-blue-600 font-bold">{e.serviceType}</span>
+                      <tr key={e.id} className="hover:bg-[#036564]/5 transition-all group font-black text-right">
+                        <td className="py-5 px-8">
+                          <div className="flex flex-col gap-1 items-start">
+                            <span onClick={() => showCustomerDetails(e)} className="font-black text-[#033649] text-lg cursor-pointer hover:text-[#00A6A6] transition-colors">{e.clientName}</span>
+                            <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest w-fit">{e.serviceType}</span>
+                          </div>
                         </td>
-                        <td className="py-3 px-6 text-center text-emerald-600">+{e.amountPaid}</td>
-                        <td className="py-3 px-6 text-center text-[10px] text-gray-400">{e.branchId}</td>
-                        <td className="py-3 px-6 text-center text-gray-400 text-xs">{e.entryDate}</td>
+                        <td className="py-5 px-6 text-center">
+                          <span className="text-2xl font-black text-emerald-600 tracking-tighter">+{e.amountPaid.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
+                        </td>
+                        <td className="py-5 px-6 text-center">
+                          <span className="bg-[#033649]/5 text-[#033649] px-3 py-1 rounded-xl text-[10px] font-black">{e.branchId}</span>
+                        </td>
+                        <td className="py-5 px-6 text-center">
+                          <span className="bg-[#00A6A6]/5 text-[#00A6A6] px-3 py-1 rounded-xl text-[10px] font-black">{e.recordedBy || '-'}</span>
+                        </td>
+                        <td className="py-5 px-8 text-center text-[#033649]/40 text-[11px] font-black tracking-tighter">{e.entryDate}</td>
                       </tr>
                     ))
                   )}
@@ -347,31 +370,47 @@ const Reports: React.FC<ReportsProps> = ({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-right font-bold">
-                <thead className="bg-gray-50 text-gray-400 text-[10px] font-black tracking-widest uppercase">
-                  <tr>
-                    <th className="py-3 px-6 text-right">البند / التصنيف</th>
-                    <th className="py-3 px-6 text-center">المبلغ</th>
-                    <th className="py-3 px-6 text-center">الفرع</th>
-                    <th className="py-3 px-6 text-center">التاريخ</th>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-red-900 text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                    <th className="py-5 px-8 text-right">البند / التصنيف</th>
+                    <th className="py-5 px-6 text-center">المبلغ</th>
+                    <th className="py-5 px-6 text-center">الفرع</th>
+                    <th className="py-5 px-6 text-center">الموظف</th>
+                    <th className="py-5 px-8 text-center">التاريخ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm font-bold">
+                <tbody className="divide-y divide-red-900/5 font-bold relative text-right">
                   {filteredData.expenses.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-16 text-center text-gray-300 font-black italic">لا توجد مصروفات تطابق البحث</td>
+                      <td colSpan={5} className="py-20 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-200">
+                            <Receipt className="w-8 h-8" />
+                          </div>
+                          <span className="text-gray-300 font-black italic">لا توجد مصروفات تطابق البحث</span>
+                        </div>
+                      </td>
                     </tr>
                   ) : (
                     filteredData.expenses.map(ex => (
-                      <tr key={ex.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-6 text-right">
-                          <span className="text-gray-900">{ex.category}</span>
-                          <br />
-                          <span className="text-[10px] text-gray-400 font-medium">{ex.notes || 'بدون تفاصيل'}</span>
+                      <tr key={ex.id} className="hover:bg-red-50 transition-all group font-black text-right">
+                        <td className="py-5 px-8">
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="font-black text-red-900 text-lg uppercase">{ex.category}</span>
+                            <span className="text-[11px] text-red-900/40 font-bold italic">{ex.notes || 'بدون تفاصيل'}</span>
+                          </div>
                         </td>
-                        <td className="py-3 px-6 text-center text-red-600">-{ex.amount}</td>
-                        <td className="py-3 px-6 text-center text-[10px] text-gray-400">{ex.branchId}</td>
-                        <td className="py-3 px-6 text-center text-gray-400 text-xs">{ex.date}</td>
+                        <td className="py-5 px-6 text-center">
+                          <span className="text-2xl font-black text-red-600 tracking-tighter">-{ex.amount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
+                        </td>
+                        <td className="py-5 px-6 text-center">
+                          <span className="bg-red-50 text-red-900/60 px-3 py-1 rounded-xl text-[10px] font-black">{ex.branchId}</span>
+                        </td>
+                        <td className="py-5 px-6 text-center">
+                          <span className="bg-[#033649]/5 text-[#033649] px-3 py-1 rounded-xl text-[10px] font-black">{ex.recordedBy || '-'}</span>
+                        </td>
+                        <td className="py-5 px-8 text-center text-red-900/40 text-[11px] font-black tracking-tighter">{ex.date}</td>
                       </tr>
                     ))
                   )}

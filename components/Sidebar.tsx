@@ -73,35 +73,24 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
     return (
       <div className="space-y-6 text-center">
         {!currentBranch ? (
-          <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-3xl text-amber-700">
+          <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-3xl text-amber-700">
             <AlertTriangle className="w-12 h-12 mx-auto mb-3" />
-            <h3 className="text-lg font-black italic">تنبيه: الفرع غير محدد</h3>
-            <p className="text-xs font-bold mt-2">لا يمكنك تسجيل الحضور حالياً لعدم وجود بيانات فرع متصلة بحسابك. يرجى مراجعة الإدارة.</p>
+            <h3 className="text-base font-black italic">تنبيه: الفرع غير محدد</h3>
+            <p className="text-[10px] font-bold mt-1">قم باختيار الفرع أولا</p>
           </div>
         ) : (
-          <div className={`p-6 rounded-3xl border-2 transition-all duration-500 ${attendanceStatus === 'checked-in' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+          <div className={`p-4 rounded-3xl border-2 transition-all duration-500 ${attendanceStatus === 'checked-in' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 transition-colors ${attendanceStatus === 'checked-in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
               {attendanceStatus === 'checked-in' ? <Wifi className="w-8 h-8 animate-pulse" /> : <WifiOff className="w-8 h-8" />}
             </div>
-            <h3 className={`text-xl font-black ${attendanceStatus === 'checked-in' ? 'text-green-700' : 'text-red-700'}`}>
+            <h3 className={`text-lg font-black ${attendanceStatus === 'checked-in' ? 'text-green-700' : 'text-red-700'}`}>
               {attendanceStatus === 'checked-in' ? 'أنت متصل بالعمل' : 'غير مسجل حضور'}
             </h3>
-            <p className="text-gray-500 font-bold text-sm mt-2">
+            <p className="text-gray-500 font-bold text-xs mt-1">
               {attendanceStatus === 'checked-in' ? 'نتمنى لك وردية موفقة' : 'برجاء تسجيل الحضور لفتح النظام'}
             </p>
           </div>
         )}
-
-        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-right">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">بيانات الاتصال</p>
-          <div className="flex justify-between items-center">
-            <span className="font-bold text-gray-800 flex items-center gap-2 text-sm">
-              <MapPin className="w-4 h-4 text-blue-500" />
-              {currentBranch?.name || <span className="text-amber-600 italic">فرع غير مخصص</span>}
-            </span>
-            <span className="text-xs font-mono font-bold text-blue-600">IP: {ip}</span>
-          </div>
-        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <button
@@ -116,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 showQuickStatus(result.message || 'فشل تسجيل الحضور', 'error');
               }
             }}
-            className={`py-4 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-in' || !currentBranch
+            className={`py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-in' || !currentBranch
               ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
               : 'bg-green-600 text-white shadow-green-100 hover:bg-green-700'
               }`}
@@ -135,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 showQuickStatus(result.message || 'فشل تسجيل الانصراف', 'error');
               }
             }}
-            className={`py-4 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-out' || !currentBranch
+            className={`py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-out' || !currentBranch
               ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
               : 'bg-red-600 text-white shadow-red-100 hover:bg-red-700'
               }`}
@@ -147,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
         {normalizeArabic(userRole) === normalizeArabic('مدير') && (
           <button
             onClick={showHRReport}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm bg-blue-600 text-white shadow-lg shadow-blue-100 mt-2 hover:bg-blue-700 transition-all active:scale-95"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs bg-blue-600 text-white shadow-lg shadow-blue-100 mt-1 hover:bg-blue-700 transition-all active:scale-95"
           >
             <FileText className="w-5 h-5" />
             عرض تقرير ساعات عمل الموظفين
@@ -235,12 +224,12 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${isActive
-      ? 'bg-blue-800 text-white shadow-md'
-      : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+    `flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${isActive
+      ? 'bg-gradient-to-r from-[#00A6A6] to-[#036564] text-white shadow-lg shadow-[#00A6A6]/20 scale-[1.02]'
+      : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6]'
     }`;
 
-  const controlInputClass = "w-full p-2.5 mt-1 border-2 border-blue-200 rounded-lg bg-white text-black font-bold text-xs focus:ring-4 focus:ring-blue-50 focus:border-blue-600 outline-none transition-all shadow-sm";
+  const controlInputClass = "w-full p-2.5 mt-1 border border-white/10 rounded-xl bg-black/20 text-white font-bold text-xs focus:ring-4 focus:ring-[#00A6A6]/20 focus:border-[#00A6A6] outline-none transition-all";
   const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
 
   return (
@@ -255,59 +244,61 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-xl z-30 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 h-full w-64 bg-[#01404E] shadow-2xl z-30 transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:translate-x-0 md:static ${isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo Area - Fixed at top */}
-          <div className="sticky top-0 z-20 flex flex-col items-center justify-center p-6 border-b border-gray-100 gap-3 bg-white shadow-sm">
-            <div className="w-48 h-12 flex items-center justify-center overflow-hidden">
+          <div className="sticky top-0 z-20 flex flex-col items-center justify-center p-6 border-b border-white/5 gap-3 bg-[#01404E]/80 backdrop-blur-lg">
+            <div className="w-48 h-12 flex items-center justify-center overflow-hidden drop-shadow-2xl">
               <img
                 src="/assets/sidebar-logo.jpg"
                 alt="Target Logo"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain brightness-110"
               />
             </div>
-            <h1 className="text-sm font-black text-blue-900 flex items-center gap-2 tracking-tight uppercase">
-              <FileText className="w-4 h-4 text-red-600" />
+            <h1 className="text-sm font-black text-[#00A6A6] flex items-center gap-2 tracking-tight uppercase">
+              <FileText className="w-4 h-4 text-[#F2E3D5]" />
               للخدمات الحكومية
             </h1>
           </div>
 
           {/* Quick Controls Section */}
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+          <div className="p-4 border-b border-white/5 bg-black/10">
             <div className="space-y-3">
               <div>
                 <CustomSelect
                   label="الفرع الحالي"
+                  labelClassName="text-white/60"
                   options={branchOptions}
                   value={currentBranch?.id || ''}
                   onChange={(val) => {
                     const selected = branches.find(b => b.id === val);
                     if (selected) onBranchChange(selected);
                   }}
-                  icon={<MapPin className="w-3 h-3 text-blue-600" />}
+                  icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
                   placeholder="اختر الفرع..."
                   disabled={userRole === 'موظف'}
+                  dark={true}
                 />
               </div>
 
               <div>
-                <label className="flex items-center justify-between gap-1 text-xs font-bold text-gray-600 px-1">
+                <label className="flex items-center justify-between gap-1 text-[10px] font-black text-white/40 px-1 uppercase tracking-wider">
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-secondary" />
+                    <Calendar className="w-3 h-3" />
                     التاريخ
                   </div>
-                  <span className="text-[9px] text-amber-600 flex items-center gap-0.5">
+                  <span className="text-[9px] text-[#00A6A6] flex items-center gap-0.5">
                     <Lock className="w-2.5 h-2.5" />
-                    مثبت تلقائياً
+                    مثبت
                   </span>
                 </label>
                 <input
                   type="date"
                   value={currentDate || ''}
                   readOnly
-                  className={`${controlInputClass} bg-gray-50 border-gray-100 cursor-not-allowed opacity-80`}
+                  className={`${controlInputClass} opacity-50 cursor-not-allowed`}
                 />
               </div>
             </div>
@@ -368,16 +359,16 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
               </NavLink>
             )}
 
-            <div className="border-t border-gray-100 my-2"></div>
+            <div className="border-t border-white/5 my-4 mx-4"></div>
 
             {/* Attendance Button/Link */}
             {userRole === 'مدير' ? (
               <NavLink
                 to="/admin/attendance"
                 className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border-2 ${isActive
-                    ? 'bg-blue-800 border-blue-800 text-white shadow-md'
-                    : 'bg-white border-blue-100 text-blue-600 hover:bg-blue-50'
+                  `w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
+                    ? 'bg-[#00A6A6] text-white shadow-lg'
+                    : 'bg-black/20 text-gray-300 hover:bg-black/30'
                   }`
                 }
                 onClick={() => setIsOpen(false)}
@@ -388,22 +379,22 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             ) : userRole !== 'مشاهد' ? (
               <button
                 onClick={handleAttendanceClick}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border-2 ${attendanceStatus === 'checked-in'
-                  ? 'bg-green-50 border-green-200 text-green-700'
-                  : 'bg-white border-red-100 text-gray-500 hover:bg-red-50 hover:text-red-600'
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
+                  ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                  : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
                   }`}
               >
-                <div className={`w-2.5 h-2.5 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
                 <span className="font-black text-sm">الحضور والانصراف</span>
               </button>
             ) : null}
           </nav>
 
           {/* Logout Button */}
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-4 border-t border-white/5">
             <button
               onClick={onLogout}
-              className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              className="flex w-full items-center gap-3 px-4 py-3.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
             >
               <LogOut className="w-5 h-5" />
               <span>تسجيل الخروج</span>
