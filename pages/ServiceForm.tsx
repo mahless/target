@@ -231,6 +231,12 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       }
     }
 
+    // التحقق من توافر الباركود للمخزن الداخلي
+    if (serviceType === 'بطاقة رقم قومي' && !isExternalBarcode && !barcode) {
+      setError("لا يمكن إتمام المعاملة؛ مخزن الباركود فارغ.ل.");
+      return;
+    }
+
     // Removed setIsSubmitting(true) as it's handled globally in onAddEntry
     try {
       const entryId = Date.now().toString();
