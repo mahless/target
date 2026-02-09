@@ -82,31 +82,42 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const dailyEntries = useMemo(() => {
     const normalizedBranch = normalizeArabic(branchId);
     const normalizedDateToday = normalizeDate(currentDate);
+    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+    const normalizedUsername = normalizeArabic(username);
 
-    return allEntries.filter(e =>
-      normalizeArabic(e.branchId) === normalizedBranch &&
-      normalizeDate(e.entryDate) === normalizedDateToday
-    );
-  }, [allEntries, branchId, currentDate]);
+    return allEntries.filter(e => {
+      const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
+      const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
+      const matchesUser = isManager || normalizeArabic(e.recordedBy || '') === normalizedUsername;
+      return matchesBranch && matchesDate && matchesUser;
+    });
+  }, [allEntries, branchId, currentDate, userRole, username]);
 
   const dailyExpenses = useMemo(() => {
     const normalizedBranch = normalizeArabic(branchId);
     const normalizedDateToday = normalizeDate(currentDate);
+    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+    const normalizedUsername = normalizeArabic(username);
 
-    return allExpenses.filter(e =>
-      normalizeArabic(e.branchId) === normalizedBranch &&
-      normalizeDate(e.date) === normalizedDateToday
-    );
-  }, [allExpenses, branchId, currentDate]);
+    return allExpenses.filter(e => {
+      const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
+      const matchesDate = normalizeDate(e.date) === normalizedDateToday;
+      const matchesUser = isManager || normalizeArabic(e.recordedBy || '') === normalizedUsername;
+      return matchesBranch && matchesDate && matchesUser;
+    });
+  }, [allExpenses, branchId, currentDate, userRole, username]);
 
   const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
 
   const currentBranch = useMemo(() => {
+    if (branchId === 'all') return null;
     const normId = normalizeArabic(branchId);
     return branches.find(b => normalizeArabic(b.id) === normId);
   }, [branches, branchId]);
 
-  const currentBranchBalance = currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0;
+  const currentBranchBalance = branchId === 'all'
+    ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
+    : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
@@ -141,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             </div>
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
               <span className="text-[10px] text-gray-400 font-black block mb-0.5">المتبقي</span>
-              <p className="font-black text-red-600 text-xs">{toEnglishDigits(String(entry.remainingAmount))} ج.م</p>
+              <p className={`font-black text-xs ${entry.remainingAmount > 0 ? 'text-red-600' : 'text-gray-400'}`}>{toEnglishDigits(String(entry.remainingAmount))} ج.م</p>
             </div>
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
               <span className="text-[10px] text-gray-400 font-black block mb-0.5">السرعة</span>
@@ -391,22 +402,19 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     // حالة البحث: البحث في كل عمليات الفرع (تاريخ مفتوح)
     if (debouncedSearchTerm) {
       const normalizedBranch = normalizeArabic(branchId);
+      const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
       const normalizedUsername = normalizeArabic(username);
 
       return allEntries.filter(e => {
-        const matchesBranch = normalizeArabic(e.branchId) === normalizedBranch;
+        const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
         const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
           e.clientName,
           e.nationalId,
           e.phoneNumber
         ]);
+        const matchesUser = isManager || normalizeArabic(e.recordedBy || '') === normalizedUsername;
 
-        // إذا كان المستخدم "مشاهد"، نعرض فقط عملياته هو
-        if (userRole === 'مشاهد') {
-          return matchesBranch && matchesSearch && normalizeArabic(e.recordedBy || '') === normalizedUsername;
-        }
-
-        return matchesBranch && matchesSearch;
+        return matchesBranch && matchesSearch && matchesUser;
       });
     }
 
@@ -469,6 +477,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             <thead>
               <tr className="bg-[#033649] text-white/60 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان الحركة</th>
+                <th className="py-5 px-8 text-center">الموظف</th>
                 <th className="py-5 px-8 text-center">المبلغ</th>
                 <th className="py-5 px-8 text-center">المتبقي</th>
                 {userRole !== 'مشاهد' && <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>}
@@ -476,7 +485,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             </thead>
             <tbody className="divide-y divide-[#033649]/5 text-sm font-bold">
               {filteredEntries.length === 0 ? (
-                <tr><td colSpan={4} className="py-16 text-center text-gray-300 font-black">لا توجد عمليات اليوم</td></tr>
+                <tr><td colSpan={5} className="py-16 text-center text-gray-300 font-black">لا توجد عمليات اليوم</td></tr>
               ) : (
                 filteredEntries.map((entry) => (
                   <tr key={entry.id} className="hover:bg-[#036564]/5 transition-all group">
@@ -492,6 +501,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                         <span className="text-[11px] text-[#036564]/70 font-black">{entry.serviceType}</span>
                       </div>
                     </td>
+                    <td className="py-5 px-8 text-center font-black text-[#033649]/60 text-xs">{entry.recordedBy || '-'}</td>
                     <td className="py-5 px-8 text-center font-black text-[#033649] text-lg">{toEnglishDigits(String(entry.amountPaid))}</td>
                     <td className="py-5 px-8 text-center text-red-600 font-black text-lg">{toEnglishDigits(String(entry.remainingAmount))}</td>
                     {userRole !== 'مشاهد' && (

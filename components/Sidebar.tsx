@@ -230,7 +230,10 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
     }`;
 
   const controlInputClass = "w-full p-2.5 mt-1 border border-white/10 rounded-xl bg-black/20 text-white font-bold text-xs focus:ring-4 focus:ring-[#00A6A6]/20 focus:border-[#00A6A6] outline-none transition-all";
-  const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
+  const branchOptions = useMemo(() => [
+    { id: 'all', name: 'كل الفروع' },
+    ...branches.map(b => ({ id: b.id, name: b.name }))
+  ], [branches]);
 
   return (
     <>
@@ -271,8 +274,12 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                     label="الفرع الحالي"
                     labelClassName="text-white/60"
                     options={branchOptions}
-                    value={currentBranch?.id || ''}
+                    value={currentBranch?.id || 'all'}
                     onChange={(val) => {
+                      if (val === 'all') {
+                        onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                        return;
+                      }
                       const selected = branches.find(b => b.id === val);
                       if (selected) onBranchChange(selected);
                     }}

@@ -138,7 +138,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     } else {
       setBarcode('');
       setBarcodeNotFound(true);
-      setError(`عذراً، مخزن فرعك من النوع (${category}) فارغ، اتصل بالمسؤول.`);
+      setError(`عذراً، مخزن فرعك من النوع (${category}) فارغ ...`);
     }
     setIsFetchingBarcode(false);
   };
@@ -233,7 +233,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
     // التحقق من توافر الباركود للمخزن الداخلي
     if (serviceType === 'بطاقة رقم قومي' && !isExternalBarcode && !barcode) {
-      setError("لا يمكن إتمام المعاملة؛ مخزن الباركود فارغ..");
+      setError(" لا يمكن إتمام المعاملة؛ مخزن الباركود فارغ ...");
       return;
     }
 
