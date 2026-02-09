@@ -128,14 +128,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return (
         <div className={`p-4 md:p-8 space-y-8 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Header */}
-            <div className="bg-[#033649] p-8 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 text-white">
-                <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
-                        <Lock className="w-8 h-8" />
+            <div className="bg-[#033649] p-4 md:p-6 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 text-white">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
+                        <Lock className="w-7 h-7" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black tracking-tight">إدارة النظام</h2>
-                        <p className="text-white/40 text-xs font-black tracking-[0.2em] uppercase mt-1">تحكم كامل في الموظفين والفروع</p>
+                        <h2 className="text-xl md:text-2xl font-black tracking-tight">إدارة النظام</h2>
+                        <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase mt-0.5">تحكم كامل في الموظفين والفروع</p>
                     </div>
                 </div>
 

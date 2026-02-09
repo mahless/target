@@ -35,13 +35,13 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
   };
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-5 rounded-[2rem] shadow-2xl transition-all duration-500 hover:translate-y-[-8px] hover:shadow-lux group animate-premium-in`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3.5 rounded-[2rem] shadow-2xl transition-all duration-500 hover:translate-y-[-8px] hover:shadow-lux group animate-premium-in`}>
       {/* Decorative background circle */}
       <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
 
       <div className="relative z-10 flex justify-between items-start">
         <div>
-          <p className="text-xs text-white/70 font-black uppercase tracking-[0.2em] mb-1.5">{title}</p>
+          <p className="text-xs text-white/70 font-black uppercase tracking-[0.2em] mb-1">{title}</p>
           <div className="flex items-baseline gap-1">
             <p className="text-3xl font-black">{value?.toLocaleString('en-US')}</p>
             <span className="text-[10px] font-bold opacity-60">ج.م</span>
@@ -51,7 +51,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
           {React.cloneElement(icon, { className: "w-5.5 h-5.5 text-white" })}
         </div>
       </div>
-      <div className="relative z-10 mt-4 pt-3 border-t border-white/5 text-[9px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
+      <div className="relative z-10 mt-3 pt-2 border-t border-white/5 text-[9px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-[#00A6A6] animate-pulse"></span>
         {footer}
       </div>
@@ -455,7 +455,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
       {/* Main Table Container */}
       <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium overflow-hidden border border-white/20 animate-premium-in">
-        <div className="p-6 md:p-8 border-b border-[#033649]/5 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-gradient-to-l from-white/50 to-transparent">
+        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-[#033649]/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-l from-white/50 to-transparent">
           <div className="flex items-center gap-4">
             <div className={`w-3 h-10 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
             <div>

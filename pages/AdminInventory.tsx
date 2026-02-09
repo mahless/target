@@ -369,36 +369,38 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                 </div>
 
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {branches.map(b => (
-                            <div key={b.id} className="relative overflow-hidden bg-white/60 p-6 rounded-[2rem] border border-white flex flex-col gap-4 shadow-premium group">
-                                <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
-                                <p className="text-[10px] font-black text-[#033649]/40 mb-2 border-b border-[#033649]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="text-center group-hover:scale-110 transition-transform">
-                                        <p className="text-[8px] font-black text-[#033649]/40 mb-1">عادي</p>
-                                        <p className="text-2xl font-black text-[#033649]">{stats[b.id]?.['عادي'] || 0}</p>
-                                    </div>
-                                    <div className="text-center border-x border-[#033649]/5 group-hover:scale-110 transition-transform">
-                                        <p className="text-[8px] font-black text-[#036564]/60 mb-1">مستعجل</p>
-                                        <p className="text-2xl font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
-                                    </div>
-                                    <div className="text-center group-hover:scale-110 transition-transform">
-                                        <p className="text-[8px] font-black text-[#00A6A6]/60 mb-1">فوري</p>
-                                        <p className="text-2xl font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
+                    <div className="max-h-[325px] overflow-y-auto custom-scrollbar pr-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {branches.map(b => (
+                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-6 rounded-[2rem] border border-white flex flex-col gap-4 shadow-premium group">
+                                    <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
+                                    <p className="text-[10px] font-black text-[#033649]/40 mb-2 border-b border-[#033649]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="text-center group-hover:scale-110 transition-transform">
+                                            <p className="text-[8px] font-black text-[#033649]/40 mb-1">عادي</p>
+                                            <p className="text-2xl font-black text-[#033649]">{stats[b.id]?.['عادي'] || 0}</p>
+                                        </div>
+                                        <div className="text-center border-x border-[#033649]/5 group-hover:scale-110 transition-transform">
+                                            <p className="text-[8px] font-black text-[#036564]/60 mb-1">مستعجل</p>
+                                            <p className="text-2xl font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
+                                        </div>
+                                        <div className="text-center group-hover:scale-110 transition-transform">
+                                            <p className="text-[8px] font-black text-[#00A6A6]/60 mb-1">فوري</p>
+                                            <p className="text-2xl font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-                        <div className="p-4 md:p-6 lg:p-8 border-b border-[#033649]/5 flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-gradient-to-l from-[#033649]/5 to-transparent">
+                        <div className="p-2 md:p-3 border-b border-[#033649]/5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gradient-to-l from-[#033649]/5 to-transparent">
                             <h4 className="font-black text-xl text-[#033649] flex items-center gap-3 shrink-0">
                                 <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
                             </h4>
-                            <div className="flex flex-col md:flex-row gap-4 items-center w-full lg:w-auto">
-                                <div className="w-full md:w-48">
+                            <div className="flex flex-row gap-3 items-center justify-end flex-1 max-w-2xl">
+                                <div className="w-32 sm:w-36">
                                     <CustomSelect
                                         options={statusOptions}
                                         value={statusFilter}
@@ -406,25 +408,27 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         placeholder="كل الحالات"
                                     />
                                 </div>
-                                <SearchInput
-                                    value={searchTerm}
-                                    onChange={setSearchTerm}
-                                    placeholder="بحث بالباركود..."
-                                    className="w-full md:w-64"
-                                />
+                                <div className="flex-1 min-w-0">
+                                    <SearchInput
+                                        value={searchTerm}
+                                        onChange={setSearchTerm}
+                                        placeholder="بحث بالباركود..."
+                                        className="w-full"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto text-right">
+                        <div className="overflow-x-auto overflow-y-auto max-h-[440px] text-right custom-scrollbar">
                             <table className="w-full border-collapse">
-                                <thead>
+                                <thead className="sticky top-0 z-20">
                                     <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
-                                        <th className="py-5 px-6 text-center first:rounded-tr-[2rem]">الباركود</th>
-                                        <th className="py-5 px-6 text-center">الفئة</th>
-                                        <th className="py-5 px-6 text-center">الفرع</th>
-                                        <th className="py-5 px-6 text-center">الحالة</th>
-                                        <th className="py-5 px-6 text-center">الموظف / الطلب</th>
-                                        {userRole !== 'مشاهد' && <th className="py-5 px-6 text-center last:rounded-tl-[2rem]">إجراءات</th>}
+                                        <th className="py-3 px-4 text-center first:rounded-tr-[2rem]">الباركود</th>
+                                        <th className="py-3 px-4 text-center">الفئة</th>
+                                        <th className="py-3 px-4 text-center">الفرع</th>
+                                        <th className="py-3 px-4 text-center">الحالة</th>
+                                        <th className="py-3 px-4 text-center">الموظف</th>
+                                        {userRole !== 'مشاهد' && <th className="py-3 px-4 text-center last:rounded-tl-[2rem]">إجراءات</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#033649]/5 font-bold relative">

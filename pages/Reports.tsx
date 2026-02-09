@@ -33,19 +33,19 @@ const StatCard = ({ title, value, icon, color, footer }: any) => {
   const theme = colorMap[color] || colorMap.blue;
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-5 rounded-[2.5rem] ${theme.shadow} shadow-premium group transition-all duration-500 hover:scale-[1.02]`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-4 rounded-[2.5rem] ${theme.shadow} shadow-premium group transition-all duration-500 hover:scale-[1.02]`}>
       <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
-      <div className="relative z-10 flex flex-col h-full justify-between gap-3">
+      <div className="relative z-10 flex flex-col h-full justify-between gap-1.5">
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
-            <span className="text-xs font-black text-white/40 uppercase tracking-[0.3em] mb-2">{title}</span>
+            <span className="text-xs font-black text-white/40 uppercase tracking-[0.3em] mb-1">{title}</span>
             <span className="text-4xl font-black text-white tracking-tighter">{value.toLocaleString()}<span className="text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
           </div>
-          <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
+          <div className="p-3 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
             {React.cloneElement(icon, { className: 'w-7 h-7' })}
           </div>
         </div>
-        <div className="pt-3 border-t border-white/5 text-[10px] text-white/40 font-black tracking-widest uppercase">
+        <div className="pt-2 border-t border-white/5 text-[10px] text-white/40 font-black tracking-widest uppercase">
           {footer}
         </div>
       </div>
@@ -190,23 +190,23 @@ const Reports: React.FC<ReportsProps> = ({
   const inputClasses = "w-full p-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
 
   return (
-    <div className="p-3 md:p-5 space-y-4 text-right animate-premium-in">
+    <div className="p-4 md:p-8 space-y-8 text-right animate-premium-in">
       {/* Header */}
-      <div className="bg-[#033649] p-3 md:p-4 rounded-[2rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-white/5 text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#00A6A6]/20 rounded-xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
-            <Receipt className="w-5 h-5" />
+      <div className="bg-[#033649] p-4 md:p-5 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
+            <Receipt className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-black tracking-tight">التقارير التحليلية</h2>
-            <p className="text-white/40 text-[9px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الأداء والتدفقات النقدية</p>
+            <h2 className="text-xl md:text-2xl font-black tracking-tight">التقارير التحليلية</h2>
+            <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الأداء والتدفقات النقدية</p>
           </div>
         </div>
         {userRole !== 'مدير' && (
           <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
             <div>
-              <p className="text-[9px] text-white/40 font-black uppercase">الموظف الحالي</p>
+              <p className="text-[10px] text-white/40 font-black uppercase">الموظف الحالي</p>
               <p className="text-xs font-black text-white">{username}</p>
             </div>
           </div>
@@ -214,8 +214,8 @@ const Reports: React.FC<ReportsProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-premium border border-white/20 space-y-8 relative z-30">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-[#033649]/5">
+      <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-6 relative z-30">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-[#033649]/5">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
             <h3 className="font-black text-[#033649] text-xl">تخصيص البحث والفترة</h3>
@@ -288,17 +288,17 @@ const Reports: React.FC<ReportsProps> = ({
             </div>
           )}
         </div>
-      </div>
+      </div >
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      < div className="grid grid-cols-1 md:grid-cols-3 gap-5" >
         <StatCard title="إجمالي الإيرادات" value={stats.revenue} icon={<TrendingUp />} color="blue" footer="حصيلة العمليات وسداد المديونيات" />
         <StatCard title="إجمالي المصروفات" value={stats.expenses} icon={<Wallet />} color="red" footer="المصروفات النثرية والمكافآت" />
         <StatCard title="صافي الربح" value={stats.net} icon={<DollarSign />} color="emerald" footer="الإيرادات مطروحاً منها المصروفات" />
-      </div>
+      </div >
 
       {/* Tabs and Table */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+      < div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden" >
         <div className="bg-[#033649]/5 p-4 border-b border-[#033649]/5">
           <div className="flex bg-[#033649]/10 rounded-2xl p-1.5 gap-2 shadow-inner">
             <button
@@ -419,8 +419,8 @@ const Reports: React.FC<ReportsProps> = ({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
