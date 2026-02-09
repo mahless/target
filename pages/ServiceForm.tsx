@@ -233,7 +233,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
     // التحقق من توافر الباركود للمخزن الداخلي
     if (serviceType === 'بطاقة رقم قومي' && !isExternalBarcode && !barcode) {
-      setError("لا يمكن إتمام المعاملة؛ مخزن الباركود فارغ.ل.");
+      setError("لا يمكن إتمام المعاملة؛ مخزن الباركود فارغ..");
       return;
     }
 
