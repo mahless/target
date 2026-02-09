@@ -12,7 +12,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date, username, pageTitle }) => {
   return (
-    <header className="bg-[#033649] h-20 shadow-[0_4px_20px_rgba(0,0,0,0.2)] flex items-center justify-between px-6 sticky top-0 z-20 text-white border-b border-white/5">
+    <header className="bg-[#033649] h-16 shadow-[0_4px_20px_rgba(0,0,0,0.2)] flex items-center justify-between px-6 sticky top-0 z-20 text-white border-b border-white/5">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
@@ -45,8 +45,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date,
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#00A6A6] to-[#036564] text-white flex items-center justify-center font-black shadow-lg shadow-[#00A6A6]/20 transition-transform group-hover:scale-110">
             <User className="w-5 h-5" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-white/40 uppercase font-black leading-none mb-1">المستخدم المتصل</span>
+          <div className="flex flex-col justify-center">
             <span className="hidden sm:inline font-black text-sm leading-none">{username}</span>
           </div>
         </div>

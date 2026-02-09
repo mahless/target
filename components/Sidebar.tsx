@@ -249,156 +249,157 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
       >
         <div className="flex flex-col h-full">
           {/* Logo Area - Fixed at top */}
-          <div className="sticky top-0 z-20 flex flex-col items-center justify-center p-6 border-b border-white/5 gap-3 bg-[#01404E]/80 backdrop-blur-lg">
-            <div className="w-48 h-12 flex items-center justify-center overflow-hidden drop-shadow-2xl">
+          <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-b border-black/10 bg-white overflow-hidden">
+            <div className="w-full flex items-center justify-center drop-shadow-sm">
               <img
                 src="/assets/sidebar-logo.jpg"
                 alt="Target Logo"
-                className="w-full h-full object-contain brightness-110"
+                className="w-full h-auto object-contain"
               />
             </div>
-            <h1 className="text-sm font-black text-[#00A6A6] flex items-center gap-2 tracking-tight uppercase">
-              <FileText className="w-4 h-4 text-[#F2E3D5]" />
+            <h1 className="text-lg font-black text-black tracking-tight uppercase py-2">
               للخدمات الحكومية
             </h1>
           </div>
 
-          {/* Quick Controls Section */}
-          <div className="p-4 border-b border-white/5 bg-black/10">
-            <div className="space-y-3">
-              <div>
-                <CustomSelect
-                  label="الفرع الحالي"
-                  labelClassName="text-white/60"
-                  options={branchOptions}
-                  value={currentBranch?.id || ''}
-                  onChange={(val) => {
-                    const selected = branches.find(b => b.id === val);
-                    if (selected) onBranchChange(selected);
-                  }}
-                  icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
-                  placeholder="اختر الفرع..."
-                  disabled={userRole === 'موظف'}
-                  dark={true}
-                />
-              </div>
+          <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+            {/* Quick Controls Section */}
+            <div className="p-4 border-b border-white/5 bg-black/10">
+              <div className="space-y-3">
+                <div>
+                  <CustomSelect
+                    label="الفرع الحالي"
+                    labelClassName="text-white/60"
+                    options={branchOptions}
+                    value={currentBranch?.id || ''}
+                    onChange={(val) => {
+                      const selected = branches.find(b => b.id === val);
+                      if (selected) onBranchChange(selected);
+                    }}
+                    icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
+                    placeholder="اختر الفرع..."
+                    disabled={userRole === 'موظف'}
+                    dark={true}
+                  />
+                </div>
 
-              <div>
-                <label className="flex items-center justify-between gap-1 text-[10px] font-black text-white/40 px-1 uppercase tracking-wider">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    التاريخ
-                  </div>
-                  <span className="text-[9px] text-[#00A6A6] flex items-center gap-0.5">
-                    <Lock className="w-2.5 h-2.5" />
-                    مثبت
-                  </span>
-                </label>
-                <input
-                  type="date"
-                  value={currentDate || ''}
-                  readOnly
-                  className={`${controlInputClass} opacity-50 cursor-not-allowed`}
-                />
+                <div>
+                  <label className="flex items-center justify-between gap-1 text-[10px] font-black text-white/40 px-1 uppercase tracking-wider">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      التاريخ
+                    </div>
+                    <span className="text-[9px] text-[#00A6A6] flex items-center gap-0.5">
+                      <Lock className="w-2.5 h-2.5" />
+                      مثبت
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={currentDate || ''}
+                    readOnly
+                    className={`${controlInputClass} opacity-50 cursor-not-allowed`}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            <NavLink to="/dashboard" className={linkClass} onClick={() => setIsOpen(false)}>
-              <Home className="w-5 h-5" />
-              <span>الصفحة الرئيسية</span>
-            </NavLink>
-
-            {userRole !== 'مشاهد' && (
-              <NavLink to="/new-service" className={linkClass} onClick={() => setIsOpen(false)}>
-                <PlusCircle className="w-5 h-5" />
-                <span>تسجيل خدمة جديدة</span>
+            {/* Navigation Links */}
+            <nav className="p-4 space-y-2">
+              <NavLink to="/dashboard" className={linkClass} onClick={() => setIsOpen(false)}>
+                <Home className="w-5 h-5" />
+                <span>الصفحة الرئيسية</span>
               </NavLink>
-            )}
 
-            {userRole !== 'مشاهد' && (
-              <NavLink to="/receivables" className={linkClass} onClick={() => setIsOpen(false)}>
-                <Clock className="w-5 h-5" />
-                <span>المتبقيات</span>
+              {userRole !== 'مشاهد' && (
+                <NavLink to="/new-service" className={linkClass} onClick={() => setIsOpen(false)}>
+                  <PlusCircle className="w-5 h-5" />
+                  <span>تسجيل خدمة جديدة</span>
+                </NavLink>
+              )}
+
+              {userRole !== 'مشاهد' && (
+                <NavLink to="/receivables" className={linkClass} onClick={() => setIsOpen(false)}>
+                  <Clock className="w-5 h-5" />
+                  <span>المتبقيات</span>
+                </NavLink>
+              )}
+
+              {userRole !== 'مشاهد' && (
+                <NavLink to="/expenses" className={linkClass} onClick={() => setIsOpen(false)}>
+                  <Wallet className="w-5 h-5" />
+                  <span>المصروفات</span>
+                </NavLink>
+              )}
+
+              <NavLink to="/reports" className={linkClass} onClick={() => setIsOpen(false)}>
+                <BarChart3 className="w-5 h-5" />
+                <span>التقارير</span>
               </NavLink>
-            )}
 
-            {userRole !== 'مشاهد' && (
-              <NavLink to="/expenses" className={linkClass} onClick={() => setIsOpen(false)}>
-                <Wallet className="w-5 h-5" />
-                <span>المصروفات</span>
-              </NavLink>
-            )}
+              {userRole !== 'مشاهد' && (
+                <NavLink to="/third-party-settlements" className={linkClass} onClick={() => setIsOpen(false)}>
+                  <Users className="w-5 h-5" />
+                  <span>تسويات مكتب خارجي</span>
+                </NavLink>
+              )}
 
-            <NavLink to="/reports" className={linkClass} onClick={() => setIsOpen(false)}>
-              <BarChart3 className="w-5 h-5" />
-              <span>التقارير</span>
-            </NavLink>
+              {/* Stock / Inventory Link */}
+              {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
+                <NavLink to="/admin/inventory" className={linkClass} onClick={() => setIsOpen(false)}>
+                  <Package className="w-5 h-5" />
+                  <span>مخزن الباركود</span>
+                </NavLink>
+              )}
 
-            {userRole !== 'مشاهد' && (
-              <NavLink to="/third-party-settlements" className={linkClass} onClick={() => setIsOpen(false)}>
-                <Users className="w-5 h-5" />
-                <span>تسويات مكتب خارجي</span>
-              </NavLink>
-            )}
+              {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin') && (
+                <NavLink to="/admin/dashboard" className={linkClass} onClick={() => setIsOpen(false)}>
+                  <Settings className="w-5 h-5" />
+                  <span>الاعدادات</span>
+                </NavLink>
+              )}
 
-            {/* Stock / Inventory Link */}
-            {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
-              <NavLink to="/admin/inventory" className={linkClass} onClick={() => setIsOpen(false)}>
-                <Package className="w-5 h-5" />
-                <span>مخزن الباركود</span>
-              </NavLink>
-            )}
+              <div className="border-t border-white/5 my-4 mx-4"></div>
 
-            {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin') && (
-              <NavLink to="/admin/dashboard" className={linkClass} onClick={() => setIsOpen(false)}>
-                <Settings className="w-5 h-5" />
-                <span>الاعدادات</span>
-              </NavLink>
-            )}
+              {/* Attendance Button/Link */}
+              {userRole === 'مدير' ? (
+                <NavLink
+                  to="/admin/attendance"
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
+                      ? 'bg-[#00A6A6] text-white shadow-lg'
+                      : 'bg-black/20 text-gray-300 hover:bg-black/30'
+                    }`
+                  }
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Clock className="w-5 h-5" />
+                  <span className="font-black text-sm">الحضور والانصراف</span>
+                </NavLink>
+              ) : userRole !== 'مشاهد' ? (
+                <button
+                  onClick={handleAttendanceClick}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
+                    ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                    : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
+                    }`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+                  <span className="font-black text-sm">الحضور والانصراف</span>
+                </button>
+              ) : null}
+            </nav>
 
-            <div className="border-t border-white/5 my-4 mx-4"></div>
-
-            {/* Attendance Button/Link */}
-            {userRole === 'مدير' ? (
-              <NavLink
-                to="/admin/attendance"
-                className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
-                    ? 'bg-[#00A6A6] text-white shadow-lg'
-                    : 'bg-black/20 text-gray-300 hover:bg-black/30'
-                  }`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-                <Clock className="w-5 h-5" />
-                <span className="font-black text-sm">الحضور والانصراف</span>
-              </NavLink>
-            ) : userRole !== 'مشاهد' ? (
+            {/* Logout Button */}
+            <div className="p-4 border-t border-white/5">
               <button
-                onClick={handleAttendanceClick}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
-                  ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                  : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
-                  }`}
+                onClick={onLogout}
+                className="flex w-full items-center gap-3 px-4 py-3.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
               >
-                <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                <span className="font-black text-sm">الحضور والانصراف</span>
+                <LogOut className="w-5 h-5" />
+                <span>تسجيل الخروج</span>
               </button>
-            ) : null}
-          </nav>
-
-          {/* Logout Button */}
-          <div className="p-4 border-t border-white/5">
-            <button
-              onClick={onLogout}
-              className="flex w-full items-center gap-3 px-4 py-3.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>تسجيل الخروج</span>
-            </button>
+            </div>
           </div>
         </div>
       </aside>

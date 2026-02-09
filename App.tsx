@@ -72,7 +72,7 @@ const AppContent: React.FC = () => {
   const isAccessLocked = userRole !== 'مدير' && userRole !== 'مشاهد' && attendanceStatus !== 'checked-in';
 
   return (
-    <div className="flex min-h-screen bg-[#F2E3D5] text-right overflow-hidden">
+    <div className="flex h-screen bg-[#F2E3D5] text-right overflow-hidden">
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} />
         <Route path="/*" element={
