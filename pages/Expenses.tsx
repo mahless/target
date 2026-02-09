@@ -148,7 +148,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
             return;
         }
 
-        if (amount <= 0 || amount > currentBalance) {
+        if (amount < 0 || amount > currentBalance) {
             showQuickStatus('المبلغ غير صالح أو يتجاوز الرصيد المتاح', 'error');
             return;
         }
@@ -213,7 +213,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                     inputMode="numeric"
                                     pattern="[0-9]*"
                                     required
-                                    value={amount === 0 ? '' : amount}
+                                    value={amount}
                                     onChange={(e) => setAmount(Number(toEnglishDigits(e.target.value)))}
                                     className={`${inputClasses} text-2xl text-red-600 !py-5`}
                                     placeholder="0.00"

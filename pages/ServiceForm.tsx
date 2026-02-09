@@ -511,7 +511,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">القيمة المحولة</label>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount === 0 ? '' : electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-lg`} placeholder="0" />
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-lg`} placeholder="0" />
                   </div>
                 </div>
               )}
@@ -557,7 +557,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">تكلفة المكتب</label>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={thirdPartyCost === 0 ? '' : thirdPartyCost} onChange={e => setThirdPartyCost(Number(toEnglishDigits(e.target.value)))} className={commonInputClass} placeholder="0" />
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={thirdPartyCost} onChange={e => setThirdPartyCost(Number(toEnglishDigits(e.target.value)))} className={commonInputClass} placeholder="0" />
                   </div>
                 </div>
               )}
@@ -567,11 +567,11 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t pt-2.5">
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">إجمالي سعر الخدمة</label>
-                <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost === 0 ? '' : serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl`} placeholder="0" />
+                <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl`} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1 text-green-700">إجمالي المحصل (كاش + إلكتروني)</label>
-                <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid === 0 ? '' : amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl text-green-700 border-2 border-green-50`} placeholder="0" />
+                <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl text-green-700 border-2 border-green-50`} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">المتبقي الآجل</label>
