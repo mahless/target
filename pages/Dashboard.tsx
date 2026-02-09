@@ -114,6 +114,14 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
   const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
 
+  // Stable icon references to prevent re-animation in StatCards
+  const icons = useMemo(() => ({
+    dollar: <DollarSign />,
+    alert: <AlertTriangle />,
+    users: <Users />,
+    clock: <Clock />
+  }), []);
+
   const currentBranch = useMemo(() => {
     if (branchId === 'all') return null;
     const normId = normalizeArabic(branchId);
@@ -439,10 +447,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     <div className="p-3 md:p-5 space-y-4">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="كاش الخزنة" value={currentBranchBalance} icon={<DollarSign />} gradient="accent" footer="صافي المبلغ المتوفر بالدرج حالياً" />
-        <StatCard title="مصروفات اليوم" value={stats.expenses} icon={<AlertTriangle />} gradient="luxury" footer="إجمالي مصروفات اليوم" />
-        <StatCard title="المتبقي على العملاء" value={stats.remaining} icon={<Users />} gradient="dark" footer="مديونيات اليوم" />
-        <StatCard title="مصاريف معلقة" value={stats.pendingThirdParty} icon={<Clock />} gradient="teal" footer="تكاليف طرف ثالث" />
+        <StatCard title="كاش الخزنة" value={currentBranchBalance} icon={icons.dollar} gradient="accent" footer="صافي المبلغ المتوفر بالدرج حالياً" />
+        <StatCard title="مصروفات اليوم" value={stats.expenses} icon={icons.alert} gradient="luxury" footer="إجمالي مصروفات اليوم" />
+        <StatCard title="المتبقي على العملاء" value={stats.remaining} icon={icons.users} gradient="dark" footer="مديونيات اليوم" />
+        <StatCard title="مصاريف معلقة" value={stats.pendingThirdParty} icon={icons.clock} gradient="teal" footer="تكاليف طرف ثالث" />
       </div>
 
       {/* Main Table Container */}

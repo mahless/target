@@ -89,11 +89,14 @@ export const useAppState = () => {
     setIsProcessing(false);
   };
 
+  const isSyncingRef = useRef(false);
+
   /**
    * دالة المزامنة الشاملة مع دمج البيانات للحفاظ على ما لم يُرفع بعد
    */
   const syncAll = async () => {
-    if (!navigator.onLine) return;
+    if (!navigator.onLine || isSyncingRef.current) return;
+    isSyncingRef.current = true;
     setIsSyncing(true);
     try {
       // تنفيذ كافة طلبات الجلب في وقت واحد (Promise.all) للتسريع
@@ -177,7 +180,12 @@ export const useAppState = () => {
               mergedMap.set(item.id, item);
             }
           });
-          return Array.from(mergedMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          const next = Array.from(mergedMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          if (next.length === prev.length) {
+            const isIdentical = next.every((e, i) => e.id === prev[i].id && e.timestamp === prev[i].timestamp && e.status === prev[i].status);
+            if (isIdentical) return prev;
+          }
+          return next;
         });
       }
 
@@ -227,7 +235,12 @@ export const useAppState = () => {
               mergedMap.set(item.id, item);
             }
           });
-          return Array.from(mergedMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          const next = Array.from(mergedMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          if (next.length === prev.length) {
+            const isIdentical = next.every((e, i) => e.id === prev[i].id && e.timestamp === prev[i].timestamp);
+            if (isIdentical) return prev;
+          }
+          return next;
         });
       }
 
@@ -243,8 +256,14 @@ export const useAppState = () => {
           usage_date: s.Usage_Date || s.usage_date,
           order_id: s.Order_ID || s.order_id
         }));
-        setStock(mappedStock);
-        localStorage.setItem('target_stock', JSON.stringify(mappedStock));
+        setStock(prev => {
+          if (prev.length === mappedStock.length) {
+            const isSame = mappedStock.every((s, i) => s.barcode === prev[i].barcode && s.status === prev[i].status);
+            if (isSame) return prev;
+          }
+          localStorage.setItem('target_stock', JSON.stringify(mappedStock));
+          return mappedStock;
+        });
       }
 
       // 4. معالجة الفروع (Branches)
@@ -262,8 +281,14 @@ export const useAppState = () => {
             Expense_List: b.Expense_List
           };
         });
-        setBranches(mappedBranches);
-        localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
+        setBranches(prev => {
+          if (prev.length === mappedBranches.length) {
+            const isSame = mappedBranches.every((b, i) => b.id === prev[i].id && b.Current_Balance === prev[i].Current_Balance);
+            if (isSame) return prev;
+          }
+          localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
+          return mappedBranches;
+        });
       }
 
       // 5. معالجة القوائم من شيت Service_Expense (الجديد)
@@ -289,6 +314,7 @@ export const useAppState = () => {
     } catch (error) {
       console.error("Sync Error:", error);
     } finally {
+      isSyncingRef.current = false;
       setIsSyncing(false);
     }
   };
