@@ -393,12 +393,12 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-                        <div className="p-6 md:p-8 border-b border-[#033649]/5 flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-gradient-to-l from-[#033649]/5 to-transparent">
-                            <h4 className="font-black text-xl text-[#033649] flex items-center gap-3">
+                        <div className="p-4 md:p-6 lg:p-8 border-b border-[#033649]/5 flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-gradient-to-l from-[#033649]/5 to-transparent">
+                            <h4 className="font-black text-xl text-[#033649] flex items-center gap-3 shrink-0">
                                 <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
                             </h4>
-                            <div className="flex flex-col sm:flex-row gap-4 items-center">
-                                <div className="w-full sm:w-48">
+                            <div className="flex flex-col md:flex-row gap-4 items-center w-full lg:w-auto">
+                                <div className="w-full md:w-48">
                                     <CustomSelect
                                         options={statusOptions}
                                         value={statusFilter}
@@ -410,7 +410,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                     value={searchTerm}
                                     onChange={setSearchTerm}
                                     placeholder="بحث بالباركود..."
-                                    className="w-full sm:w-64"
+                                    className="w-full md:w-64"
                                 />
                             </div>
                         </div>
