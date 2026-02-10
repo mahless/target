@@ -79,6 +79,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   // Refresh debounce state (S7: Performance optimization)
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [isRefreshCooldown, setIsRefreshCooldown] = useState(false);
+  const [visibleEntriesCount, setVisibleEntriesCount] = useState(50);
 
   // Update storage when search changes
   React.useEffect(() => {
@@ -523,7 +524,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               {filteredEntries.length === 0 ? (
                 <tr><td colSpan={5} className="py-16 text-center text-gray-300 font-black">لا توجد عمليات اليوم</td></tr>
               ) : (
-                filteredEntries.map((entry) => (
+                filteredEntries.slice(0, visibleEntriesCount).map((entry) => (
                   <tr key={entry.id} className="hover:bg-[#036564]/5 transition-all group">
                     <td className="py-5 px-8">
                       <span
@@ -588,6 +589,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               )}
             </tbody>
           </table>
+          {visibleEntriesCount < filteredEntries.length && (
+            <div className="p-6 text-center border-t border-[#033649]/5">
+              <button
+                onClick={() => setVisibleEntriesCount(prev => prev + 50)}
+                className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                تحميل المزيد ({filteredEntries.length - visibleEntriesCount} متبقي)
+              </button>
+            </div>
+          )}
         </div>
       </div >
     </div >

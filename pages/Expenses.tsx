@@ -183,17 +183,17 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
     const inputClasses = "w-full p-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
 
     return (
-        <div className={`p-4 md:p-8 space-y-8 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`p-3 md:p-6 space-y-3 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Expense Form */}
-                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20 shadow-premium space-y-8 relative z-30">
+                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-3 relative z-30">
                     <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
                         <h3 className="font-black text-[#033649] text-lg">إضافة مصروف جديد</h3>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6 text-right">
+                    <form onSubmit={handleSubmit} className="space-y-3 text-right">
                         <div>
                             <CustomSelect
                                 label="نوع المصروف"
@@ -206,7 +206,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-[#033649]/40 mb-3 ml-1 uppercase tracking-widest">القيمة المالية</label>
+                            <label className="block text-[10px] font-black text-[#033649]/40 mb-1.5 ml-1 uppercase tracking-widest">القيمة المالية</label>
                             <div className="relative">
                                 <input
                                     type="text"
@@ -215,7 +215,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                     required
                                     value={amount}
                                     onChange={(e) => setAmount(Number(toEnglishDigits(e.target.value)))}
-                                    className={`${inputClasses} text-2xl text-red-600 !py-5`}
+                                    className={`${inputClasses} text-2xl text-red-600 !py-3`}
                                     placeholder="0.00"
                                 />
                                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 bg-white/10 px-3 py-1 rounded-lg">ج.م</div>
@@ -227,7 +227,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-[#033649]/40 mb-3 ml-1 uppercase tracking-widest">بيان التفاصيل</label>
+                            <label className="block text-[10px] font-black text-[#033649]/40 mb-1.5 ml-1 uppercase tracking-widest">بيان التفاصيل</label>
                             <textarea
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
@@ -252,7 +252,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                 </div>
 
                 {/* Expenses List */}
-                <div className="lg:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-4">
                     <div className="relative overflow-hidden bg-gradient-to-br from-red-600 to-red-900 p-8 rounded-[2.5rem] shadow-premium flex justify-between items-center group">
                         <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
                         <div className="relative z-10 flex flex-col">
@@ -268,7 +268,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-                        <div className="p-6 md:p-8 border-b border-[#033649]/5 flex justify-between items-center bg-gradient-to-l from-[#033649]/5 to-transparent">
+                        <div className="p-4 md:p-5 border-b border-[#033649]/5 flex justify-between items-center bg-gradient-to-l from-[#033649]/5 to-transparent">
                             <h3 className="font-black text-xl text-[#033649] flex items-center gap-3">
                                 <Clock className="w-6 h-6 text-[#00A6A6]" />  سجل المصروفات
                             </h3>

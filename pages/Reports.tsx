@@ -69,6 +69,8 @@ const Reports: React.FC<ReportsProps> = ({
     return userRole === 'مدير' ? 'الكل' : username;
   });
   const [activeTab, setActiveTab] = useState<'entries' | 'expenses'>('entries');
+  const [visibleEntriesCount, setVisibleEntriesCount] = useState(50);
+  const [visibleExpensesCount, setVisibleExpensesCount] = useState(50);
 
   const { showModal, setIsProcessing } = useModal();
 
@@ -190,7 +192,7 @@ const Reports: React.FC<ReportsProps> = ({
   const inputClasses = "w-full p-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
 
   return (
-    <div className="p-4 md:p-8 space-y-8 text-right animate-premium-in">
+    <div className="p-3 md:p-6 space-y-3 text-right animate-premium-in">
       {/* Header */}
       <div className="bg-[#033649] p-4 md:p-5 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
         <div className="flex items-center gap-4">
@@ -214,7 +216,7 @@ const Reports: React.FC<ReportsProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-6 relative z-30">
+      <div className="bg-white/80 backdrop-blur-xl p-4 md:p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-4 relative z-30">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-[#033649]/5">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
@@ -291,7 +293,7 @@ const Reports: React.FC<ReportsProps> = ({
       </div >
 
       {/* Stats Cards */}
-      < div className="grid grid-cols-1 md:grid-cols-3 gap-5" >
+      < div className="grid grid-cols-1 md:grid-cols-3 gap-4" >
         <StatCard title="إجمالي الإيرادات" value={stats.revenue} icon={<TrendingUp />} color="blue" footer="حصيلة العمليات وسداد المديونيات" />
         <StatCard title="إجمالي المصروفات" value={stats.expenses} icon={<Wallet />} color="red" footer="المصروفات النثرية والمكافآت" />
         <StatCard title="صافي الربح" value={stats.net} icon={<DollarSign />} color="emerald" footer="الإيرادات مطروحاً منها المصروفات" />
@@ -344,7 +346,7 @@ const Reports: React.FC<ReportsProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    filteredData.entries.map(e => (
+                    filteredData.entries.slice(0, visibleEntriesCount).map(e => (
                       <tr key={e.id} className="hover:bg-[#036564]/5 transition-all group font-black text-right">
                         <td className="py-5 px-8">
                           <div className="flex flex-col gap-1 items-start">
@@ -367,6 +369,16 @@ const Reports: React.FC<ReportsProps> = ({
                   )}
                 </tbody>
               </table>
+              {visibleEntriesCount < filteredData.entries.length && (
+                <div className="p-6 text-center border-t border-[#033649]/5">
+                  <button
+                    onClick={() => setVisibleEntriesCount(prev => prev + 50)}
+                    className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    تحميل المزيد ({filteredData.entries.length - visibleEntriesCount} متبقي)
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -393,7 +405,7 @@ const Reports: React.FC<ReportsProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    filteredData.expenses.map(ex => (
+                    filteredData.expenses.slice(0, visibleExpensesCount).map(ex => (
                       <tr key={ex.id} className="hover:bg-red-50 transition-all group font-black text-right">
                         <td className="py-5 px-8">
                           <div className="flex flex-col gap-1 items-start">
@@ -416,6 +428,16 @@ const Reports: React.FC<ReportsProps> = ({
                   )}
                 </tbody>
               </table>
+              {visibleExpensesCount < filteredData.expenses.length && (
+                <div className="p-6 text-center border-t border-red-900/5">
+                  <button
+                    onClick={() => setVisibleExpensesCount(prev => prev + 50)}
+                    className="px-6 py-3 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    تحميل المزيد ({filteredData.expenses.length - visibleExpensesCount} متبقي)
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

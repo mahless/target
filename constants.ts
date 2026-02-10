@@ -130,8 +130,8 @@ export const BRANCHES = {
 /**
  * Service Speeds Arrays
  */
-export const ID_CARD_SPEEDS = [SPEED.NORMAL, SPEED.URGENT, SPEED.INSTANT] as const;
-export const PASSPORT_SPEEDS = [SPEED.NORMAL, SPEED.URGENT, SPEED.INSTANT, SPEED.SUPER_INSTANT] as const;
+export const ID_CARD_SPEEDS = [SPEED.NORMAL, SPEED.URGENT, SPEED.INSTANT, SPEED.SUPER_INSTANT] as const;
+export const PASSPORT_SPEEDS = [SPEED.NORMAL, SPEED.URGENT, SPEED.INSTANT] as const;
 
 /**
  * Electronic Payment Methods

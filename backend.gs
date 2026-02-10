@@ -1,3 +1,88 @@
+/**
+ * ============================================
+ * BACKEND.GS - Google Apps Script Backend
+ * ============================================
+ * 
+ * PURPOSE:
+ * Server-side logic for a government services management system.
+ * Handles CRUD operations for:
+ * - Service entries (transactions)
+ * - Expenses tracking
+ * - Stock/barcode inventory
+ * - User management & authentication
+ * - Branch balance management
+ * - Employee attendance tracking
+ * 
+ * ARCHITECTURE:
+ * - Entry Points: doGet() and doPost() handle all HTTP requests
+ * - Data Storage: Google Sheets (7 sheets: Entries, Expenses, Stock, Users, 
+ *   Attendance, Branches_Config, Service_Expense)
+ * - Concurrency: LockService prevents race conditions on write operations
+ * - Caching: Header mappings cached for 6 hours via CacheService
+ * - Timezone: All dates use Africa/Cairo timezone
+ * 
+ * FRONTEND INTEGRATION:
+ * React + Vite + TypeScript frontend calls this backend via:
+ * - google.script.run for async operations
+ * - URL parameters for GET requests (?action=getData&sheetName=Users)
+ * - JSON body for POST requests (action specified in URL params)
+ * 
+ * SECURITY:
+ * - Role-based access: Admin (مدير), Assistant (مساعد), Employee (موظف), Viewer (عارض)
+ * - Authorization checks in doPost() before sensitive operations
+ * - IP-based attendance verification for check-in/check-out
+ * 
+ * DEPLOYMENT:
+ * Published as web app with "Anyone with link" access
+ * Frontend hosted separately (Vite build)
+ */
+
+// ============================================
+// CONSTANTS - Extracted magic strings for consistency
+// ============================================
+
+// Sheet Names (prevent typos, centralized naming)
+const SHEET_NAMES = {
+  ATTENDANCE: 'Attendance',
+  USERS: 'Users',
+  ENTRIES: 'Entries',
+  STOCK: 'Stock',
+  EXPENSES: 'Expenses',
+  BRANCHES_CONFIG: 'Branches_Config',
+  SERVICE_EXPENSE: 'Service_Expense'
+};
+
+// Status Values
+const STOCK_STATUS = {
+  AVAILABLE: 'Available',
+  USED: 'Used',
+  DAMAGED: 'Damaged'
+};
+
+const ENTRY_STATUS = {
+  ACTIVE: 'active',
+  DELIVERED: 'تم التسليم',
+  CANCELLED_AR: 'ملغي',
+  CANCELLED_EN: 'cancelled'
+};
+
+// Special Service Types
+const SERVICE_TYPES = {
+  DEBT_SETTLEMENT: 'سداد مديونية',
+  BRANCH_TRANSFER_OUT: 'تحويل صادر'
+};
+
+// Text Field Names (for formatting as plain text)
+const TEXT_FIELD_NAMES = [
+  'phoneNumber', 'رقم الهاتف', 'phone',
+  'barcode', 'الباركود', 'Barcode',
+  'nationalId', 'الرقم القومي'
+];
+
+// ============================================
+// SHEET CONFIGURATION
+// ============================================
+
 const SHEET_CONFIG = {
   Attendance: ['id', 'username', 'branchId', 'Type', 'ip', 'Timestamp', 'date', 'Total_Hours', 'users_ID'],
   Users: ['id', 'name', 'password', 'role', 'assignedBranchId'],
@@ -14,6 +99,56 @@ const SHEET_CONFIG = {
   Service_Expense: ['Service_List', 'Expense_List']
 };
 
+// ============================================
+// HELPER FUNCTIONS - Wrappers for repeated logic
+// ============================================
+
+/**
+ * Get current date in Cairo timezone (yyyy-MM-dd format)
+ * Centralizes date formatting to ensure consistency
+ */
+function getCairoDate() {
+  return Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+}
+
+/**
+ * Get current date and time in Cairo timezone (yyyy-MM-dd HH:mm:ss format)
+ * Used for timestamp fields
+ */
+function getCairoDateTime() {
+  return Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd HH:mm:ss");
+}
+
+/**
+ * Check if user has Admin role (مدير or Admin)
+ * @param {string} role - User role
+ * @returns {boolean} True if user is admin
+ */
+function isAdmin(role) {
+  return normalizeArabic(role) === normalizeArabic('مدير') || role === 'Admin';
+}
+
+/**
+ * Check if user has Admin or Assistant role (مدير, مساعد, or Admin)
+ * @param {string} role - User role
+ * @returns {boolean} True if user is admin or assistant
+ */
+function isAdminOrAssistant(role) {
+  return isAdmin(role) || normalizeArabic(role) === normalizeArabic('مساعد');
+}
+
+// ============================================
+// UTILITY FUNCTIONS - Core helpers used throughout
+// ============================================
+
+/**
+ * Get column index by name with flexible matching
+ * Searches header mapping for exact or normalized matches (case-insensitive, Arabic normalization)
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {string} colName - Column name to find
+ * @returns {number|undefined} Zero-based column index, or undefined if not found
+ */
 function getColIndex(sheetName, colName) {
   const map = getHeaderMapping(null, sheetName);
   // البحث في المابينج بشكل مرن ( case-insensitive والبحث عن بدائل)
@@ -32,16 +167,39 @@ function getColIndex(sheetName, colName) {
   return undefined;
 }
 
+/**
+ * Cached spreadsheet reference to avoid multiple getActiveSpreadsheet() calls
+ * Reduces API quota usage and improves performance
+ */
 let cachedSS = null;
+
+/**
+ * Get active spreadsheet with caching
+ * @returns {Spreadsheet} Active spreadsheet object
+ */
 function getSS() {
   if (cachedSS) return cachedSS;
   cachedSS = SpreadsheetApp.getActiveSpreadsheet();
   return cachedSS;
 }
 
+// ============================================
+// ENTRY POINTS - HTTP Request Handlers
+// ============================================
+
 /**
  * Handle GET requests (Read Operations)
- * @param {Object} e - Event parameter
+ * Routes to appropriate handler based on 'action' parameter
+ * Supported actions:
+ * - getData: Fetch sheet data with optional role-based filtering
+ * - getAvailableBarcode: Get oldest available barcode for assignment
+ * - getHRReport: Generate attendance report for admin dashboard
+ * - login: Authenticate user and return role/permissions
+ * - getUserLogs: Get detailed attendance logs for a user
+ * - getBranches: Fetch branch configuration
+ * 
+ * @param {Object} e - Event parameter with query string params
+ * @param {string} e.parameter.action - Action to perform
  * @returns {ContentService.TextOutput} JSON response
  */
 function doGet(e) {
@@ -68,7 +226,7 @@ function doGet(e) {
   }
 
   if (action === 'getBranches') {
-    return handleGetData('Branches_Config');
+    return handleGetData(SHEET_NAMES.BRANCHES_CONFIG);
   }
   
 
@@ -77,7 +235,26 @@ function doGet(e) {
 
 /**
  * Handle POST requests (Write Operations)
+ * Routes to appropriate handler with authorization checks
+ * Supported actions:
+ * - addRow: Add new entry/expense (All roles)
+ * - addStockBatch: Batch upload barcodes (Admin/Assistant only)
+ * - updateStockStatus: Mark barcode as used/available/damaged
+ * - updateStockItem: Edit barcode details (number, branch)
+ * - deleteStockItem: Permanently remove barcode
+ * - updateEntry: Modify existing service entry
+ * - attendance: Check-in/check-out with IP verification
+ * - deliverOrder: Mark order delivered + collect remaining debt
+ * - branchTransfer: Transfer funds between branches (Admin/Assistant)
+ * - manageUsers: Add/update/delete users (Admin only)
+ * - manageBranches: Add/delete branches (Admin only)
+ * - deleteExpense: Remove expense and refund to branch balance
+ * - updateSettings: Update service/expense type lists (Admin only)
+ * 
  * @param {Object} e - Event parameter
+ * @param {Object} e.postData - POST body
+ * @param {string} e.parameter.action - Action to perform
+ * @param {string} e.parameter.role - User role for authorization
  * @returns {ContentService.TextOutput} JSON response
  */
 function doPost(e) {
@@ -129,21 +306,19 @@ function doPost(e) {
   }
 
   if (action === 'branchTransfer') {
-    const isAuthorized = normalizeArabic(userRole) === normalizeArabic('مدير') || 
-                        normalizeArabic(userRole) === normalizeArabic('مساعد') || 
-                        userRole === 'Admin';
+    const isAuthorized = isAdminOrAssistant(userRole);
     if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins and Assistants only" });
     return handleBranchTransfer(requestData);
   }
 
   if (action === 'manageUsers') {
-    const isAuthorized = normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin';
+    const isAuthorized = isAdmin(userRole);
     if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
     return handleManageUsers(requestData);
   }
 
   if (action === 'manageBranches') {
-    const isAuthorized = normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin';
+    const isAuthorized = isAdmin(userRole);
     if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
     return handleManageBranches(requestData);
   }
@@ -154,7 +329,7 @@ function doPost(e) {
   }
 
   if (action === 'updateSettings') {
-    const isAuthorized = normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin';
+    const isAuthorized = isAdmin(userRole);
     if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
     return handleUpdateSettings(requestData);
   }
@@ -180,7 +355,7 @@ function handleDeleteExpense(data) {
     
     console.log("Starting handleDeleteExpense for ID: " + data.id);
     
-    let sheet = ss.getSheetByName("Expenses") || ss.getSheetByName("المصروفات");
+    let sheet = ss.getSheetByName(SHEET_NAMES.EXPENSES) || ss.getSheetByName("المصروفات");
     if (!sheet) {
       const allSheets = ss.getSheets();
       sheet = allSheets.find(s => normalizeArabic(s.getName()).includes("مصروفات"));
@@ -276,13 +451,13 @@ function handleDeliverOrder(data) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    const sheetEntries = ss.getSheetByName("Entries");
+    const sheetEntries = ss.getSheetByName(SHEET_NAMES.ENTRIES);
     if (!sheetEntries) return createJSONResponse({ status: "error", message: "Entries sheet not found" });
 
-    const map = getHeaderMapping(sheetEntries, "Entries");
-    const idColIdx = getColIndex("Entries", "id");
-    const statusColIdx = getColIndex("Entries", "status");
-    const deliveredDateColIdx = getColIndex("Entries", "deliveredDate");
+    const map = getHeaderMapping(sheetEntries, SHEET_NAMES.ENTRIES);
+    const idColIdx = getColIndex(SHEET_NAMES.ENTRIES, "id");
+    const statusColIdx = getColIndex(SHEET_NAMES.ENTRIES, "status");
+    const deliveredDateColIdx = getColIndex(SHEET_NAMES.ENTRIES, "deliveredDate");
 
     if (idColIdx === undefined) return createJSONResponse({ status: "error", message: "ID Column not found" });
 
@@ -299,11 +474,11 @@ function handleDeliverOrder(data) {
     
     if (rowIndex === -1) return createJSONResponse({ status: "error", message: "Order not found" });
 
-    const cairoTime = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+    const cairoTime = getCairoDate();
 
     // 1. تحديث حالة الطلب وتاريخ التسليم
     if (statusColIdx !== undefined) {
-      sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue("تم التسليم");
+      sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue(ENTRY_STATUS.DELIVERED);
     }
     if (deliveredDateColIdx !== undefined) {
       sheetEntries.getRange(rowIndex + 1, deliveredDateColIdx + 1).setValue(cairoTime);
@@ -312,12 +487,12 @@ function handleDeliverOrder(data) {
     // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
     const remainingCollected = parseFloat(data.remainingCollected || 0);
     if (remainingCollected > 0) {
-      const headerKeys = SHEET_CONFIG["Entries"];
+      const headerKeys = SHEET_CONFIG[SHEET_NAMES.ENTRIES];
       const newRow = headerKeys.map(key => {
         const k = key.toLowerCase();
         if (k === 'id') return Date.now().toString() + "-collect";
         if (k === 'clientname') return data.clientName;
-        if (k === 'servicetype') return "سداد مديونية";
+        if (k === 'servicetype') return SERVICE_TYPES.DEBT_SETTLEMENT;
         if (k === 'amountpaid') return remainingCollected;
         if (k === 'servicecost') return 0; // سداد المديونية تكلفته صفرية لأنه تحصيل فقط
         if (k === 'remainingamount') return 0;
@@ -329,7 +504,7 @@ function handleDeliverOrder(data) {
         if (k === 'timestamp') return Date.now();
         if (k === 'recordedby') return data.collectorName;
         if (k === 'branchid') return data.branchId;
-        if (k === 'status') return "active";
+        if (k === 'status') return ENTRY_STATUS.ACTIVE;
         if (k === 'parententryid') return data.orderId;
         return "";
       });
@@ -362,20 +537,20 @@ function handleAttendance(data) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    let sheet = ss.getSheetByName("Attendance");
+    let sheet = ss.getSheetByName(SHEET_NAMES.ATTENDANCE);
     
     // إنشاء الشيت إذا لم تكن موجودة بالهيدرز الصحيحة
     if (!sheet) {
-      sheet = ss.insertSheet("Attendance");
-      sheet.appendRow(SHEET_CONFIG["Attendance"]);
+      sheet = ss.insertSheet(SHEET_NAMES.ATTENDANCE);
+      sheet.appendRow(SHEET_CONFIG[SHEET_NAMES.ATTENDANCE]);
     }
     
-    const idxUserID = getColIndex("Attendance", "users_ID");
-    const idxType = getColIndex("Attendance", "Type");
-    const idxTimestamp = getColIndex("Attendance", "Timestamp");
-    const idxHours = getColIndex("Attendance", "Total_Hours");
-    const idxBranch = getColIndex("Attendance", "branchId");
-    const idxIP = getColIndex("Attendance", "ip");
+    const idxUserID = getColIndex(SHEET_NAMES.ATTENDANCE, "users_ID");
+    const idxType = getColIndex(SHEET_NAMES.ATTENDANCE, "Type");
+    const idxTimestamp = getColIndex(SHEET_NAMES.ATTENDANCE, "Timestamp");
+    const idxHours = getColIndex(SHEET_NAMES.ATTENDANCE, "Total_Hours");
+    const idxBranch = getColIndex(SHEET_NAMES.ATTENDANCE, "branchId");
+    const idxIP = getColIndex(SHEET_NAMES.ATTENDANCE, "ip");
 
     if ([idxUserID, idxType, idxTimestamp, idxHours].some(idx => idx === undefined)) {
       return createJSONResponse({ status: "error", message: "هيكل جدول الحضور غير مكتمل" });
@@ -383,11 +558,11 @@ function handleAttendance(data) {
 
     // 1. التحقق من الـ IP (Dynamic Whitelist Logic)
     let isAuthorized = true;
-    const configSheet = ss.getSheetByName("Branches_Config");
+    const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
     
     if (configSheet) {
-      const idxBranchName = getColIndex("Branches_Config", "Branch_Name");
-      const idxAuthIP = getColIndex("Branches_Config", "Authorized_IP");
+      const idxBranchName = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+      const idxAuthIP = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Authorized_IP");
       const configData = configSheet.getDataRange().getValues();
       
       if (idxBranchName !== undefined && idxAuthIP !== undefined) {
@@ -417,8 +592,8 @@ function handleAttendance(data) {
     }
 
     const today = new Date();
-    const cairoTimeStr = Utilities.formatDate(today, "Africa/Cairo", "yyyy-MM-dd HH:mm:ss");
-    const todayDateStr = Utilities.formatDate(today, "Africa/Cairo", "yyyy-MM-dd");
+    const cairoTimeStr = getCairoDateTime();
+    const todayDateStr = getCairoDate();
     
     let totalHours = 0;
 
@@ -469,7 +644,7 @@ function handleAttendance(data) {
     }
 
     // إنشاء الصف الجديد بناءً على الهيدرز في SHEET_CONFIG
-    const headers = SHEET_CONFIG["Attendance"];
+    const headers = SHEET_CONFIG[SHEET_NAMES.ATTENDANCE];
     const newRow = headers.map(headerName => {
        switch(headerName) {
          case 'id': return Date.now().toString();
@@ -508,15 +683,15 @@ function handleAttendance(data) {
 function handleLogin(id, password) {
   try {
     const ss = getSS();
-    const sheet = ss.getSheetByName("Users");
+    const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
     if (!sheet) return createJSONResponse({ success: false, message: "Users sheet not found" });
     
     const data = sheet.getDataRange().getValues();
-    const idxId = getColIndex("Users", "id");
-    const idxName = getColIndex("Users", "name");
-    const idxPass = getColIndex("Users", "password");
-    const idxRole = getColIndex("Users", "role");
-    const idxBranch = getColIndex("Users", "assignedBranchId");
+    const idxId = getColIndex(SHEET_NAMES.USERS, "id");
+    const idxName = getColIndex(SHEET_NAMES.USERS, "name");
+    const idxPass = getColIndex(SHEET_NAMES.USERS, "password");
+    const idxRole = getColIndex(SHEET_NAMES.USERS, "role");
+    const idxBranch = getColIndex(SHEET_NAMES.USERS, "assignedBranchId");
 
     if (idxId === undefined || idxPass === undefined) {
       return createJSONResponse({ success: false, message: "هيكل جدول المستخدمين غير صحيح" });
@@ -553,7 +728,7 @@ function handleLogin(id, password) {
  */
 function handleGetData(sheetName, role, username) {
   try {
-    if (sheetName === 'Branches_Config') checkAndResetDailyBalances();
+    if (sheetName === SHEET_NAMES.BRANCHES_CONFIG) checkAndResetDailyBalances();
     const ss = getSS();
     const sheet = ss.getSheetByName(sheetName);
     if (!sheet) return createJSONResponse([]);
@@ -566,7 +741,7 @@ function handleGetData(sheetName, role, username) {
     const tz = ss.getSpreadsheetTimeZone();
     
     const map = getHeaderMapping(sheet, sheetName);
-    const isAdmin = normalizeArabic(role) === normalizeArabic('مدير') || role === 'Admin';
+    const userIsAdmin = isAdmin(role);
     
     const result = rows
       .filter(row => {
@@ -631,25 +806,25 @@ function handleGetData(sheetName, role, username) {
 function handleGetHRReport(monthParam) {
   try {
     const ss = getSS();
-    const sheet = ss.getSheetByName("Attendance");
+    const sheet = ss.getSheetByName(SHEET_NAMES.ATTENDANCE);
     if (!sheet) return createJSONResponse([]);
     
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return createJSONResponse([]);
     
-    const idxUserID = getColIndex("Attendance", "users_ID");
-    const idxUser = getColIndex("Attendance", "username");
-    const idxHours = getColIndex("Attendance", "Total_Hours");
-    const idxDate = getColIndex("Attendance", "date");
-    const idxType = getColIndex("Attendance", "Type");
-    const idxTime = getColIndex("Attendance", "Timestamp");
+    const idxUserID = getColIndex(SHEET_NAMES.ATTENDANCE, "users_ID");
+    const idxUser = getColIndex(SHEET_NAMES.ATTENDANCE, "username");
+    const idxHours = getColIndex(SHEET_NAMES.ATTENDANCE, "Total_Hours");
+    const idxDate = getColIndex(SHEET_NAMES.ATTENDANCE, "date");
+    const idxType = getColIndex(SHEET_NAMES.ATTENDANCE, "Type");
+    const idxTime = getColIndex(SHEET_NAMES.ATTENDANCE, "Timestamp");
     
     if (idxUserID === undefined || idxHours === undefined || idxDate === undefined) {
       return createJSONResponse({ status: "error", message: "الأعمدة المطلوبة غير موجودة في جدول الحضور" });
     }
 
     const now = new Date();
-    const todayStr = Utilities.formatDate(now, "Africa/Cairo", "yyyy-MM-dd");
+    const todayStr = getCairoDate();
 
     // تحديد الشهر المستهدف (إما من البارامتر أو الشهر الحالي)
     let targetYear, targetMonth;
@@ -783,15 +958,15 @@ function handleGetHRReport(monthParam) {
 function handleGetUserLogs(username, monthParam) {
   try {
     const ss = getSS();
-    const sheet = ss.getSheetByName("Attendance");
+    const sheet = ss.getSheetByName(SHEET_NAMES.ATTENDANCE);
     if (!sheet) return createJSONResponse([]);
     
     const data = sheet.getDataRange().getValues();
-    const idxUserID = getColIndex("Attendance", "users_ID");
-    const idxType = getColIndex("Attendance", "Type");
-    const idxTime = getColIndex("Attendance", "Timestamp");
-    const idxHours = getColIndex("Attendance", "Total_Hours");
-    const idxDate = getColIndex("Attendance", "date");
+    const idxUserID = getColIndex(SHEET_NAMES.ATTENDANCE, "users_ID");
+    const idxType = getColIndex(SHEET_NAMES.ATTENDANCE, "Type");
+    const idxTime = getColIndex(SHEET_NAMES.ATTENDANCE, "Timestamp");
+    const idxHours = getColIndex(SHEET_NAMES.ATTENDANCE, "Total_Hours");
+    const idxDate = getColIndex(SHEET_NAMES.ATTENDANCE, "date");
 
     const now = new Date();
     // تحديد الشهر المستهدف
@@ -881,15 +1056,11 @@ function handleAddRow(sheetName, data) {
     // جلب الهيدرز الفعلية من الشيت لضمان الترتيب الصحيح
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     
-    const textFields = new Set([
-      'phoneNumber', 'رقم الهاتف', 'phone',
-      'barcode', 'الباركود', 'Barcode',
-      'nationalId', 'الرقم القومي'
-    ]);
+    const textFields = new Set(TEXT_FIELD_NAMES);
 
-    const isEntries = sheetName === 'Entries' || normalizeArabic(sheetName) === normalizeArabic('المعاملات');
+    const isEntries = sheetName === SHEET_NAMES.ENTRIES || normalizeArabic(sheetName) === normalizeArabic('المعاملات');
     const serviceType = data['serviceType'] || data['نوع الخدمة'] || "";
-    const isSettlement = isEntries && normalizeArabic(serviceType) === normalizeArabic('سداد مديونية');
+    const isSettlement = isEntries && normalizeArabic(serviceType) === normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT);
 
     if (isSettlement) {
       // فصل منطق سداد المديونية: تصفير أي مبالغ تخص الطرف الثالث لعدم التكرار
@@ -918,7 +1089,7 @@ function handleAddRow(sheetName, data) {
     });
 
     // منطق الرصيد الحي
-    if (sheetName === 'Expenses' || normalizeArabic(sheetName) === normalizeArabic('المصروفات')) {
+    if (sheetName === SHEET_NAMES.EXPENSES || normalizeArabic(sheetName) === normalizeArabic('المصروفات')) {
       const amount = parseFloat(data['amount'] || data['المبلغ'] || 0);
       const branch = data['branchId'] || data['الفرع'];
       const currentBalance = getBranchBalance(branch);
@@ -1024,12 +1195,12 @@ function handleUpdateEntry(sheetName, data) {
     });
     
     // منطق الإلغاء والخصم الفوري لـ Entries
-    if (sheetName === 'Entries' || normalizeArabic(sheetName) === normalizeArabic('المعاملات')) {
+    if (sheetName === SHEET_NAMES.ENTRIES || normalizeArabic(sheetName) === normalizeArabic('المعاملات')) {
       const newStatus = data['status'] || oldStatus;
       const newAmountPaid = data['amountPaid'] !== undefined ? parseFloat(data['amountPaid']) : oldAmountPaid;
 
-      const isNowCancelled = normalizeArabic(newStatus) === normalizeArabic('ملغي') || newStatus.toLowerCase() === 'cancelled';
-      const wasCancelled = normalizeArabic(oldStatus) === normalizeArabic('ملغي') || oldStatus.toLowerCase() === 'cancelled';
+      const isNowCancelled = normalizeArabic(newStatus) === normalizeArabic(ENTRY_STATUS.CANCELLED_AR) || newStatus.toLowerCase() === ENTRY_STATUS.CANCELLED_EN;
+      const wasCancelled = normalizeArabic(oldStatus) === normalizeArabic(ENTRY_STATUS.CANCELLED_AR) || oldStatus.toLowerCase() === ENTRY_STATUS.CANCELLED_EN;
 
       if (isNowCancelled && !wasCancelled) {
         updateBranchBalance(branch, -oldAmountPaid);
@@ -1061,10 +1232,10 @@ function handleUpdateEntry(sheetName, data) {
  */
 function handleGetAvailableBarcode(branch, category) {
   const ss = getSS();
-  const sheet = ss.getSheetByName("Stock");
+  const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
   if (!sheet) return createJSONResponse({ status: "error", message: "Stock sheet not found" });
   
-  const map = getHeaderMapping(sheet, "Stock");
+  const map = getHeaderMapping(sheet, SHEET_NAMES.STOCK);
   if (['Barcode', 'Category', 'Branch', 'Status'].some(k => map[k] === undefined)) {
      return createJSONResponse({ status: "error", message: "Invalid Stock Sheet Structure" });
   }
@@ -1075,7 +1246,7 @@ function handleGetAvailableBarcode(branch, category) {
     const row = data[i];
     if (String(row[map['Branch']]) === String(branch) && 
         String(row[map['Category']]) === String(category) && 
-        row[map['Status']] === "Available") {
+        row[map['Status']] === STOCK_STATUS.AVAILABLE) {
       return createJSONResponse({ status: "success", barcode: row[map['Barcode']] });
     }
   }
@@ -1094,14 +1265,14 @@ function handleGetAvailableBarcode(branch, category) {
 function handleAddStockBatch(items) {
   try {
     const ss = getSS();
-    let sheet = ss.getSheetByName("Stock");
+    let sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
     
     if (!sheet) {
-      sheet = ss.insertSheet("Stock");
+      sheet = ss.insertSheet(SHEET_NAMES.STOCK);
       sheet.appendRow(["Barcode", "Category", "Branch", "Status", "Created_At", "Used_By", "Usage_Date", "Order_ID"]);
     }
     
-    const map = getHeaderMapping(sheet, "Stock");
+    const map = getHeaderMapping(sheet, SHEET_NAMES.STOCK);
     const headerKeys = Object.keys(map).sort((a, b) => map[a] - map[b]);
 
     const rows = items.map(item => {
@@ -1142,13 +1313,13 @@ function handleUpdateStockStatus(params) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    const sheet = ss.getSheetByName("Stock");
+    const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
     
-    const barcodeCol = getColIndex("Stock", "Barcode");
-    const statusCol = getColIndex("Stock", "Status");
-    const usedByCol = getColIndex("Stock", "Used_By");
-    const usageDateCol = getColIndex("Stock", "Usage_Date");
-    const orderIdCol = getColIndex("Stock", "Order_ID");
+    const barcodeCol = getColIndex(SHEET_NAMES.STOCK, "Barcode");
+    const statusCol = getColIndex(SHEET_NAMES.STOCK, "Status");
+    const usedByCol = getColIndex(SHEET_NAMES.STOCK, "Used_By");
+    const usageDateCol = getColIndex(SHEET_NAMES.STOCK, "Usage_Date");
+    const orderIdCol = getColIndex(SHEET_NAMES.STOCK, "Order_ID");
 
     if (barcodeCol === undefined) return createJSONResponse({ status: "error", message: "Barcode Column Missing" });
 
@@ -1158,7 +1329,7 @@ function handleUpdateStockStatus(params) {
     for (let i = 1; i < values.length; i++) {
       if (String(values[i][barcodeCol]) === String(params.barcode)) {
         const rowData = values[i];
-        const isAvailable = params.status === "Available";
+        const isAvailable = params.status === STOCK_STATUS.AVAILABLE;
         
         if (statusCol !== undefined) rowData[statusCol] = params.status;
         if (usedByCol !== undefined) rowData[usedByCol] = isAvailable ? "" : (params.usedBy || "");
@@ -1166,7 +1337,7 @@ function handleUpdateStockStatus(params) {
         if (orderIdCol !== undefined) rowData[orderIdCol] = isAvailable ? "" : (params.orderId || "");
         
         sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
-        applyTextFormatting(sheet, getHeaderMapping(sheet, "Stock"), i + 1);
+        applyTextFormatting(sheet, getHeaderMapping(sheet, SHEET_NAMES.STOCK), i + 1);
         return createJSONResponse({ status: "success" });
       }
     }
@@ -1192,9 +1363,9 @@ function handleUpdateStockItem(data) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    const sheet = ss.getSheetByName("Stock");
-    const barcodeCol = getColIndex("Stock", "Barcode");
-    const branchCol = getColIndex("Stock", "Branch");
+    const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+    const barcodeCol = getColIndex(SHEET_NAMES.STOCK, "Barcode");
+    const branchCol = getColIndex(SHEET_NAMES.STOCK, "Branch");
     
     if (barcodeCol === undefined) return createJSONResponse({ status: "error", message: "Barcode Column missing" });
 
@@ -1210,7 +1381,7 @@ function handleUpdateStockItem(data) {
         if (branchCol !== undefined) rowData[branchCol] = data.newBranch;
         
         range.setValues([rowData]);
-        applyTextFormatting(sheet, getHeaderMapping(sheet, "Stock"), i + 1);
+        applyTextFormatting(sheet, getHeaderMapping(sheet, SHEET_NAMES.STOCK), i + 1);
         return createJSONResponse({ status: "success" });
       }
     }
@@ -1236,8 +1407,8 @@ function handleDeleteStockItem(barcode) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    const sheet = ss.getSheetByName("Stock");
-    const barcodeCol = getColIndex("Stock", "Barcode");
+    const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+    const barcodeCol = getColIndex(SHEET_NAMES.STOCK, "Barcode");
     
     if (barcodeCol === undefined) return createJSONResponse({ status: "error", message: "Barcode Column missing" });
 
@@ -1321,11 +1492,7 @@ function normalizeArabic(text) {
  * لضمان عدم فقدان الأصفار جهة اليسار.
  */
 function applyTextFormatting(sheet, map, rowIndex) {
-  const textFields = [
-    'phoneNumber', 'رقم الهاتف', 'phone',
-    'barcode', 'الباركود', 'Barcode',
-    'nationalId', 'الرقم القومي'
-  ];
+  const textFields = TEXT_FIELD_NAMES;
   
   textFields.forEach(field => {
     const colIdx = map[field];
@@ -1348,11 +1515,11 @@ function updateBranchBalance(branchId, amount) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    const configSheet = ss.getSheetByName("Branches_Config");
+    const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
     if (!configSheet) return false;
   
-    const nameCol = getColIndex("Branches_Config", "Branch_Name");
-    const balanceCol = getColIndex("Branches_Config", "Current_Balance");
+    const nameCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+    const balanceCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Current_Balance");
   
     if (nameCol === undefined || balanceCol === undefined) return false;
   
@@ -1385,11 +1552,11 @@ function updateBranchBalance(branchId, amount) {
 function getBranchBalance(branchId) {
   checkAndResetDailyBalances();
   const ss = getSS();
-  const configSheet = ss.getSheetByName("Branches_Config");
+  const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
   if (!configSheet) return 0;
 
-  const nameCol = getColIndex("Branches_Config", "Branch_Name");
-  const balanceCol = getColIndex("Branches_Config", "Current_Balance");
+  const nameCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+  const balanceCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Current_Balance");
   if (nameCol === undefined || balanceCol === undefined) return 0;
 
   const data = configSheet.getDataRange().getValues();
@@ -1418,7 +1585,7 @@ function handleBranchTransfer(data) {
   try {
     lock.waitLock(20000);
     const ss = getSS();
-    const sheetExpenses = ss.getSheetByName("Expenses");
+    const sheetExpenses = ss.getSheetByName(SHEET_NAMES.EXPENSES);
     
     const amount = parseFloat(data.amount || 0);
     if (isNaN(amount) || amount <= 0) return createJSONResponse({ status: "error", message: "مبلغ غير صالح" });
@@ -1435,12 +1602,12 @@ function handleBranchTransfer(data) {
 
     // 3. تسجيل كمصروف في الفرع المرسل للتوثيق
     if (sheetExpenses) {
-      const headers = SHEET_CONFIG["Expenses"];
+      const headers = SHEET_CONFIG[SHEET_NAMES.EXPENSES];
       const cairoDate = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
       const rowFrom = headers.map(key => {
         const k = key.toLowerCase();
         if (k === 'id') return Date.now() + "-tf-out";
-        if (k === 'category') return "تحويل صادر";
+        if (k === 'category') return SERVICE_TYPES.BRANCH_TRANSFER_OUT;
         if (k === 'amount') return amount;
         if (k === 'branchid') return data.fromBranch;
         if (k === 'date') return cairoDate;
@@ -1466,10 +1633,10 @@ function checkAndResetDailyBalances() {
   try {
     if (lock.tryLock(15000)) {
       const ss = getSS();
-      const configSheet = ss.getSheetByName("Branches_Config");
+      const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
       if (!configSheet) return;
 
-      const map = getHeaderMapping(configSheet, "Branches_Config");
+      const map = getHeaderMapping(configSheet, SHEET_NAMES.BRANCHES_CONFIG);
       let resetDateCol = map['Last_Reset_Date'] || map['Last Reset Date'];
       const balanceCol = map['Current_Balance'];
       
@@ -1478,11 +1645,11 @@ function checkAndResetDailyBalances() {
       if (resetDateCol === undefined) {
         const lastCol = configSheet.getLastColumn();
         configSheet.getRange(1, lastCol + 1).setValue("Last_Reset_Date");
-        CacheService.getScriptCache().remove("headers_v5_Branches_Config");
+        CacheService.getScriptCache().remove("headers_v5_" + SHEET_NAMES.BRANCHES_CONFIG);
         resetDateCol = lastCol;
       }
 
-      const today = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+      const today = getCairoDate();
       const data = configSheet.getDataRange().getValues();
       let anyReset = false;
 
@@ -1524,16 +1691,16 @@ function checkAndResetDailyBalances() {
  */
 function handleManageUsers(data) {
   const ss = getSS();
-  const sheet = ss.getSheetByName("Users");
+  const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
   const lock = LockService.getScriptLock();
   
   try {
     lock.waitLock(20000);
-    const idCol = getColIndex("Users", "id");
-    const nameCol = getColIndex("Users", "name");
-    const passCol = getColIndex("Users", "password");
-    const roleCol = getColIndex("Users", "role");
-    const branchCol = getColIndex("Users", "assignedBranchId");
+    const idCol = getColIndex(SHEET_NAMES.USERS, "id");
+    const nameCol = getColIndex(SHEET_NAMES.USERS, "name");
+    const passCol = getColIndex(SHEET_NAMES.USERS, "password");
+    const roleCol = getColIndex(SHEET_NAMES.USERS, "role");
+    const branchCol = getColIndex(SHEET_NAMES.USERS, "assignedBranchId");
 
     const values = sheet.getDataRange().getValues();
 
@@ -1545,7 +1712,7 @@ function handleManageUsers(data) {
         }
       }
 
-      const headers = SHEET_CONFIG["Users"];
+      const headers = SHEET_CONFIG[SHEET_NAMES.USERS];
       const row = headers.map(key => {
          const k = key.toLowerCase();
          if (k === 'id') return String(data.user.id).trim();
@@ -1601,17 +1768,17 @@ function handleManageUsers(data) {
  */
 function handleManageBranches(data) {
   const ss = getSS();
-  const sheet = ss.getSheetByName("Branches_Config");
+  const sheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
   const lock = LockService.getScriptLock();
   
   try {
     lock.waitLock(20000);
-    const nameCol = getColIndex("Branches_Config", "Branch_Name");
-    const balanceCol = getColIndex("Branches_Config", "Current_Balance");
-    const ipCol = getColIndex("Branches_Config", "Authorized_IP");
+    const nameCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+    const balanceCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Current_Balance");
+    const ipCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Authorized_IP");
 
     if (data.type === 'add') {
-      const headers = SHEET_CONFIG["Branches_Config"];
+      const headers = SHEET_CONFIG[SHEET_NAMES.BRANCHES_CONFIG];
       const row = headers.map(key => {
          const k = key.toLowerCase();
          if (k === 'branch_name') return data.branch.name;
@@ -1648,7 +1815,7 @@ function handleManageBranches(data) {
  */
 function handleUpdateSettings(data) {
   const ss = getSS();
-  let sheet = ss.getSheetByName("Service_Expense");
+  let sheet = ss.getSheetByName(SHEET_NAMES.SERVICE_EXPENSE);
   const lock = LockService.getScriptLock();
   
   try {
@@ -1656,15 +1823,15 @@ function handleUpdateSettings(data) {
     
     // 1. إنشاء الشيت إذا لم تكن موجودة
     if (!sheet) {
-      sheet = ss.insertSheet("Service_Expense");
-      sheet.appendRow(SHEET_CONFIG["Service_Expense"]);
+      sheet = ss.insertSheet(SHEET_NAMES.SERVICE_EXPENSE);
+      sheet.appendRow(SHEET_CONFIG[SHEET_NAMES.SERVICE_EXPENSE]);
       SpreadsheetApp.flush();
     }
 
     // 2. فحص الهيدرز
     let lastCol = sheet.getLastColumn();
     let headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
-    const expected = SHEET_CONFIG["Service_Expense"];
+    const expected = SHEET_CONFIG[SHEET_NAMES.SERVICE_EXPENSE];
     let updatedHeaders = false;
 
     expected.forEach(col => {
@@ -1678,7 +1845,7 @@ function handleUpdateSettings(data) {
 
     if (updatedHeaders) {
       SpreadsheetApp.flush();
-      CacheService.getScriptCache().remove("headers_v5_Service_Expense");
+      CacheService.getScriptCache().remove("headers_v5_" + SHEET_NAMES.SERVICE_EXPENSE);
     }
 
     // 3. تحديد أماكن الأعمدة

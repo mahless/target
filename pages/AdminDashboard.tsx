@@ -11,7 +11,7 @@ import { ROLES, BRANCHES } from '../constants';
 // Memoized components for list items (S8: Performance optimization)
 const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete: (id: string, name: string) => void }>(({ user, onEdit, onDelete }) => (
     <tr className="hover:bg-blue-500/5 transition-all group">
-        <td className="py-5 px-8 whitespace-nowrap">
+        <td className="py-3.5 px-8 whitespace-nowrap">
             <div className="flex flex-col gap-1">
                 <span className="text-lg font-black text-[#033649]">{user.name}</span>
                 <span className="text-[10px] text-gray-400 font-black font-mono tracking-widest flex items-center gap-1.5 uppercase">
@@ -20,12 +20,12 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
                 </span>
             </div>
         </td>
-        <td className="py-5 px-6 whitespace-nowrap text-center">
+        <td className="py-3.5 px-6 whitespace-nowrap text-center">
             <div className="flex flex-col items-center gap-2">
                 <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
-                        user.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
-                            user.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
-                                'bg-[#00A6A6]/10 text-[#00A6A6]'
+                    user.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
+                        user.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
+                            'bg-[#00A6A6]/10 text-[#00A6A6]'
                     }`}>
                     {user.role}
                 </span>
@@ -35,13 +35,13 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
                 </span>
             </div>
         </td>
-        <td className="py-5 px-6 whitespace-nowrap text-center">
+        <td className="py-3.5 px-6 whitespace-nowrap text-center">
             <div className="flex items-center justify-center gap-2">
                 <Lock className="w-3 h-3 text-[#033649]/20" />
                 <code className="text-sm font-black text-[#033649] tracking-tighter">{toEnglishDigits(String(user.password))}</code>
             </div>
         </td>
-        <td className="py-5 px-8 whitespace-nowrap">
+        <td className="py-3.5 px-8 whitespace-nowrap">
             <div className="flex items-center justify-center gap-3">
                 <button
                     onClick={() => onEdit(user)}
@@ -229,9 +229,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     return (
-        <div className={`p-4 md:p-8 space-y-8 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`p-3 md:p-6 space-y-4 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Header */}
-            <div className="bg-[#033649] p-4 md:p-6 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 text-white">
+            <div className="bg-[#033649] p-4 md:p-5 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
                         <Lock className="w-7 h-7" />
@@ -270,8 +270,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {activeTab === 'employees' ? (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Form Side */}
-                    <div className="lg:col-span-1 space-y-6">
-                        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-8 overflow-hidden relative group">
+                    <div className="lg:col-span-1 space-y-4">
+                        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
 
                             <h2 className="text-xl font-black text-[#033649] mb-8 flex items-center gap-3 relative">
@@ -281,7 +281,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 {editingUser ? 'تعديل موظف' : 'إضافة موظف جديد'}
                             </h2>
 
-                            <form onSubmit={editingUser ? handleUpdateUser : handleAddUser} className="space-y-6 relative">
+                            <form onSubmit={editingUser ? handleUpdateUser : handleAddUser} className="space-y-4 relative">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">ID الموظف</label>
@@ -293,7 +293,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 placeholder="001"
                                                 className="w-full pr-12 pl-4 py-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm disabled:opacity-50"
                                                 value={editingUser ? editingUser.id : newUser.id || ''}
-                                                onChange={(e) => setNewUser({ ...newUser, id: toEnglishDigits(e.target.value) })}
+                                                maxLength={3}
+                                                onChange={(e) => {
+                                                    const val = toEnglishDigits(e.target.value).slice(0, 3);
+                                                    setNewUser({ ...newUser, id: val });
+                                                }}
                                                 required
                                             />
                                         </div>
@@ -320,7 +324,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             placeholder="••••••"
                                             className="w-full pr-12 pl-4 py-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm"
                                             value={editingUser ? editingUser.password : newUser.password || ''}
-                                            onChange={(e) => editingUser ? setEditingUser({ ...editingUser, password: toEnglishDigits(e.target.value) }) : setNewUser({ ...newUser, password: toEnglishDigits(e.target.value) })}
+                                            maxLength={4}
+                                            onChange={(e) => {
+                                                const val = toEnglishDigits(e.target.value).slice(0, 4);
+                                                editingUser
+                                                    ? setEditingUser({ ...editingUser, password: val })
+                                                    : setNewUser({ ...newUser, password: val });
+                                            }}
                                             required
                                         />
                                     </div>
@@ -391,7 +401,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {/* List Side */}
                     <div className="lg:col-span-2">
                         <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-                            <div className="p-8 border-b border-[#033649]/5 flex items-center justify-between">
+                            <div className="p-4 md:p-6 border-b border-[#033649]/5 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
                                     <h2 className="text-xl font-black text-[#033649] flex items-center gap-2">
@@ -481,7 +491,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     <div className="lg:col-span-2">
                         <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-                            <div className="p-8 border-b border-[#033649]/5 flex items-center">
+                            <div className="p-4 md:p-6 border-b border-[#033649]/5 flex items-center">
                                 <div className="flex items-center gap-4">
                                     <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
                                     <h2 className="text-xl font-black text-[#033649] flex items-center gap-2">
@@ -491,7 +501,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6">
                                 {branches.map((b) => (
                                     <BranchCard key={b.id} branch={b} onDelete={handleDeleteBranch} />
                                 ))}
@@ -501,9 +511,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
             ) : (
                 /* Lists Tab */
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Services Management */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-8 overflow-hidden relative group">
+                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
                         <h2 className="text-xl font-black text-[#033649] mb-8 flex items-center gap-3 relative">
                             <div className="p-2 bg-blue-500/10 rounded-xl">
@@ -512,7 +522,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             إدارة أنواع الخدمات
                         </h2>
 
-                        <div className="space-y-6 relative">
+                        <div className="space-y-4 relative">
                             <div className="flex gap-4">
                                 <input
                                     type="text"
@@ -553,7 +563,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
 
                     {/* Expenses Management */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-8 overflow-hidden relative group">
+                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
                         <h2 className="text-xl font-black text-[#033649] mb-8 flex items-center gap-3 relative">
                             <div className="p-2 bg-orange-500/10 rounded-xl">
@@ -562,7 +572,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             إدارة بنود المصروفات
                         </h2>
 
-                        <div className="space-y-6 relative">
+                        <div className="space-y-4 relative">
                             <div className="flex gap-4">
                                 <input
                                     type="text"

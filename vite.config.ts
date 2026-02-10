@@ -19,6 +19,26 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       }
     },
-    base: './'
+    base: './',
+    build: {
+      // Optimize chunk splitting for better caching
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Separate vendor chunks for better caching
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'icons': ['lucide-react'],
+          },
+        },
+      },
+      // Use esbuild for faster minification
+      minify: 'esbuild',
+      // Chunk size warnings
+      chunkSizeWarningLimit: 500,
+      // Disable source maps for smaller bundle
+      sourcemap: false,
+      // Remove console.log in production via esbuild
+      target: 'es2015',
+    },
   };
 });

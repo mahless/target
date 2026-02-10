@@ -153,9 +153,9 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
     }, [entries, debouncedSearchTerm]);
 
     return (
-        <div className={`p-4 md:p-8 space-y-8 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`p-3 md:p-6 space-y-4 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
-            <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-premium border border-white/20 space-y-6">
+            <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-4">
                 <div className="flex items-center gap-3">
                     <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
                     <h3 className="font-black text-[#033649] text-xl">تصفية وبحث التسويات</h3>

@@ -319,11 +319,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
     };
 
     return (
-        <div className={`p-4 md:p-8 space-y-8 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`p-3 md:p-6 space-y-4 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Expense Form */}
-                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20 shadow-premium space-y-8 relative z-30 animate-slideIn">
+                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-5 relative z-30 animate-slideIn">
                     <h3 className="font-black text-blue-900 flex items-center gap-2">
                         <PlusCircle className="w-5 h-5" /> إضافة باركود جديد
                     </h3>
@@ -368,11 +368,11 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="max-h-[325px] overflow-y-auto custom-scrollbar pr-1">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {branches.map(b => (
-                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-6 rounded-[2rem] border border-white flex flex-col gap-4 shadow-premium group">
+                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-4 rounded-[2rem] border border-white flex flex-col gap-3 shadow-premium group">
                                     <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
                                     <p className="text-[10px] font-black text-[#033649]/40 mb-2 border-b border-[#033649]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
                                     <div className="grid grid-cols-3 gap-4">
