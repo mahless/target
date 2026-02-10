@@ -352,7 +352,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
               {userRole !== 'مشاهد' && (
                 <NavLink to="/third-party-settlements" className={linkClass} onClick={() => setIsOpen(false)}>
                   <Users className="w-5 h-5" />
-                  <span>تسويات المكتب الخارجي</span>
+                  <span>تسويات مكتب خارجي</span>
                 </NavLink>
               )}
 
