@@ -37,7 +37,7 @@ export interface ServiceEntry {
   thirdPartyCost?: number;
   isCostPaid?: boolean;
   costPaidDate?: string;
-  costSettledBy?: string;
+  costPaidBy?: string;
 
   // Electronic Payment
   isElectronic: boolean;

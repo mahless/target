@@ -162,7 +162,7 @@ export const useAppState = () => {
             thirdPartyCost: Number(e.thirdPartyCost || e['تكلفة المورد'] || e['thirdPartyCost'] || 0),
             isCostPaid: e.isCostPaid === true || e.isCostPaid === 'true' || false,
             costPaidDate: e.costPaidDate || e['تاريخ دفع التكلفة'],
-            costSettledBy: e.costSettledBy || e['سجل الدفع بواسطة'],
+            costPaidBy: e.costPaidBy || e.costSettledBy || e['سجل الدفع بواسطة'],
             isElectronic: e.isElectronic === true || e.isElectronic === 'true' || false,
             electronicAmount: Number(e.electronicAmount || 0),
             electronicMethod: e.electronicMethod,
@@ -463,7 +463,7 @@ export const useAppState = () => {
         'إجمالي التكلفة': updatedEntry.serviceCost,
         'isCostPaid': updatedEntry.isCostPaid,
         'تاريخ دفع التكلفة': updatedEntry.costPaidDate,
-        'سجل الدفع بواسطة': updatedEntry.costSettledBy,
+        'costPaidBy': updatedEntry.costPaidBy,
         'ملاحظات': updatedEntry.notes || ''
       };
 

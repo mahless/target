@@ -57,7 +57,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                     ...entry,
                     isCostPaid: true,
                     costPaidDate: new Date().toISOString().split('T')[0],
-                    costSettledBy: username
+                    costPaidBy: username
                 };
 
                 const result = await onUpdateEntry(updatedEntry);
@@ -192,6 +192,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                         <thead>
                             <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان المعاملة والمكتب</th>
+                                <th className="py-5 px-6 text-center">الموظف</th>
                                 <th className="py-5 px-6 text-center">تكلفة المكتب الخارجي</th>
                                 <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
                             </tr>
@@ -199,7 +200,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                         <tbody className="divide-y divide-[#033649]/5 font-bold relative">
                             {filteredEntries.length === 0 ? (
                                 <tr>
-                                    <td colSpan={3} className="py-20 text-center">
+                                    <td colSpan={4} className="py-20 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-200">
                                                 <CheckCircle2 className="w-8 h-8" />
@@ -224,6 +225,11 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                                                     <span className="bg-[#033649]/5 text-[#033649] px-2 py-0.5 rounded-lg text-[9px] font-black">المكتب: {entry.thirdPartyName}</span>
                                                     <span className="text-[10px] text-gray-400 font-bold">{entry.entryDate}</span>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-5 px-6 text-center">
+                                            <div className="flex flex-col items-center gap-1 group-hover:scale-110 transition-transform">
+                                                <span className="bg-gray-100 text-[#033649] px-2 py-1 rounded-lg text-[10px] font-black">{entry.recordedBy || 'غير مسجل'}</span>
                                             </div>
                                         </td>
                                         <td className="py-5 px-6 text-center">

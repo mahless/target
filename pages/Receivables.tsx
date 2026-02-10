@@ -222,6 +222,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
             <thead>
               <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان مديونية العميل</th>
+                <th className="py-5 px-6 text-center">الموظف</th>
                 <th className="py-5 px-6 text-center">المبلغ المتبقي</th>
                 <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
               </tr>
@@ -229,7 +230,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
             <tbody className="divide-y divide-[#033649]/5 font-bold relative">
               {filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="py-20 text-center">
+                  <td colSpan={4} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-200">
                         <Wallet className="w-8 h-8" />
@@ -253,6 +254,11 @@ const Receivables: React.FC<ReceivablesProps> = ({
                           <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest">{entry.serviceType}</span>
                           <span className="text-[10px] text-gray-400 font-bold">{entry.entryDate}</span>
                         </div>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6 text-center">
+                      <div className="flex flex-col items-center gap-1 group-hover:scale-110 transition-transform">
+                        <span className="bg-gray-100 text-[#033649] px-2 py-1 rounded-lg text-[10px] font-black">{entry.recordedBy || 'غير مسجل'}</span>
                       </div>
                     </td>
                     <td className="py-5 px-6 text-center">
