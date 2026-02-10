@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { normalizeArabic, toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
+import { ROLES, BRANCHES } from '../constants';
 
 interface AdminDashboardProps {
     users: User[];
@@ -25,7 +26,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const { showModal, showQuickStatus } = useModal();
 
     // States for Forms
-    const [newUser, setNewUser] = useState<Partial<User>>({ role: 'موظف' });
+    const [newUser, setNewUser] = useState<Partial<User>>({ role: ROLES.EMPLOYEE });
     const [newBranch, setNewBranch] = useState({ name: '', ip: '' });
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -38,7 +39,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const res = await onManageUsers({ type: 'add', user: newUser });
         if (res.success) {
             showQuickStatus(res.message || 'تمت الإضافة بنجاح');
-            setNewUser({ role: 'موظف' });
+            setNewUser({ role: ROLES.EMPLOYEE });
         } else {
             showQuickStatus(res.message || 'فشل الإضافة', 'error');
         }
@@ -228,13 +229,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">الصلاحية</label>
                                         <select
                                             className="w-full px-4 py-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black focus:bg-white focus:border-[#00A6A6] outline-none transition-all shadow-sm appearance-none"
-                                            value={editingUser ? editingUser.role : newUser.role || 'موظف'}
-                                            onChange={(e) => editingUser ? setEditingUser({ ...editingUser, role: e.target.value }) : setNewUser({ ...newUser, role: e.target.value })}
+                                            value={editingUser ? editingUser.role : newUser.role || ROLES.EMPLOYEE}
+                                            onChange={(e) => editingUser ? setEditingUser({ ...editingUser, role: e.target.value as any }) : setNewUser({ ...newUser, role: e.target.value as any })}
                                         >
-                                            <option value="Admin">مدير</option>
-                                            <option value="مساعد">مساعد</option>
-                                            <option value="موظف">موظف</option>
-                                            <option value="مشاهد">مشاهد</option>
+                                            <option value={ROLES.ADMIN}>مدير</option>
+                                            <option value={ROLES.ASSISTANT}>مساعد</option>
+                                            <option value={ROLES.EMPLOYEE}>موظف</option>
+                                            <option value={ROLES.VIEWER}>مشاهد</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">
@@ -322,9 +323,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 </td>
                                                 <td className="py-5 px-6 whitespace-nowrap text-center">
                                                     <div className="flex flex-col items-center gap-2">
-                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${u.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
-                                                            u.role === 'مساعد' ? 'bg-orange-100 text-orange-700' :
-                                                                u.role === 'مشاهد' ? 'bg-blue-100 text-blue-700' :
+                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${u.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
+                                                            u.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
+                                                                u.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
                                                                     'bg-[#00A6A6]/10 text-[#00A6A6]'
                                                             }`}>
                                                             {u.role}

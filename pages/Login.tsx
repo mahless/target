@@ -4,6 +4,7 @@ import { User as UserType } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
+import { STORAGE_KEYS } from '../constants';
 
 interface LoginProps {
   onLogin: (userData: UserType) => void;
@@ -31,7 +32,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     if (response.success && response.id && response.name && response.role) {
       // حفظ رقم الموظف الثابت في localStorage كما هو مطلوب
-      localStorage.setItem('active_employee_id', String(response.id));
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_EMPLOYEE_ID, String(response.id));
 
       onLogin({
         id: response.id,
@@ -51,7 +52,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#033649] to-[#036564] p-4">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-opacity-10 pointer-events-none" style={{ backgroundImage: `url('${import.meta.env.VITE_LOGIN_BG_PATTERN_URL}')` }}></div>
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative z-10 border border-white/20">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-br from-[#00A6A6] to-[#036564] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl shadow-[#00A6A6]/40 rotate-3">

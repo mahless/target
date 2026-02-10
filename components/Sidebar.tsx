@@ -169,24 +169,16 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                   <thead className="bg-gray-50 text-gray-400 font-black">
                     <tr>
                       <th className="p-3">الموظف</th>
-                      <th className="p-3 text-center">أ1</th>
-                      <th className="p-3 text-center">أ2</th>
-                      <th className="p-3 text-center">أ3</th>
-                      <th className="p-3 text-center">أ4</th>
                       <th className="p-3 text-center bg-blue-50 text-blue-700">الإجمالي</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y font-bold text-[10px]">
                     {reportData.length === 0 ? (
-                      <tr><td colSpan={6} className="p-8 text-center text-gray-300 italic">لا توجد بيانات لهذا الشهر</td></tr>
+                      <tr><td colSpan={2} className="p-8 text-center text-gray-300 italic">لا توجد بيانات لهذا الشهر</td></tr>
                     ) : (
                       reportData.map((u, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="p-3 text-gray-800">{u.name}</td>
-                          <td className="p-2 text-center text-gray-500">{u.week1}</td>
-                          <td className="p-2 text-center text-gray-500">{u.week2}</td>
-                          <td className="p-2 text-center text-gray-500">{u.week3}</td>
-                          <td className="p-2 text-center text-gray-500">{u.week4}</td>
                           <td className="p-2 text-center bg-blue-50/50 text-blue-700 font-black">{u.totalMonth}</td>
                         </tr>
                       ))

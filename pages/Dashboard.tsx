@@ -8,6 +8,7 @@ import { normalizeArabic, normalizeDate, searchMultipleFields, useDebounce, toEn
 import { useModal } from '../context/ModalContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { GoogleSheetsService } from '../services/googleSheetsService';
+import { ROLES, STATUS, STORAGE_KEYS, BRANCHES, SERVICE_TYPES, EXPENSE_CATEGORIES } from '../constants';
 
 interface DashboardProps {
   allEntries: ServiceEntry[];
@@ -64,15 +65,15 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   isSubmitting = false, username, onAddExpense, branches, onDeliverOrder, onBranchTransfer, userRole
 }) => {
   // Persistence for search term
-  const [searchTerm, setSearchTerm] = useState(() => localStorage.getItem('dashboard_search_term') || '');
+  const [searchTerm, setSearchTerm] = useState(() => localStorage.getItem(STORAGE_KEYS.DASHBOARD_SEARCH_TERM) || '');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Update storage when search changes
   React.useEffect(() => {
     if (searchTerm) {
-      localStorage.setItem('dashboard_search_term', searchTerm);
+      localStorage.setItem(STORAGE_KEYS.DASHBOARD_SEARCH_TERM, searchTerm);
     } else {
-      localStorage.removeItem('dashboard_search_term');
+      localStorage.removeItem(STORAGE_KEYS.DASHBOARD_SEARCH_TERM);
     }
   }, [searchTerm]);
   /* Update destructuring */
@@ -80,16 +81,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
   // الفلترة الداخلية الحيوية والموحدة
   const dailyEntries = useMemo(() => {
-    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+    const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
     // إذا لم يكنديراً ولم يختر فرعاً، لا تظهر أي بيانات
-    if (!isManager && (!branchId || branchId === 'all')) return [];
+    if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return [];
 
     const normalizedBranch = normalizeArabic(branchId);
     const normalizedDateToday = normalizeDate(currentDate);
     const normalizedUsername = normalizeArabic(username);
 
     return allEntries.filter(e => {
-      const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
+      const matchesBranch = branchId === BRANCHES.ALL || normalizeArabic(e.branchId) === normalizedBranch;
       const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
       // في لوحة التحكم، الموظف يرى كل عمليات الفرع المختار
       return matchesBranch && matchesDate;
@@ -97,15 +98,15 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [allEntries, branchId, currentDate, userRole, username]);
 
   const dailyExpenses = useMemo(() => {
-    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
-    if (!isManager && (!branchId || branchId === 'all')) return [];
+    const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
+    if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return [];
 
     const normalizedBranch = normalizeArabic(branchId);
     const normalizedDateToday = normalizeDate(currentDate);
     const normalizedUsername = normalizeArabic(username);
 
     return allExpenses.filter(e => {
-      const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
+      const matchesBranch = branchId === BRANCHES.ALL || normalizeArabic(e.branchId) === normalizedBranch;
       const matchesDate = normalizeDate(e.date) === normalizedDateToday;
       // في لوحة التحكم، الموظف يرى كل مصروفات الفرع المختار
       return matchesBranch && matchesDate;
@@ -123,16 +124,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }), []);
 
   const currentBranch = useMemo(() => {
-    if (branchId === 'all') return null;
+    if (branchId === BRANCHES.ALL) return null;
     const normId = normalizeArabic(branchId);
     return branches.find(b => normalizeArabic(b.id) === normId);
   }, [branches, branchId]);
 
   const currentBranchBalance = useMemo(() => {
-    const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
-    if (!isManager && (!branchId || branchId === 'all')) return 0;
+    const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
+    if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return 0;
 
-    return branchId === 'all'
+    return branchId === BRANCHES.ALL
       ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
       : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
   }, [branchId, userRole, branches, currentBranch]);
@@ -186,7 +187,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             </div>
             <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
               <span className="text-[10px] text-gray-400 font-black block mb-0.5">حالة المعاملة</span>
-              <p className={`font-black text-xs ${entry.status === 'active' ? 'text-blue-600' : entry.status === 'cancelled' ? 'text-red-500' : 'text-green-600'}`}>
+              <p className={`font-black text-xs ${entry.status === STATUS.ACTIVE ? 'text-blue-600' : entry.status === STATUS.CANCELLED ? 'text-red-500' : 'text-green-600'}`}>
                 {entry.status}
               </p>
             </div>
@@ -270,7 +271,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         const isFullRefund = expenseAmount === 0;
         const updatedEntry: ServiceEntry = {
           ...entry,
-          status: 'cancelled',
+          status: STATUS.CANCELLED,
           amountPaid: isFullRefund ? 0 : expenseAmount,
           remainingAmount: 0,
           notes: `[ملغاة] ${isFullRefund ? 'استرداد كامل' : 'خصم مصروفات ' + expenseAmount} | ${entry.notes || ''} `
@@ -317,8 +318,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         if (result) {
           // جلب بيانات الطرف الثالث لتسجيل المصروف
           const thirdPartyExpense: Expense = {
-            id: `tp - ${Date.now()} -${entry.id} `,
-            category: 'طرف ثالث',
+            id: `tp-${Date.now()}-${entry.id}`,
+            category: EXPENSE_CATEGORIES.THIRD_PARTY,
             amount: entry.thirdPartyCost || 0,
             notes: `تسوية للمورد: ${entry.thirdPartyName} | العميل: ${entry.clientName} | ${entry.serviceType} `,
             branchId: entry.branchId,
@@ -419,15 +420,15 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const filteredEntries = useMemo(() => {
     // حالة البحث: البحث في كل عمليات الفرع (تاريخ مفتوح)
     if (debouncedSearchTerm) {
-      const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+      const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
       // إذا لم يكن مديراً ولم يختر فرعاً، لا تظهر نتائج بحث عامة
-      if (!isManager && (!branchId || branchId === 'all')) return [];
+      if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return [];
 
       const normalizedBranch = normalizeArabic(branchId);
       const normalizedUsername = normalizeArabic(username);
 
       return allEntries.filter(e => {
-        const matchesBranch = branchId === 'all' || normalizeArabic(e.branchId) === normalizedBranch;
+        const matchesBranch = branchId === BRANCHES.ALL || normalizeArabic(e.branchId) === normalizedBranch;
         const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
           e.clientName,
           e.nationalId,
@@ -479,7 +480,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                 <Clock className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
               </button>
-              {(userRole === 'مدير' || userRole === 'مساعد' || userRole === 'Admin') && (
+              {(userRole === ROLES.MANAGER || userRole === ROLES.ASSISTANT || userRole === ROLES.ADMIN) && (
                 <button
                   onClick={handleTransfer}
                   disabled={isSyncing || isSubmitting}
@@ -501,7 +502,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                 <th className="py-5 px-8 text-center">الموظف</th>
                 <th className="py-5 px-8 text-center">المبلغ</th>
                 <th className="py-5 px-8 text-center">المتبقي</th>
-                {userRole !== 'مشاهد' && <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>}
+                {userRole !== ROLES.VIEWER && <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#033649]/5 text-sm font-bold">
@@ -525,11 +526,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                     <td className="py-5 px-8 text-center font-black text-[#033649]/60 text-xs">{entry.recordedBy || '-'}</td>
                     <td className="py-5 px-8 text-center font-black text-[#033649] text-lg">{toEnglishDigits(String(entry.amountPaid))}</td>
                     <td className="py-5 px-8 text-center text-red-600 font-black text-lg">{toEnglishDigits(String(entry.remainingAmount))}</td>
-                    {userRole !== 'مشاهد' && (
+                    {userRole !== ROLES.VIEWER && (
                       <td className="py-5 px-8 text-center">
                         <div className="flex justify-center gap-3">
-                          {entry.status === 'active' &&
-                            normalizeArabic(entry.serviceType) !== normalizeArabic('سداد مديونية') &&
+                          {entry.status === STATUS.ACTIVE &&
+                            normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) &&
                             !entry.parentEntryId && (
                               <>
                                 {!entry.notes?.includes('بيع استمارة لطرف اخر') && (
@@ -550,7 +551,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                                 </button>
                               </>
                             )}
-                          {entry.status === 'active' && entry.hasThirdParty && !entry.isCostPaid && (
+                          {entry.status === STATUS.ACTIVE && entry.hasThirdParty && !entry.isCostPaid && (
                             <button
                               onClick={() => handleSettleThirdParty(entry)}
                               disabled={isSubmitting}
@@ -559,10 +560,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                               تسوية
                             </button>
                           )}
-                          {entry.status === 'cancelled' && (
+                          {entry.status === STATUS.CANCELLED && (
                             <span className="text-[10px] text-red-400 font-bold px-3 py-1 bg-red-50 rounded-xl border border-red-100">ملغاة</span>
                           )}
-                          {entry.status === 'تم التسليم' && (
+                          {entry.status === STATUS.DELIVERED && (
                             <span className="text-[10px] text-[#00A6A6] font-bold px-3 py-1 bg-[#00A6A6]/5 rounded-xl border border-[#00A6A6]/20">تم التسليم</span>
                           )}
                         </div>

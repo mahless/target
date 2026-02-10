@@ -112,3 +112,28 @@ export interface AppState {
   expenses: Expense[];
   stock: StockItem[];
 }
+
+// API Response Types
+export interface BackendResponse {
+  status: 'success' | 'error';
+  message?: string;
+  timestamp?: string;
+  barcode?: string;
+  [key: string]: any; // Allow for other dynamic fields like refunded amount
+}
+
+export interface HRReportItem {
+  id: string;
+  name: string;
+  totalMonth: number;
+  todayTotal: number;
+  checkIn: string;
+  checkOut: string;
+  todayStatus: string;
+}
+
+export interface UserLogEntry {
+  dateTime: string;
+  type: string;
+  hours: number;
+}

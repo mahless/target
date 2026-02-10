@@ -39,6 +39,11 @@ function getSS() {
   return cachedSS;
 }
 
+/**
+ * Handle GET requests (Read Operations)
+ * @param {Object} e - Event parameter
+ * @returns {ContentService.TextOutput} JSON response
+ */
 function doGet(e) {
   const action = e.parameter.action;
   
@@ -70,6 +75,11 @@ function doGet(e) {
   return createJSONResponse({ status: "error", message: "Invalid Action" });
 }
 
+/**
+ * Handle POST requests (Write Operations)
+ * @param {Object} e - Event parameter
+ * @returns {ContentService.TextOutput} JSON response
+ */
 function doPost(e) {
   let requestData;
   try {
@@ -155,6 +165,12 @@ function doPost(e) {
 /**
  * دالة حذف مصروف وإرجاع المبالغ للخزنة
  * نسخة مطورة (Resilient) تتعرف على المسميات العربية والإنجليزية للأعمدة
+ */
+/**
+ * Delete an expense and refund to branch balance
+ * 
+ * @param {Object} data - {id}
+ * @returns {ContentService.TextOutput} JSON response {status}
  */
 function handleDeleteExpense(data) {
   const lock = LockService.getScriptLock();
@@ -249,6 +265,12 @@ function handleDeleteExpense(data) {
 /**
  * 7. تسليم المعاملة وتحصيل المتبقي (Delivery & Collection)
  */
+/**
+ * 7. Deliver Order and Collect Remaining Amount
+ * 
+ * @param {Object} data - {orderId, remainingCollected, clientName, collectorName, branchId}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleDeliverOrder(data) {
   const lock = LockService.getScriptLock();
   try {
@@ -328,6 +350,12 @@ function handleDeliverOrder(data) {
 
 /**
  * 6. نظام الحضور والانصراف (Attendance)
+ */
+/**
+ * 6. Attendance System (Check-in/Check-out)
+ * 
+ * @param {Object} data - {users_ID, username, branchId, type, ip}
+ * @returns {ContentService.TextOutput} JSON response {status, timestamp?}
  */
 function handleAttendance(data) {
   const lock = LockService.getScriptLock();
@@ -470,6 +498,13 @@ function handleAttendance(data) {
 /**
  * 0. تسجيل الدخول والتحقق من المستخدم
  */
+/**
+ * 0. Login and user verification
+ * 
+ * @param {string} id - User ID
+ * @param {string} password - User Password
+ * @returns {ContentService.TextOutput} JSON response {success, id, name, role, ...}
+ */
 function handleLogin(id, password) {
   try {
     const ss = getSS();
@@ -507,6 +542,14 @@ function handleLogin(id, password) {
 
 /**
  * 1. جلب البيانات من أي شيت (Entries, Expenses, Stock) مع فلترة الحماية
+ */
+/**
+ * 1. Retrieve data from a sheet with optional filtering
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {string} role - User role for authorization
+ * @param {string} username - Username for filtering
+ * @returns {ContentService.TextOutput} JSON response
  */
 function handleGetData(sheetName, role, username) {
   try {
@@ -578,6 +621,12 @@ function handleGetData(sheetName, role, username) {
 /**
  * دالة جلب تقرير HR للمدير (الساعات الأسبوعية والشهرية)
  * مطور لدعم فلتر الشهر وتفاصيل الحضور اليومية
+ */
+/**
+ * Get HR Report for Admin Dashboard
+ * 
+ * @param {string} monthParam - Target month 'YYYY-MM'
+ * @returns {ContentService.TextOutput} JSON response [{id, name, totalMonth, ...}]
  */
 function handleGetHRReport(monthParam) {
   try {
@@ -724,6 +773,13 @@ function handleGetHRReport(monthParam) {
 /**
  * جلب كافة حركات موظف معين لشهر محدد أو الشهر الحالي
  */
+/**
+ * Get detailed user attendance logs
+ * 
+ * @param {string} username - User name
+ * @param {string} monthParam - Target month 'YYYY-MM'
+ * @returns {ContentService.TextOutput} JSON response [{dateTime, type, hours}]
+ */
 function handleGetUserLogs(username, monthParam) {
   try {
     const ss = getSS();
@@ -806,6 +862,13 @@ function handleGetUserLogs(username, monthParam) {
 
 /**
  * 2. إضافة سجل جديد (Entry أو Expense)
+ */
+/**
+ * 2. Add a new row (Entry or Expense)
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {Object} data - Row data
+ * @returns {ContentService.TextOutput} JSON response {status}
  */
 function handleAddRow(sheetName, data) {
   const lock = LockService.getScriptLock();
@@ -907,6 +970,13 @@ function handleAddRow(sheetName, data) {
 /**
  * 2b. تحديث سجل موجود (Update Entry)
  */
+/**
+ * 2b. Update an existing entry (Update Entry)
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {Object} data - Updated data fields
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleUpdateEntry(sheetName, data) {
   const lock = LockService.getScriptLock();
   try {
@@ -982,6 +1052,13 @@ function handleUpdateEntry(sheetName, data) {
 /**
  * 3. جلب أقدم باركود متاح (توزيع ذكي)
  */
+/**
+ * 3. Get oldest available barcode for a branch/category
+ * 
+ * @param {string} branch - Branch ID
+ * @param {string} category - Stock category
+ * @returns {ContentService.TextOutput} JSON response {status, barcode}
+ */
 function handleGetAvailableBarcode(branch, category) {
   const ss = getSS();
   const sheet = ss.getSheetByName("Stock");
@@ -1007,6 +1084,12 @@ function handleGetAvailableBarcode(branch, category) {
 
 /**
  * 4. إضافة دفعة باركودات للمخزن (Batch Upload)
+ */
+/**
+ * 4. Add a batch of stock items (Batch Upload)
+ * 
+ * @param {Array<Object>} items - List of stock items to add
+ * @returns {ContentService.TextOutput} JSON response {status}
  */
 function handleAddStockBatch(items) {
   try {
@@ -1047,6 +1130,12 @@ function handleAddStockBatch(items) {
 
 /**
  * 5. تحديث حالة الباركود (مستخدم، خطأ، تالف) مع قفل
+ */
+/**
+ * 5. Update stock item status (Available, Used, Damaged, etc.)
+ * 
+ * @param {Object} params - {barcode, status, usedBy, orderId, ...}
+ * @returns {ContentService.TextOutput} JSON response {status}
  */
 function handleUpdateStockStatus(params) {
   const lock = LockService.getScriptLock();
@@ -1092,6 +1181,12 @@ function handleUpdateStockStatus(params) {
 /**
  * 5b. تحديث كامل لبيانات الباركود (تغيير الرقم أو الفرع)
  */
+/**
+ * 5b. Full update of stock item details (Barcode or Branch)
+ * 
+ * @param {Object} data - {oldBarcode, newBarcode, newBranch}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleUpdateStockItem(data) {
   const lock = LockService.getScriptLock();
   try {
@@ -1129,6 +1224,12 @@ function handleUpdateStockItem(data) {
 
 /**
  * 5c. حذف باركود نهائياً من المخزن
+ */
+/**
+ * 5c. Permanently delete a stock item
+ * 
+ * @param {string} barcode - Barcode to delete
+ * @returns {ContentService.TextOutput} JSON response {status}
  */
 function handleDeleteStockItem(barcode) {
   const lock = LockService.getScriptLock();
@@ -1306,6 +1407,12 @@ function getBranchBalance(branchId) {
 /**
  * دالة التحويل المالي بين الفروع
  */
+/**
+ * Branch Fund Transfer
+ * 
+ * @param {Object} data - {fromBranch, toBranch, amount, recordedBy}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleBranchTransfer(data) {
   const lock = LockService.getScriptLock();
   try {
@@ -1409,6 +1516,12 @@ function checkAndResetDailyBalances() {
 /**
  * إدارة الموظفين للمدير فقط
  */
+/**
+ * User Management (Admin Only)
+ * 
+ * @param {Object} data - {type: add|update|delete, user?, id?}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleManageUsers(data) {
   const ss = getSS();
   const sheet = ss.getSheetByName("Users");
@@ -1480,6 +1593,12 @@ function handleManageUsers(data) {
 /**
  * إدارة الفروع للمدير فقط
  */
+/**
+ * Branch Management (Admin Only)
+ * 
+ * @param {Object} data - {type: add|delete, branch?, name?}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleManageBranches(data) {
   const ss = getSS();
   const sheet = ss.getSheetByName("Branches_Config");
@@ -1521,6 +1640,12 @@ function handleManageBranches(data) {
     lock.releaseLock();
   }
 }
+/**
+ * Update Application Settings (Service/Expense Lists)
+ * 
+ * @param {Object} data - {serviceList, expenseList}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
 function handleUpdateSettings(data) {
   const ss = getSS();
   let sheet = ss.getSheetByName("Service_Expense");

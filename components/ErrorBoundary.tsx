@@ -50,7 +50,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                             <div className="bg-gray-50 rounded-xl p-4 mb-4">
                                 <p className="text-sm font-bold text-gray-700 mb-2">تفاصيل إضافية:</p>
                                 <pre className="text-xs text-gray-600 bg-white p-3 rounded border border-gray-200 overflow-auto max-h-60" dir="ltr">
-                                    {this.state.errorInfo.componentStack}
+                                    {(this.state.errorInfo as any).componentStack}
                                 </pre>
                             </div>
                         )}

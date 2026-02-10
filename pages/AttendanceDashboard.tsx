@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import SearchInput from '../components/SearchInput';
+import { HRReportItem } from '../types';
+import { STATUS } from '../constants';
 import {
     Users,
     Calendar,
@@ -14,20 +16,6 @@ import {
 } from 'lucide-react';
 import { normalizeArabic, useDebounce } from '../utils';
 
-interface AttendanceReport {
-    id: string;
-    name: string;
-    week1: number;
-    week2: number;
-    week3: number;
-    week4: number;
-    totalMonth: number;
-    todayTotal: number;
-    checkIn: string;
-    checkOut: string;
-    todayStatus: string;
-}
-
 interface UserLog {
     dateTime: string;
     type: string;
@@ -35,7 +23,7 @@ interface UserLog {
 }
 
 const AttendanceDashboard: React.FC = () => {
-    const [report, setReport] = useState<AttendanceReport[]>([]);
+    const [report, setReport] = useState<HRReportItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -58,7 +46,7 @@ const AttendanceDashboard: React.FC = () => {
         fetchReport();
     }, [selectedMonth]);
 
-    const handleUserClick = async (user: AttendanceReport) => {
+    const handleUserClick = async (user: HRReportItem) => {
         if (selectedUser === user.id) {
             setSelectedUser(null);
             return;
@@ -147,15 +135,15 @@ const AttendanceDashboard: React.FC = () => {
                                                     <span className="font-black text-[#033649] text-lg">{user.name}</span>
                                                 </td>
                                                 <td className="py-5 px-6 text-center whitespace-nowrap">
-                                                    {user.todayStatus !== 'حاضر' ? (
+                                                    {user.todayStatus !== STATUS.PRESENT ? (
                                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase bg-red-50 text-red-600 border border-red-100">
                                                             <UserMinus className="w-3.5 h-3.5" />
-                                                            غائب
+                                                            {STATUS.ABSENT}
                                                         </span>
                                                     ) : (
                                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase bg-green-50 text-green-600 border border-green-100">
                                                             <UserCheck className="w-3.5 h-3.5" />
-                                                            حاضر
+                                                            {STATUS.PRESENT}
                                                         </span>
                                                     )}
                                                 </td>
@@ -215,15 +203,15 @@ const AttendanceDashboard: React.FC = () => {
                                                                                 <tr key={idx} className="hover:bg-white transition-colors">
                                                                                     <td className="py-3 px-6 font-mono text-[#033649]">{log.dateTime}</td>
                                                                                     <td className="py-3 px-6 text-center">
-                                                                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${log.type === 'check-in'
+                                                                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${log.type === STATUS.CHECK_IN
                                                                                             ? 'bg-blue-50 text-blue-600 border border-blue-100'
                                                                                             : 'bg-orange-50 text-orange-600 border border-orange-100'
                                                                                             }`}>
-                                                                                            {log.type === 'check-in' ? 'دخول' : 'انصراف'}
+                                                                                            {log.type === STATUS.CHECK_IN ? 'دخول' : 'انصراف'}
                                                                                         </span>
                                                                                     </td>
                                                                                     <td className="py-3 px-6 text-center font-black font-mono text-[#033649] text-base">
-                                                                                        {log.type === 'check-out' ? (
+                                                                                        {log.type === STATUS.CHECK_OUT ? (
                                                                                             Number(log.hours) > 0 ? `${Number(log.hours).toFixed(2)}h` : '-'
                                                                                         ) : '-'}
                                                                                     </td>

@@ -5,6 +5,7 @@ import { GoogleSheetsService } from '../services/googleSheetsService';
 import { generateReceipt } from '../services/pdfService';
 import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw, Check } from 'lucide-react';
 import { toEnglishDigits, normalizeArabic } from '../utils';
+import { validateServiceSubmission } from '../validators';
 import { useModal } from '../context/ModalContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -192,48 +193,24 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     setError(null);
     setSuccessMsg(null);
 
-    if (!isOtherService && !isSellingForm && nationalId.length !== 14) {
-      setError("الرقم القومي يجب أن يكون 14 رقم");
-      return;
-    }
+    const validationError = validateServiceSubmission({
+      serviceType,
+      isOtherService,
+      isSellingForm,
+      nationalId,
+      phoneNumber,
+      isElectronic,
+      electronicMethod: electronicMethod as string,
+      electronicAmount,
+      amountPaid,
+      speed: speed || '',
+      isExternalBarcode,
+      barcode,
+      entries
+    });
 
-    if (!serviceType) {
-      setError("يرجى اختيار نوع الخدمة من القائمة");
-      return;
-    }
-
-    if (!isOtherService && !isSellingForm && !phoneNumber.startsWith('0')) {
-      setError(" رقم الهاتف يجب أن يبدأ بصفر (0)");
-      return;
-    }
-
-    if (isElectronic && (!electronicMethod || electronicMethod === '')) {
-      setError("يرجى اختيار وسيلة التحصيل الإلكتروني");
-      return;
-    }
-
-    if (isElectronic && electronicAmount > amountPaid) {
-      setError("خطأ: مبلغ التحصيل الإلكتروني لا يمكن أن يكون أكبر من إجمالي المبلغ المحصل.");
-      return;
-    }
-
-    // التحقق من سرعة الخدمة (إجباري للبطاقة والجواز)
-    if ((serviceType === 'بطاقة رقم قومي' || serviceType === 'جواز سفر') && !speed) {
-      setError("يرجى اختيار سرعة تنفيذ الخدمة (عادي/مستعجل/فوري)");
-      return;
-    }
-
-    if (isExternalBarcode && barcode) {
-      const duplicate = entries.find(e => e.barcode === barcode);
-      if (duplicate) {
-        setError(`هذا الباركود (${barcode}) مسجل مسبقاً للعميل ${duplicate.clientName}`);
-        return;
-      }
-    }
-
-    // التحقق من توافر الباركود للمخزن الداخلي
-    if (serviceType === 'بطاقة رقم قومي' && !isExternalBarcode && !barcode) {
-      setError(" لا يمكن إتمام المعاملة؛ مخزن الباركود فارغ ...");
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
