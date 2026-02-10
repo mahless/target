@@ -303,10 +303,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">الاسم الكامل</label>
+                                        <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">اسم الموظف</label>
                                         <input
                                             type="text"
-                                            placeholder="اسم الموظف"
                                             className="w-full px-4 py-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm"
                                             value={editingUser ? editingUser.name : newUser.name || ''}
                                             onChange={(e) => editingUser ? setEditingUser({ ...editingUser, name: e.target.value }) : setNewUser({ ...newUser, name: e.target.value })}
