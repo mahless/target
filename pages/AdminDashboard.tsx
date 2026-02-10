@@ -8,6 +8,108 @@ import { normalizeArabic, toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
 import { ROLES, BRANCHES } from '../constants';
 
+// Memoized components for list items (S8: Performance optimization)
+const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete: (id: string, name: string) => void }>(({ user, onEdit, onDelete }) => (
+    <tr className="hover:bg-blue-500/5 transition-all group">
+        <td className="py-5 px-8 whitespace-nowrap">
+            <div className="flex flex-col gap-1">
+                <span className="text-lg font-black text-[#033649]">{user.name}</span>
+                <span className="text-[10px] text-gray-400 font-black font-mono tracking-widest flex items-center gap-1.5 uppercase">
+                    <Shield className="w-3 h-3" />
+                    معرف : {toEnglishDigits(String(user.id))}
+                </span>
+            </div>
+        </td>
+        <td className="py-5 px-6 whitespace-nowrap text-center">
+            <div className="flex flex-col items-center gap-2">
+                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
+                        user.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
+                            user.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
+                                'bg-[#00A6A6]/10 text-[#00A6A6]'
+                    }`}>
+                    {user.role}
+                </span>
+                <span className="text-[10px] font-black text-gray-400 flex items-center gap-1.5 opacity-60">
+                    <MapPin className="w-3 h-3" />
+                    {user.assignedBranchId || 'غير محدد'}
+                </span>
+            </div>
+        </td>
+        <td className="py-5 px-6 whitespace-nowrap text-center">
+            <div className="flex items-center justify-center gap-2">
+                <Lock className="w-3 h-3 text-[#033649]/20" />
+                <code className="text-sm font-black text-[#033649] tracking-tighter">{toEnglishDigits(String(user.password))}</code>
+            </div>
+        </td>
+        <td className="py-5 px-8 whitespace-nowrap">
+            <div className="flex items-center justify-center gap-3">
+                <button
+                    onClick={() => onEdit(user)}
+                    className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+                >
+                    <Edit3 className="w-4.5 h-4.5" />
+                </button>
+                <button
+                    onClick={() => onDelete(String(user.id), user.name)}
+                    className="w-10 h-10 rounded-xl bg-red-500/10 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95"
+                >
+                    <Trash2 className="w-4.5 h-4.5" />
+                </button>
+            </div>
+        </td>
+    </tr>
+));
+
+const BranchCard = React.memo<{ branch: Branch; onDelete: (name: string) => void }>(({ branch, onDelete }) => (
+    <div className="relative overflow-hidden group bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-[#033649]/5 hover:border-green-100 hover:bg-green-50/50 transition-all duration-300">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-125 transition-transform" />
+        <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-600 shadow-sm">
+                    <MapPin className="w-6 h-6" />
+                </div>
+                <div>
+                    <div className="text-lg font-black text-[#033649]">{branch.name}</div>
+                    <div className="text-[11px] text-gray-400 font-bold flex items-center gap-2 mt-1">
+                        <span className="text-[#033649]/40">الرصيد :</span>
+                        <span className="text-green-600 font-black">{toEnglishDigits(String(branch.Current_Balance || branch.currentBalance || 0))} ج.م</span>
+                    </div>
+                </div>
+            </div>
+            <button
+                onClick={() => onDelete(branch.name)}
+                className="w-10 h-10 rounded-xl bg-red-500/5 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm opacity-0 group-hover:opacity-100 active:scale-95"
+            >
+                <Trash2 className="w-4.5 h-4.5" />
+            </button>
+        </div>
+    </div>
+));
+
+const ServiceTag = React.memo<{ service: string; onDelete: (service: string) => void }>(({ service, onDelete }) => (
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#00A6A6]/10 text-[#00A6A6] rounded-xl border border-[#00A6A6]/20 font-black text-xs group transition-all hover:bg-white hover:shadow-lux">
+        {service}
+        <button
+            onClick={() => onDelete(service)}
+            className="text-gray-400 hover:text-red-500 transition-colors"
+        >
+            <X className="w-4 h-4" />
+        </button>
+    </div>
+));
+
+const ExpenseTag = React.memo<{ category: string; onDelete: (category: string) => void }>(({ category, onDelete }) => (
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 font-black text-xs group transition-all hover:bg-white hover:shadow-lux">
+        {category}
+        <button
+            onClick={() => onDelete(category)}
+            className="text-orange-300 hover:text-red-500 transition-colors"
+        >
+            <X className="w-4 h-4" />
+        </button>
+    </div>
+));
+
 interface AdminDashboardProps {
     users: User[];
     branches: Branch[];
@@ -311,54 +413,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     </thead>
                                     <tbody className="divide-y divide-[#033649]/5 font-bold relative">
                                         {users.map((u) => (
-                                            <tr key={u.id} className="hover:bg-blue-500/5 transition-all group">
-                                                <td className="py-5 px-8 whitespace-nowrap">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-lg font-black text-[#033649]">{u.name}</span>
-                                                        <span className="text-[10px] text-gray-400 font-black font-mono tracking-widest flex items-center gap-1.5 uppercase">
-                                                            <Shield className="w-3 h-3" />
-                                                            معرف : {toEnglishDigits(String(u.id))}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-5 px-6 whitespace-nowrap text-center">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${u.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
-                                                            u.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
-                                                                u.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
-                                                                    'bg-[#00A6A6]/10 text-[#00A6A6]'
-                                                            }`}>
-                                                            {u.role}
-                                                        </span>
-                                                        <span className="text-[10px] font-black text-gray-400 flex items-center gap-1.5 opacity-60">
-                                                            <MapPin className="w-3 h-3" />
-                                                            {u.assignedBranchId || 'غير محدد'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-5 px-6 whitespace-nowrap text-center">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <Lock className="w-3 h-3 text-[#033649]/20" />
-                                                        <code className="text-sm font-black text-[#033649] tracking-tighter">{toEnglishDigits(String(u.password))}</code>
-                                                    </div>
-                                                </td>
-                                                <td className="py-5 px-8 whitespace-nowrap">
-                                                    <div className="flex items-center justify-center gap-3">
-                                                        <button
-                                                            onClick={() => setEditingUser(u)}
-                                                            className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
-                                                        >
-                                                            <Edit3 className="w-4.5 h-4.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteUser(String(u.id), u.name)}
-                                                            className="w-10 h-10 rounded-xl bg-red-500/10 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95"
-                                                        >
-                                                            <Trash2 className="w-4.5 h-4.5" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                            <UserRow key={u.id} user={u} onEdit={setEditingUser} onDelete={handleDeleteUser} />
                                         ))}
                                     </tbody>
                                 </table>
@@ -438,30 +493,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8">
                                 {branches.map((b) => (
-                                    <div key={b.id} className="relative overflow-hidden group bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-[#033649]/5 hover:border-green-100 hover:bg-green-50/50 transition-all duration-300">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-125 transition-transform" />
-                                        <div className="flex items-center justify-between relative z-10">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-600 shadow-sm">
-                                                    <MapPin className="w-6 h-6" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-lg font-black text-[#033649]">{b.name}</div>
-                                                    <div className="text-[11px] text-gray-400 font-bold flex items-center gap-2 mt-1">
-                                                        <span className="text-[#033649]/40">الرصيد :</span>
-                                                        <span className="text-green-600 font-black">{toEnglishDigits(String(b.Current_Balance || b.currentBalance || 0))} ج.م</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                onClick={() => handleDeleteBranch(b.name)}
-                                                className="w-10 h-10 rounded-xl bg-red-500/5 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm opacity-0 group-hover:opacity-100 active:scale-95"
-                                            >
-                                                <Trash2 className="w-4.5 h-4.5" />
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <BranchCard key={b.id} branch={b} onDelete={handleDeleteBranch} />
                                 ))}
                             </div>
                         </div>
@@ -514,15 +546,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                             <div className="flex flex-wrap gap-3 pt-2">
                                 {serviceTypes.map((type, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 px-4 py-2.5 bg-[#00A6A6]/10 text-[#00A6A6] rounded-xl border border-[#00A6A6]/20 font-black text-xs group transition-all hover:bg-white hover:shadow-lux">
-                                        {type}
-                                        <button
-                                            onClick={() => handleUpdateLists(serviceTypes.filter(t => t !== type), expenseCategories)}
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    <ServiceTag key={idx} service={type} onDelete={(t) => handleUpdateLists(serviceTypes.filter(s => s !== t), expenseCategories)} />
                                 ))}
                             </div>
                         </div>
@@ -572,15 +596,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                             <div className="flex flex-wrap gap-3 pt-2">
                                 {expenseCategories.map((cat, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 px-4 py-2.5 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 font-black text-xs group transition-all hover:bg-white hover:shadow-lux">
-                                        {cat}
-                                        <button
-                                            onClick={() => handleUpdateLists(serviceTypes, expenseCategories.filter(c => c !== cat))}
-                                            className="text-orange-300 hover:text-red-500 transition-colors"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    <ExpenseTag key={idx} category={cat} onDelete={(c) => handleUpdateLists(serviceTypes, expenseCategories.filter(exp => exp !== c))} />
                                 ))}
                             </div>
                         </div>

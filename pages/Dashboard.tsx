@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ServiceEntry, Expense, Branch } from '../types';
 import TransferForm from '../components/TransferForm';
 import SearchInput from '../components/SearchInput';
@@ -9,6 +9,14 @@ import { useModal } from '../context/ModalContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { ROLES, STATUS, STORAGE_KEYS, BRANCHES, SERVICE_TYPES, EXPENSE_CATEGORIES } from '../constants';
+
+// Module-scope constants for stable icon references (S4: Performance optimization)
+const ICONS = {
+  dollar: <DollarSign />,
+  alert: <AlertTriangle />,
+  users: <Users />,
+  clock: <Clock />
+} as const;
 
 interface DashboardProps {
   allEntries: ServiceEntry[];
@@ -68,6 +76,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const [searchTerm, setSearchTerm] = useState(() => localStorage.getItem(STORAGE_KEYS.DASHBOARD_SEARCH_TERM) || '');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+  // Refresh debounce state (S7: Performance optimization)
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
+  const [isRefreshCooldown, setIsRefreshCooldown] = useState(false);
+
   // Update storage when search changes
   React.useEffect(() => {
     if (searchTerm) {
@@ -79,15 +91,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   /* Update destructuring */
   const { showModal, hideModal, showQuickStatus, setIsProcessing } = useModal();
 
-  // الفلترة الداخلية الحيوية والموحدة
+  // Pre-normalize comparison strings (S2, S3: Performance optimization)
+  const normalizedBranch = useMemo(() => normalizeArabic(branchId), [branchId]);
+  const normalizedDateToday = useMemo(() => normalizeDate(currentDate), [currentDate]);
+  const normalizedUsername = useMemo(() => normalizeArabic(username), [username]);
+
+  // الفلترة الداخلية الحيوية والموحدة (using pre-normalized values)
   const dailyEntries = useMemo(() => {
     const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
     // إذا لم يكنديراً ولم يختر فرعاً، لا تظهر أي بيانات
     if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return [];
-
-    const normalizedBranch = normalizeArabic(branchId);
-    const normalizedDateToday = normalizeDate(currentDate);
-    const normalizedUsername = normalizeArabic(username);
 
     return allEntries.filter(e => {
       const matchesBranch = branchId === BRANCHES.ALL || normalizeArabic(e.branchId) === normalizedBranch;
@@ -95,15 +108,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       // في لوحة التحكم، الموظف يرى كل عمليات الفرع المختار
       return matchesBranch && matchesDate;
     });
-  }, [allEntries, branchId, currentDate, userRole, username]);
+  }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole]);
 
   const dailyExpenses = useMemo(() => {
     const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
     if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return [];
-
-    const normalizedBranch = normalizeArabic(branchId);
-    const normalizedDateToday = normalizeDate(currentDate);
-    const normalizedUsername = normalizeArabic(username);
 
     return allExpenses.filter(e => {
       const matchesBranch = branchId === BRANCHES.ALL || normalizeArabic(e.branchId) === normalizedBranch;
@@ -111,23 +120,14 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       // في لوحة التحكم، الموظف يرى كل مصروفات الفرع المختار
       return matchesBranch && matchesDate;
     });
-  }, [allExpenses, branchId, currentDate, userRole, username]);
+  }, [allExpenses, branchId, normalizedBranch, normalizedDateToday, userRole]);
 
   const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
 
-  // Stable icon references to prevent re-animation in StatCards
-  const icons = useMemo(() => ({
-    dollar: <DollarSign />,
-    alert: <AlertTriangle />,
-    users: <Users />,
-    clock: <Clock />
-  }), []);
-
   const currentBranch = useMemo(() => {
     if (branchId === BRANCHES.ALL) return null;
-    const normId = normalizeArabic(branchId);
-    return branches.find(b => normalizeArabic(b.id) === normId);
-  }, [branches, branchId]);
+    return branches.find(b => normalizeArabic(b.id) === normalizedBranch);
+  }, [branches, normalizedBranch, branchId]);
 
   const currentBranchBalance = useMemo(() => {
     const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
@@ -138,7 +138,24 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
   }, [branchId, userRole, branches, currentBranch]);
 
-  const showCustomerDetails = (entry: ServiceEntry) => {
+  // Debounced refresh handler (S7: Performance optimization)
+  const handleRefreshClick = useCallback(() => {
+    const now = Date.now();
+    if (now - lastRefreshTime < 300) {
+      // Still in cooldown
+      return;
+    }
+    setLastRefreshTime(now);
+    setIsRefreshCooldown(true);
+    onRefresh();
+
+    // Reset cooldown after 300ms
+    setTimeout(() => {
+      setIsRefreshCooldown(false);
+    }, 300);
+  }, [lastRefreshTime, onRefresh]);
+
+  const showCustomerDetails = useCallback((entry: ServiceEntry) => {
     showModal({
       title: 'تفاصيل المعاملة',
       content: (
@@ -237,9 +254,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       },
       cancelText: 'تراجع'
     });
-  };
+  }, [showModal, setIsProcessing]);
 
-  const handleCancelService = (entry: ServiceEntry) => {
+  const handleCancelService = useCallback((entry: ServiceEntry) => {
     let expenseAmount = 0;
 
     showModal({
@@ -286,9 +303,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         }
       }
     });
-  };
+  }, [onUpdateEntry, showModal, showQuickStatus, onRefresh]);
 
-  const handleSettleThirdParty = (entry: ServiceEntry) => {
+  const handleSettleThirdParty = useCallback((entry: ServiceEntry) => {
     showModal({
       title: 'تسوية تكلفة الطرف الثالث',
       type: 'info',
@@ -336,9 +353,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         }
       }
     });
-  };
+  }, [currentBranchBalance, onUpdateEntry, showModal, showQuickStatus, onAddExpense, onRefresh, currentDate, username]);
 
-  const handleDeliver = async (entry: ServiceEntry) => {
+  const handleDeliver = useCallback(async (entry: ServiceEntry) => {
     const remaining = entry.remainingAmount;
     let amountToCollect = remaining;
 
@@ -397,7 +414,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         onConfirm: () => performDelivery(amountToCollect)
       });
     }
-  };
+  }, [onDeliverOrder, showModal, showQuickStatus, branchId, username]);
 
   const handleTransfer = () => {
     showModal({
@@ -424,9 +441,6 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       // إذا لم يكن مديراً ولم يختر فرعاً، لا تظهر نتائج بحث عامة
       if (!isManager && (!branchId || branchId === BRANCHES.ALL)) return [];
 
-      const normalizedBranch = normalizeArabic(branchId);
-      const normalizedUsername = normalizeArabic(username);
-
       return allEntries.filter(e => {
         const matchesBranch = branchId === BRANCHES.ALL || normalizeArabic(e.branchId) === normalizedBranch;
         const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
@@ -442,16 +456,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
     // الحالة الافتراضية: عرض عمليات اليوم فقط
     return dailyEntries;
-  }, [dailyEntries, allEntries, debouncedSearchTerm, branchId, userRole, username]);
+  }, [dailyEntries, allEntries, debouncedSearchTerm, branchId, normalizedBranch, userRole]);
 
   return (
     <div className="p-3 md:p-5 space-y-4">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="كاش الخزنة" value={currentBranchBalance} icon={icons.dollar} gradient="accent" footer="صافي المبلغ المتوفر بالدرج حالياً" />
-        <StatCard title="مصروفات اليوم" value={stats.expenses} icon={icons.alert} gradient="luxury" footer="إجمالي مصروفات اليوم" />
-        <StatCard title="المتبقي على العملاء" value={stats.remaining} icon={icons.users} gradient="dark" footer="مديونيات اليوم" />
-        <StatCard title="مصاريف معلقة" value={stats.pendingThirdParty} icon={icons.clock} gradient="teal" footer="تكاليف طرف ثالث" />
+        <StatCard title="كاش الخزنة" value={currentBranchBalance} icon={ICONS.dollar} gradient="accent" footer="صافي المبلغ المتوفر بالدرج حالياً" />
+        <StatCard title="مصروفات اليوم" value={stats.expenses} icon={ICONS.alert} gradient="luxury" footer="إجمالي مصروفات اليوم" />
+        <StatCard title="المتبقي على العملاء" value={stats.remaining} icon={ICONS.users} gradient="dark" footer="مديونيات اليوم" />
+        <StatCard title="مصاريف معلقة" value={stats.pendingThirdParty} icon={ICONS.clock} gradient="teal" footer="تكاليف طرف ثالث" />
       </div>
 
       {/* Main Table Container */}
@@ -473,9 +487,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             />
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
-                onClick={onRefresh}
-                disabled={isSyncing || isSubmitting}
-                className={`flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#033649] text-white hover:bg-[#01404E]'}`}
+                onClick={handleRefreshClick}
+                disabled={isSyncing || isSubmitting || isRefreshCooldown}
+                className={`flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#033649] text-white hover:bg-[#01404E]'}`}
               >
                 <Clock className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
