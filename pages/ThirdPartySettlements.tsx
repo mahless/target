@@ -40,7 +40,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
             type: 'info',
             content: (
                 <div className="space-y-3 text-right">
-                    <p className="text-gray-600 font-bold">متأكد من دفع مبلغ <span className="text-blue-600 font-black">{entry.thirdPartyCost} ج.م</span> للمورد <span className="text-blue-600 font-black">{entry.thirdPartyName}</span>؟</p>
+                    <p className="text-gray-600 font-bold">متأكد من دفع مبلغ <span className="text-blue-600 font-black">{entry.thirdPartyCost} ج.م</span> للمكتب الخارجي <span className="text-blue-600 font-black">{entry.thirdPartyName}</span>؟</p>
                     <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
                         <p className="text-[10px] text-blue-700 leading-relaxed font-bold">سيتم خصم المبلغ من رصيد الخزنة، وسيتم تسجيل العملية باسمك.</p>
                     </div>
@@ -66,7 +66,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                         id: `tp-${Date.now()}-${entry.id}`,
                         category: 'طرف ثالث',
                         amount: entry.thirdPartyCost || 0,
-                        notes: `تسوية للمورد: ${entry.thirdPartyName} | العميل: ${entry.clientName} | ${entry.serviceType}`,
+                        notes: `تسوية للمكتب الخارجي: ${entry.thirdPartyName} | العميل: ${entry.clientName} | ${entry.serviceType}`,
                         branchId: entry.branchId,
                         date: currentDate,
                         timestamp: Date.now(),
@@ -158,7 +158,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
             <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-4">
                 <div className="flex items-center gap-3">
                     <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
-                    <h3 className="font-black text-[#033649] text-xl">تصفية وبحث التسويات</h3>
+                    <h3 className="font-black text-[#033649] text-xl">بحث في التسويات</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-3">
@@ -166,7 +166,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                         <SearchInput
                             value={searchTerm}
                             onChange={setSearchTerm}
-                            placeholder="ابحث بالعميل، المورد، أو الرقم..."
+                            placeholder="ابحث باسم العميل، أو الرقم..."
                             className="w-full"
                         />
                     </div>
@@ -192,7 +192,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                         <thead>
                             <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان المعاملة والمكتب</th>
-                                <th className="py-5 px-6 text-center">تكلفة المورد</th>
+                                <th className="py-5 px-6 text-center">تكلفة المكتب الخارجي</th>
                                 <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
                             </tr>
                         </thead>
@@ -262,7 +262,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                     <div>
                         <h4 className="font-black text-amber-700 text-sm mb-1">ملاحظة هامة حول التسويات</h4>
                         <p className="text-xs text-amber-800/70 font-bold leading-relaxed">
-                            هذه الصفحة تعرض جميع المعاملات التي تتضمن "طرف ثالث" ولم يتم دفع تكلفتها للمورد بعد. عند الضغط على "تسوية"، سيتم خصم المبلغ من الرصيد الحالي للفرع وتسجيل مصروف تلقائي.
+                            هذه الصفحة تعرض جميع المعاملات التي تتضمن "طرف ثالث" ولم يتم دفع تكلفتها للمكتب الخارجي بعد. عند الضغط على "تسوية"، سيتم خصم المبلغ من الرصيد الحالي للفرع وتسجيل مصروف تلقائي.
                         </p>
                     </div>
                 </div>

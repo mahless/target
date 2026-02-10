@@ -47,7 +47,7 @@ const AppContent: React.FC = () => {
       case '/admin/inventory': return 'إدارة المخزن';
       case '/admin/attendance': return 'لوحة الحضور والانصراف';
       case '/admin/dashboard': return 'لوحة التحكم الإدارية';
-      case '/third-party-settlements': return 'تسويات الموردين المتأخرة';
+      case '/third-party-settlements': return 'تسويات المكتب الخارجي';
       default: return 'تارجت للخدمات';
     }
   }, [location.pathname]);
