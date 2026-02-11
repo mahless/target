@@ -181,10 +181,10 @@ const Receivables: React.FC<ReceivablesProps> = ({
           <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
           <h3 className="font-black text-[#033649] text-xl">البحث في المديونيات</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+          <div className="space-y-3 font-bold">
             <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">بحث الاسم/الرقم</label>
-            <div className="flex-1 min-w-0 bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
+            <div className="bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
               <SearchInput
                 value={searchTerm}
                 onChange={setSearchTerm}
@@ -195,20 +195,23 @@ const Receivables: React.FC<ReceivablesProps> = ({
           </div>
 
           <div className="space-y-3">
-            <CustomSelect
-              label="نوع الخدمة"
-              options={serviceOptions}
-              value={filterService}
-              onChange={setFilterService}
-              placeholder="كل الخدمات"
-            />
+            <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">نوع الخدمة</label>
+            <div className="bg-white/50 p-1 rounded-2xl border border-white/40 shadow-premium">
+              <CustomSelect
+                options={serviceOptions}
+                value={filterService}
+                onChange={setFilterService}
+                placeholder="كل الخدمات"
+                showAllOption={true}
+              />
+            </div>
           </div>
 
-          <div className="flex items-end">
+          <div className="w-full">
             <button
               onClick={onRefresh}
               disabled={isSyncing || isSubmitting}
-              className={`w-full relative overflow-hidden group font-black py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-500 shadow-lux active:scale-[0.98] ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-[#033649] to-[#01404E] text-white hover:from-[#00A6A6] hover:to-[#036564]'}`}
+              className={`w-full relative overflow-hidden group font-black h-[60px] rounded-2xl flex items-center justify-center gap-3 transition-all duration-500 shadow-lux active:scale-[0.98] ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-[#033649] to-[#01404E] text-white hover:from-[#00A6A6] hover:to-[#036564]'}`}
             >
               <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
               <div className="relative z-10 flex items-center gap-3">
