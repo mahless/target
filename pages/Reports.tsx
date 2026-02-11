@@ -223,7 +223,7 @@ const Reports: React.FC<ReportsProps> = ({
             <h3 className="font-black text-[#033649] text-xl">تخصيص البحث والفترة</h3>
           </div>
 
-          <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
+          <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-1.5 rounded-2xl border border-white/40 shadow-premium">
             <div className="flex items-center gap-2 flex-1 md:flex-initial">
               <span className="text-[10px] font-black text-[#033649]/40 whitespace-nowrap px-2">من:</span>
               <input
@@ -245,9 +245,9 @@ const Reports: React.FC<ReportsProps> = ({
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <CustomSelect
               label="فرع البحث"
               options={branchOptions}
@@ -258,7 +258,7 @@ const Reports: React.FC<ReportsProps> = ({
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <CustomSelect
               label="نوع الخدمة"
               options={serviceOptions}
@@ -268,7 +268,7 @@ const Reports: React.FC<ReportsProps> = ({
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <CustomSelect
               label="نوع المصروف"
               options={expenseTypeOptions}
@@ -279,7 +279,7 @@ const Reports: React.FC<ReportsProps> = ({
           </div>
 
           {userRole === 'مدير' && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <CustomSelect
                 label="الموظف"
                 options={employeeOptions}

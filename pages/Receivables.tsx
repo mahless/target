@@ -176,13 +176,13 @@ const Receivables: React.FC<ReceivablesProps> = ({
   return (
     <div className={`p-3 md:p-6 space-y-3 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
-      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-premium border border-white/20 space-y-3 relative z-30">
+      <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-2 relative z-30">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
           <h3 className="font-black text-[#033649] text-xl">البحث في المديونيات</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
-          <div className="space-y-3 font-bold">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+          <div className="space-y-2 font-bold">
             <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">بحث الاسم/الرقم</label>
             <div className="bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
               <SearchInput
@@ -194,7 +194,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">نوع الخدمة</label>
             <div className="bg-white/50 p-1 rounded-2xl border border-white/40 shadow-premium">
               <CustomSelect

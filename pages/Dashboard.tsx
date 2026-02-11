@@ -471,7 +471,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
       {/* Main Table Container */}
       <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium overflow-hidden border border-white/20 animate-premium-in">
-        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-[#033649]/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-l from-white/50 to-transparent">
+        <div className="px-4 py-3 md:px-6 md:py-3 border-b border-[#033649]/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-l from-white/50 to-transparent">
           <div className="flex items-center gap-4">
             <div className={`w-3 h-10 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
             <div>
@@ -479,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               <p className="text-[10px] text-[#036564] font-black uppercase tracking-[0.3em] mt-1">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto bg-white/50 p-1.5 rounded-2xl border border-white/40 shadow-premium">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
