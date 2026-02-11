@@ -243,8 +243,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <Lock className="w-7 h-7" />
                     </div>
                     <div>
-                        <h2 className="text-xl md:text-2xl font-black tracking-tight">إدارة النظام</h2>
-                        <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase mt-0.5">تحكم كامل في الموظفين والفروع</p>
+                        <h2 className="text-xl md:text-2xl font-black tracking-tight">إدارة الموظفين والفروع</h2>
                     </div>
                 </div>
 
