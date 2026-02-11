@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3,
@@ -48,6 +48,20 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   branches
 }) => {
   const { showModal, showQuickStatus } = useModal();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Restore scroll position on mount
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('sidebar-scroll');
+    if (savedScroll && scrollRef.current) {
+      scrollRef.current.scrollTop = parseInt(savedScroll, 10);
+    }
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    sessionStorage.setItem('sidebar-scroll', target.scrollTop.toString());
+  };
 
   const AttendanceModalContent: React.FC<{
     attendanceStatus: 'checked-in' | 'checked-out';
@@ -261,7 +275,11 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             </h1>
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
+          >
             {/* Quick Controls Section */}
             <div className="p-4 border-b border-white/5 bg-black/10">
               <div className="space-y-3">
@@ -319,39 +337,39 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
 
             {/* Navigation Links */}
             <nav className="p-4 space-y-2">
-              <NavLink to="/dashboard" className={linkClass} onClick={() => setIsOpen(false)}>
+              <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                 <Home className="w-5 h-5" />
                 <span>الصفحة الرئيسية</span>
               </NavLink>
 
               {userRole !== 'مشاهد' && (
-                <NavLink to="/new-service" className={linkClass} onClick={() => setIsOpen(false)}>
+                <NavLink to="/new-service" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <PlusCircle className="w-5 h-5" />
                   <span>تسجيل خدمة جديدة</span>
                 </NavLink>
               )}
 
               {userRole !== 'مشاهد' && (
-                <NavLink to="/receivables" className={linkClass} onClick={() => setIsOpen(false)}>
+                <NavLink to="/receivables" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Clock className="w-5 h-5" />
                   <span>المتبقيات</span>
                 </NavLink>
               )}
 
               {userRole !== 'مشاهد' && (
-                <NavLink to="/expenses" className={linkClass} onClick={() => setIsOpen(false)}>
+                <NavLink to="/expenses" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Wallet className="w-5 h-5" />
                   <span>المصروفات</span>
                 </NavLink>
               )}
 
-              <NavLink to="/reports" className={linkClass} onClick={() => setIsOpen(false)}>
+              <NavLink to="/reports" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                 <BarChart3 className="w-5 h-5" />
                 <span>التقارير</span>
               </NavLink>
 
               {userRole !== 'مشاهد' && (
-                <NavLink to="/third-party-settlements" className={linkClass} onClick={() => setIsOpen(false)}>
+                <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Users className="w-5 h-5" />
                   <span>تسويات مكتب خارجي</span>
                 </NavLink>
@@ -359,14 +377,14 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
 
               {/* Stock / Inventory Link */}
               {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
-                <NavLink to="/admin/inventory" className={linkClass} onClick={() => setIsOpen(false)}>
+                <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Package className="w-5 h-5" />
                   <span>مخزن الباركود</span>
                 </NavLink>
               )}
 
               {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin') && (
-                <NavLink to="/admin/dashboard" className={linkClass} onClick={() => setIsOpen(false)}>
+                <NavLink to="/admin/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Settings className="w-5 h-5" />
                   <span>الاعدادات</span>
                 </NavLink>
@@ -384,7 +402,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                       : 'bg-black/20 text-gray-300 hover:bg-black/30'
                     }`
                   }
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => { if (isOpen) setIsOpen(false); }}
                 >
                   <Clock className="w-5 h-5" />
                   <span className="font-black text-sm">الحضور والانصراف</span>
