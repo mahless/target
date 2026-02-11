@@ -230,7 +230,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${isActive
+    `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 ${isActive
       ? 'bg-gradient-to-r from-[#00A6A6] to-[#036564] text-white shadow-lg shadow-[#00A6A6]/20 scale-[1.02]'
       : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6]'
     }`;
@@ -261,7 +261,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
       >
         <div className="flex flex-col h-full">
           {/* Logo Area - Fixed at top */}
-          <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-4 border-[#01404E] bg-white overflow-hidden mx-2 mt-2 rounded-2xl">
+          <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-4 border-[#01404E] bg-white overflow-hidden mx-2 mt-1 rounded-2xl">
             <div className="w-full h-3 bg-[#ffffff]"></div>
             <div className="w-full flex items-center justify-center drop-shadow-sm px-4">
               <img
@@ -270,7 +270,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 className="w-full h-auto object-contain"
               />
             </div>
-            <h1 className="text-lg font-black text-black tracking-tight uppercase py-2">
+            <h1 className="text-lg font-black text-black tracking-tight uppercase py-1.5">
               للخدمات الحكومية
             </h1>
           </div>
@@ -281,8 +281,8 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
           >
             {/* Quick Controls Section */}
-            <div className="p-4 border-b border-white/5 bg-black/10">
-              <div className="space-y-3">
+            <div className="p-3 border-b border-white/5 bg-black/10">
+              <div className="space-y-2">
                 <div>
                   <CustomSelect
                     label="الفرع الحالي"
@@ -336,7 +336,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             </div>
 
             {/* Navigation Links */}
-            <nav className="p-4 space-y-2">
+            <nav className="p-3 space-y-1">
               <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                 <Home className="w-5 h-5" />
                 <span>الصفحة الرئيسية</span>
@@ -390,14 +390,14 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 </NavLink>
               )}
 
-              <div className="border-t border-white/5 my-4 mx-4"></div>
+              <div className="border-t border-white/5 my-2 mx-4"></div>
 
               {/* Attendance Button/Link */}
               {userRole === 'مدير' ? (
                 <NavLink
                   to="/admin/attendance"
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
+                    `w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
                       ? 'bg-[#00A6A6] text-white shadow-lg'
                       : 'bg-black/20 text-gray-300 hover:bg-black/30'
                     }`
@@ -410,7 +410,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
               ) : userRole !== 'مشاهد' ? (
                 <button
                   onClick={handleAttendanceClick}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
                     ? 'bg-green-500/10 border-green-500/30 text-green-400'
                     : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
                     }`}
@@ -425,7 +425,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             <div className="p-4 border-t border-white/5">
               <button
                 onClick={onLogout}
-                className="flex w-full items-center gap-3 px-4 py-3.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
+                className="flex w-full items-center gap-3 px-4 py-2.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
               >
                 <LogOut className="w-5 h-5" />
                 <span>تسجيل الخروج</span>
