@@ -1,5 +1,18 @@
 import { ServiceEntry } from '../types';
 
+/* =========================
+   🔐 HTML Escape Protection
+========================= */
+const escapeHtml = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 export const generateReceiptHtml = (entry: ServiceEntry): string => {
   return `
     <!DOCTYPE html>
@@ -95,32 +108,32 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         .content-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 2px 0;
+          margin: 1px 0;
           border: 1px solid #000;
         }
 
         .content-table th {
           background-color: #f0f0f0;
           border: 1px solid #000;
-          padding: 5px;
-          font-size: 12pt;
+          padding: 3px;
+          font-size: 11pt;
           font-weight: 900;
         }
 
         .content-table td {
           border: 1px solid #000;
-          padding: 4px;
+          padding: 2px;
           font-size: 10pt;
           font-weight: 700;
           vertical-align: top;
         }
 
         .label {
-          font-size: 9pt;
+          font-size: 8pt;
           color: #555;
           font-weight: 600;
           display: block;
-          margin-bottom: 2px;
+          margin-bottom: 0px;
         }
 
         .value {
@@ -140,10 +153,10 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
           gap: 15px;
           justify-content: space-around;
           background: #f9f9f9;
-          padding: 2px 8px;
+          padding: 1px 8px;
           border-radius: 5px;
           border: 1px solid #ddd;
-          margin-bottom: 3px;
+          margin-bottom: 2px;
         }
 
         .total-item {
@@ -166,7 +179,7 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
 
         /* Company Contact Info Footer */
         .contact-info {
-          margin-top: 15px;
+          margin-top: 8px;
           text-align: center;
           font-size: 8pt;
           font-weight: 700;
@@ -206,10 +219,10 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
           </div>
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div class="meta-info">
-              <p class="branch-name">فرع: ${entry.branchId || 'الرئيسي'}</p>
-              <div class="meta-item">تاريخ العملية: ${entry.entryDate}</div>
-              <div class="meta-item">وقت العملية: ${new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
-              <div class="meta-item">الموظف: ${entry.recordedBy}</div>
+              <p class="branch-name">فرع: ${escapeHtml(entry.branchId || 'الرئيسي')}</p>
+              <div class="meta-item">تاريخ العملية: ${escapeHtml(entry.entryDate)}</div>
+              <div class="meta-item">وقت العملية: ${escapeHtml(new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))}</div>
+              <div class="meta-item">الموظف: ${escapeHtml(entry.recordedBy)}</div>
             </div>
 
             <div class="qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 5px; margin-left: 10px;">
@@ -224,25 +237,25 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
         <table class="content-table">
           <tbody>
             <tr>
-              <td style="width: 50%;"><span class="label">اسم العميل:</span><span class="value">${entry.clientName}</span></td>
-              <td style="width: 50%;"><span class="label">الرقم القومي:</span><span class="value" style="font-size: 9pt;">${entry.nationalId}</span></td>
+              <td style="width: 50%;"><span class="label">اسم العميل:</span><span class="value">${escapeHtml(entry.clientName)}</span></td>
+              <td style="width: 50%;"><span class="label">الرقم القومي:</span><span class="value" style="font-size: 9pt;">${escapeHtml(entry.nationalId)}</span></td>
             </tr>
             <tr>
-              <td style="width: 50%;"><span class="label">رقم الهاتف:</span><span class="value" style="font-size: 9pt;">${entry.phoneNumber || '-'}</span></td>
-              <td style="width: 50%;"><span class="label">نوع الخدمة:</span><span class="value">${entry.serviceType}</span></td>
+              <td style="width: 50%;"><span class="label">رقم الهاتف:</span><span class="value" style="font-size: 9pt;">${escapeHtml(entry.phoneNumber || '-')}</span></td>
+              <td style="width: 50%;"><span class="label">نوع الخدمة:</span><span class="value">${escapeHtml(entry.serviceType)}</span></td>
             </tr>
             <tr>
-              <td style="width: 50%;"><span class="label">الملاحظات:</span><span class="value" style="font-size: 9pt;">${entry.notes || '-'}</span></td>
-              <td style="width: 50%;"><span class="label">الباركود:</span><span class="value" style="font-family: monospace; font-size: 9pt;">${entry.barcode || '-'}</span></td>
+              <td style="width: 50%;"><span class="label">الملاحظات:</span><span class="value" style="font-size: 9pt;">${escapeHtml(entry.notes || '-')}</span></td>
+              <td style="width: 50%;"><span class="label">الباركود:</span><span class="value" style="font-family: monospace; font-size: 9pt;">${escapeHtml(entry.barcode || '-')}</span></td>
             </tr>
           </tbody>
         </table>
 
         <div class="footer">
           <div class="totals-section">
-            <div class="total-item"><span class="total-label">الإجمالي</span><span class="total-value">${entry.serviceCost} EGP</span></div>
-            <div class="total-item"><span class="total-label">المدفوع</span><span class="total-value" style="color: green;">${entry.amountPaid} EGP</span></div>
-            <div class="total-item"><span class="total-label">المتبقي</span><span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${entry.remainingAmount} EGP</span></div>
+            <div class="total-item"><span class="total-label">الإجمالي</span><span class="total-value">${escapeHtml(entry.serviceCost)} EGP</span></div>
+            <div class="total-item"><span class="total-label">المدفوع</span><span class="total-value" style="color: green;">${escapeHtml(entry.amountPaid)} EGP</span></div>
+            <div class="total-item"><span class="total-label">المتبقي</span><span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${escapeHtml(entry.remainingAmount)} EGP</span></div>
           </div>
           
           <div class="contact-info">
@@ -271,39 +284,38 @@ export const generateReceiptHtml = (entry: ServiceEntry): string => {
       </div>
       
       <script>
-        // Ensure images are loaded before notifying the parent
-        function checkImages() {
-          const imgs = [
-            document.getElementById('watermarkImg'), 
-            document.getElementById('qrImg'),
-            document.getElementById('logoImg')
-          ];
-          let loadedCount = 0;
+        async function checkReady() {
+          const imgs = Array.from(document.images);
           
-          imgs.forEach(img => {
-            if (img.complete) {
-              loadedCount++;
-            } else {
-              img.onload = () => {
-                loadedCount++;
-                if (loadedCount === imgs.length) finish();
-              };
-              img.onerror = () => {
-                loadedCount++; // Still proceed even if an image fails
-                if (loadedCount === imgs.length) finish();
-              };
-            }
+          // 1. Wait for all images
+          const imagePromises = imgs.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            });
           });
-          
-          if (loadedCount === imgs.length) finish();
+
+          // 2. Wait for Fonts
+          const fontPromise = document.fonts ? document.fonts.ready : Promise.resolve();
+
+          try {
+            await Promise.all([...imagePromises, fontPromise]);
+            setTimeout(() => {
+              window.parent.postMessage('receipt-ready', '*');
+            }, 100);
+          } catch (e) {
+            setTimeout(() => {
+              window.parent.postMessage('receipt-ready', '*');
+            }, 500);
+          }
         }
 
-        function finish() {
-          // Send message to parent that we are ready
-          window.parent.postMessage('receipt-ready', '*');
+        if (document.readyState === "complete") {
+          checkReady();
+        } else {
+          window.addEventListener("load", checkReady);
         }
-
-        window.onload = checkImages;
       </script>
     </body>
     </html>
@@ -334,23 +346,52 @@ export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
 
       // Listen for the ready message from the iframe
       const handleMessage = (event: MessageEvent) => {
-        if (event.data === 'receipt-ready') {
+        if (
+          event.source === iframe.contentWindow &&
+          event.data === 'receipt-ready'
+        ) {
           window.removeEventListener('message', handleMessage);
 
-          // Small extra delay for font rendering
           setTimeout(() => {
             try {
-              iframe.contentWindow?.focus();
-              iframe.contentWindow?.print();
+              const win = iframe.contentWindow;
+
+              let cleaned = false;
+              const cleanup = () => {
+                if (cleaned) return;
+                cleaned = true;
+
+                // Full cleanup
+                window.removeEventListener('message', handleMessage);
+
+                if (document.body.contains(iframe)) {
+                  document.body.removeChild(iframe);
+                }
+                resolve();
+              };
+
+              if (!win) {
+                cleanup();
+                return;
+              }
+
+              // High reliability cleanup
+              win.addEventListener("afterprint", cleanup, { once: true });
+
+              win.focus();
+              win.print();
+
+              // Fallback (Safari / edge cases)
+              setTimeout(cleanup, 10000);
+
             } catch (e) {
               console.error("Printing failed", e);
-            } finally {
-              resolve();
-              setTimeout(() => {
+              if (document.body.contains(iframe)) {
                 document.body.removeChild(iframe);
-              }, 10000);
+              }
+              resolve();
             }
-          }, 300);
+          }, 400);
         }
       };
 
