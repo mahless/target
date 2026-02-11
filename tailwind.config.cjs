@@ -17,6 +17,11 @@ module.exports = {
                 primary: '#1e40af', // blue-800
                 secondary: '#f59e0b', // amber-500
                 background: '#f3f4f6', // gray-100
+            },
+            boxShadow: {
+                'premium': 'var(--shadow-premium)',
+                'lux': 'var(--shadow-lux)',
+                'card-deep': 'var(--shadow-card)',
             }
         },
     },

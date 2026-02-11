@@ -223,7 +223,7 @@ const Reports: React.FC<ReportsProps> = ({
             <h3 className="font-black text-[#033649] text-xl">تخصيص البحث والفترة</h3>
           </div>
 
-          <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-2 rounded-2xl border border-white/40 shadow-inner">
+          <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
             <div className="flex items-center gap-2 flex-1 md:flex-initial">
               <span className="text-[10px] font-black text-[#033649]/40 whitespace-nowrap px-2">من:</span>
               <input
@@ -302,7 +302,7 @@ const Reports: React.FC<ReportsProps> = ({
       {/* Tabs and Table */}
       < div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden" >
         <div className="bg-[#033649]/5 p-4 border-b border-[#033649]/5">
-          <div className="flex bg-[#033649]/10 rounded-2xl p-1.5 gap-2 shadow-inner">
+          <div className="flex bg-[#033649]/10 rounded-2xl p-1.5 gap-2 shadow-lux">
             <button
               onClick={() => setActiveTab('entries')}
               className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 ${activeTab === 'entries' ? 'bg-[#033649] text-white shadow-premium scale-[1.02]' : 'text-[#033649]/40 hover:text-[#033649] hover:bg-white/50'}`}

@@ -44,7 +44,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
   };
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3.5 rounded-[2rem] shadow-2xl transition-all duration-500 hover:translate-y-[-8px] hover:shadow-lux group animate-premium-in`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3.5 rounded-[2rem] shadow-lux transition-all duration-500 hover:translate-y-[-8px] hover:shadow-2xl group animate-premium-in`}>
       {/* Decorative background circle */}
       <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
 
@@ -222,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               <p className="font-bold text-gray-600 text-[10px] whitespace-pre-wrap leading-tight">{entry.notes || 'لا توجد ملاحظات'}</p>
             </div>
             {entry.hasThirdParty && (
-              <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-2">
+              <div className="flex-1 min-w-0 bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-[10px] text-blue-400 font-black block mb-0.5">الطرف الثالث</span>
                   <p className="font-black text-blue-800 text-xs">{entry.thirdPartyName}</p>
@@ -479,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               <p className="text-[10px] text-[#036564] font-black uppercase tracking-[0.3em] mt-1">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}

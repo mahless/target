@@ -30,6 +30,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
+    const [visibleCount, setVisibleCount] = useState(50);
 
     const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
     const categoryOptions = useMemo(() => [
@@ -372,7 +373,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                     <div className="max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {branches.map(b => (
-                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-4 rounded-[2rem] border border-white flex flex-col gap-3 shadow-premium group">
+                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-4 rounded-[2rem] border border-white flex flex-col gap-3 shadow-lux group">
                                     <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
                                     <p className="text-[10px] font-black text-[#033649]/40 mb-2 border-b border-[#033649]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
                                     <div className="grid grid-cols-3 gap-4">
@@ -394,12 +395,12 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         </div>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-lux overflow-hidden">
                         <div className="p-2 md:p-3 border-b border-[#033649]/5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gradient-to-l from-[#033649]/5 to-transparent">
                             <h4 className="font-black text-xl text-[#033649] flex items-center gap-3 shrink-0">
                                 <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
                             </h4>
-                            <div className="flex flex-row gap-3 items-center justify-end flex-1 max-w-2xl">
+                            <div className="flex flex-row gap-3 items-center justify-end flex-1 max-w-2xl bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
                                 <div className="w-32 sm:w-36">
                                     <CustomSelect
                                         options={statusOptions}

@@ -165,12 +165,14 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-3">
                         <label className="block text-[10px] font-black text-[#033649]/40 uppercase tracking-widest mr-1">بحث شامل</label>
-                        <SearchInput
-                            value={searchTerm}
-                            onChange={setSearchTerm}
-                            placeholder="ابحث باسم العميل، أو الرقم..."
-                            className="w-full"
-                        />
+                        <div className="bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
+                            <SearchInput
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                                placeholder="ابحث باسم العميل، أو الرقم..."
+                                className="w-full"
+                            />
+                        </div>
                     </div>
                     <div className="flex items-end">
                         <button

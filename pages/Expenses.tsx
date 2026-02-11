@@ -29,6 +29,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
     const [category, setCategory] = useState<ExpenseCategory>('');
     const [amount, setAmount] = useState<number>(0);
     const [notes, setNotes] = useState('');
+    const [visibleCount, setVisibleCount] = useState(50);
 
     const categoryOptions = useMemo(() => expenseCategories.map(c => ({ id: c, name: c })), [expenseCategories]);
 
@@ -324,7 +325,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                                     <td className="py-6 px-6 text-red-600 font-black text-2xl text-center tracking-tighter">{expense.amount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></td>
                                                     <td className="py-6 px-6">
                                                         <div className="flex justify-between items-center gap-4">
-                                                            <div className="bg-[#033649]/5 p-3 rounded-xl border border-[#033649]/5 flex-1 max-w-xs transition-colors group-hover:bg-white">
+                                                            <div className="bg-[#033649]/5 p-3 rounded-xl border border-[#033649]/5 flex-1 max-w-xs transition-colors group-hover:bg-white shadow-premium">
                                                                 <p className="text-[10px] text-gray-600 font-bold leading-relaxed">{expense.notes || '-'}</p>
                                                             </div>
                                                             <button
