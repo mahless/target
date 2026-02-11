@@ -509,7 +509,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           </div>
         </div>
 
-        <div className="overflow-x-auto text-right">
+        <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#033649] text-white/60 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">

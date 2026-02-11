@@ -274,7 +274,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                             </h3>
                             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
                         </div>
-                        <div className="overflow-x-auto text-right">
+                        <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
@@ -296,7 +296,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                             </td>
                                         </tr>
                                     ) : (
-                                        todaysExpenses.map(expense => {
+                                        todaysExpenses.slice(0, visibleCount).map(expense => {
                                             // ربط المصروف بالعميل عبر البحث عن ID العملية في محتوى الملاحظات أو الـ ID
                                             const linkedEntry = (entries || []).find(entry =>
                                                 expense.id.includes(entry.id) ||
@@ -343,6 +343,16 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                     )}
                                 </tbody>
                             </table>
+                            {visibleCount < todaysExpenses.length && (
+                                <div className="p-6 text-center border-t border-[#033649]/5">
+                                    <button
+                                        onClick={() => setVisibleCount(prev => prev + 50)}
+                                        className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                                    >
+                                        تحميل المزيد ({todaysExpenses.length - visibleCount} متبقي)
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

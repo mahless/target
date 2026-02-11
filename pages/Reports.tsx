@@ -322,7 +322,7 @@ const Reports: React.FC<ReportsProps> = ({
 
         <div className="p-0">
           {activeTab === 'entries' ? (
-            <div className="overflow-x-auto">
+            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
@@ -381,7 +381,7 @@ const Reports: React.FC<ReportsProps> = ({
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-red-900 text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">

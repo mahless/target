@@ -158,6 +158,8 @@ const Receivables: React.FC<ReceivablesProps> = ({
   const [selectedBranch, setSelectedBranch] = useState<string>(branchId);
   const serviceOptions = useMemo(() => serviceTypes.map(s => ({ id: s, name: s })), [serviceTypes]);
 
+  const [visibleCount, setVisibleCount] = useState(50);
+
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
       const matchesService = filterService === 'الكل' || e.serviceType === filterService;
@@ -217,7 +219,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
       </div>
 
       <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-        <div className="overflow-x-auto text-right">
+        <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
@@ -240,7 +242,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredEntries.map((entry) => (
+                filteredEntries.slice(0, visibleCount).map((entry) => (
                   <tr key={entry.id} className="hover:bg-[#036564]/5 transition-all group">
                     <td className="py-5 px-8">
                       <div className="flex flex-col gap-1">
@@ -287,6 +289,16 @@ const Receivables: React.FC<ReceivablesProps> = ({
               )}
             </tbody>
           </table>
+          {visibleCount < filteredEntries.length && (
+            <div className="p-6 text-center border-t border-[#033649]/5">
+              <button
+                onClick={() => setVisibleCount(prev => prev + 50)}
+                className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                تحميل المزيد ({filteredEntries.length - visibleCount} متبقي)
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

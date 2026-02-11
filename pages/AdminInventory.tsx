@@ -419,7 +419,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto overflow-y-auto max-h-[440px] text-right custom-scrollbar">
+                        <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                             <table className="w-full border-collapse">
                                 <thead className="sticky top-0 z-20">
                                     <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
@@ -442,7 +442,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                             </td>
                                         </tr>
                                     )}
-                                    {filteredStock.slice(0, 50).map(item => (
+                                    {filteredStock.slice(0, visibleCount).map(item => (
                                         <tr key={item.id || item.barcode || (item as any).Barcode} className="hover:bg-[#036564]/5 transition-all group">
                                             <td className="py-5 px-6 text-center font-mono">
                                                 {userRole === 'مشاهد' ? (
@@ -497,6 +497,16 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                     ))}
                                 </tbody>
                             </table>
+                            {visibleCount < filteredStock.length && (
+                                <div className="p-6 text-center border-t border-[#033649]/5">
+                                    <button
+                                        onClick={() => setVisibleCount(prev => prev + 50)}
+                                        className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                                    >
+                                        تحميل المزيد ({filteredStock.length - visibleCount} متبقي)
+                                    </button>
+                                </div>
+                            )}
                             {filteredStock.length === 0 && (
                                 <div className="p-10 text-center text-gray-300 italic">لم يتم العثور على نتائج</div>
                             )}
