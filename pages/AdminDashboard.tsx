@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Branch } from '../types';
 import {
     Users, Building2, UserPlus, Trash2, Edit3, Shield, MapPin,
@@ -124,7 +124,13 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
     users, branches, serviceTypes, expenseCategories, onManageUsers, onManageBranches, onUpdateSettings, isSubmitting
 }) => {
-    const [activeTab, setActiveTab] = useState<'employees' | 'branches' | 'lists'>('employees');
+    const [activeTab, setActiveTab] = useState<'employees' | 'branches' | 'lists'>(() => {
+        return (sessionStorage.getItem('admin-dashboard-active-tab') as any) || 'employees';
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem('admin-dashboard-active-tab', activeTab);
+    }, [activeTab]);
     const { showModal, showQuickStatus } = useModal();
 
     // States for Forms
