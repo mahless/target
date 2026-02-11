@@ -36,7 +36,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const baseBorder = dark
         ? 'border-white/10'
         : accentColor === 'blue'
-            ? 'border-[#033649]/10'
+            ? 'border-[#01404E]/10'
             : 'border-emerald-200';
 
     const hoverItemClasses = dark
@@ -63,19 +63,19 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
     return (
         <div className="space-y-1 w-full text-right" ref={containerRef}>
-            {label && <label className={`block text-[10px] font-black uppercase tracking-widest mr-1 ${dark ? 'text-white/40' : 'text-[#033649]/60'} ${labelClassName}`}>{label}</label>}
+            {label && <label className={`block text-[10px] font-black uppercase tracking-widest mr-1 ${dark ? 'text-white/40' : 'text-[#01404E]/60'} ${labelClassName}`}>{label}</label>}
             <div className="relative">
                 <button
                     type="button"
                     disabled={disabled}
                     onClick={() => setIsOpen(!isOpen)}
                     className={`w-full p-4 transition-all flex items-center justify-between text-sm font-bold rounded-2xl border-2 ${disabled ? (dark ? 'bg-black/20 text-white/20 border-white/5' : 'bg-gray-100 cursor-not-allowed opacity-75 border-gray-200') :
-                        isOpen ? activeClasses : `${dark ? 'bg-black/20 text-white' : 'bg-white text-[#033649]'} ${baseBorder} hover:border-[#00A6A6]`
+                        isOpen ? activeClasses : `${dark ? 'bg-black/20 text-white' : 'bg-white text-[#01404E]'} ${baseBorder} hover:border-[#00A6A6]`
                         }`}
                 >
                     <div className="flex items-center gap-3">
                         <span className={dark ? 'text-white/20' : 'text-gray-400'}>{icon}</span>
-                        <span className={selectedOption ? (dark ? 'text-white' : 'text-[#033649]') : (dark ? 'text-white/30' : 'text-gray-400')}>
+                        <span className={selectedOption ? (dark ? 'text-white' : 'text-[#01404E]') : (dark ? 'text-white/30' : 'text-gray-400')}>
                             {selectedOption ? selectedOption.name : placeholder}
                         </span>
                     </div>
@@ -83,7 +83,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </button>
 
                 {isOpen && (
-                    <div className={`absolute z-[500] mt-2 w-full border overflow-hidden animate-scaleIn max-h-60 overflow-y-auto rounded-2xl shadow-2xl ${dark ? 'bg-[#01404E] border-white/10' : 'bg-white border-[#033649]/5'}`}>
+                    <div className={`absolute z-[500] mt-2 w-full border overflow-hidden animate-scaleIn max-h-60 overflow-y-auto rounded-2xl shadow-2xl ${dark ? 'bg-[#01404E] border-white/10' : 'bg-white border-[#01404E]/5'}`}>
                         <div className="p-2 space-y-1">
                             {/* Option for 'All' */}
                             {showAllOption && (
@@ -102,7 +102,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                     key={opt.id}
                                     type="button"
                                     onClick={() => { onChange(opt.id); setIsOpen(false); }}
-                                    className={`w-full p-3 rounded-xl text-right text-xs font-black transition-all flex items-center justify-between ${value === opt.id ? selectedItemClasses : `${dark ? 'text-white/70' : 'text-[#033649]/80'} ${hoverItemClasses}`}`}
+                                    className={`w-full p-3 rounded-xl text-right text-xs font-black transition-all flex items-center justify-between ${value === opt.id ? selectedItemClasses : `${dark ? 'text-white/70' : 'text-[#01404E]/80'} ${hoverItemClasses}`}`}
                                 >
                                     <span>{opt.name}</span>
                                     {value === opt.id && <Check className="w-3 h-3" />}

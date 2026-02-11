@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --primary-dark: #033649;
+    --primary-dark: #01404E;
     --secondary-dark: #01404E;
     --primary-teal: #036564;
     --accent-teal: #00A6A6;
@@ -16,7 +16,7 @@
   }
 
   body {
-    @apply bg-[#F2E3D5] text-[#033649] font-sans;
+    @apply bg-[#F2E3D5] text-[#01404E] font-sans;
     font-family: 'Cairo', sans-serif;
   }
 }

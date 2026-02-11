@@ -39,8 +39,8 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
   const gradientClasses: any = {
     teal: 'from-[#036564] to-[#01404E] text-white shadow-[#036564]/20',
     accent: 'from-[#00A6A6] to-[#036564] text-white shadow-[#00A6A6]/20',
-    dark: 'from-[#033649] to-[#01404E] text-white shadow-[#033649]/20',
-    luxury: 'from-[#01404E] to-[#033649] text-white shadow-[#01404E]/20'
+    dark: 'from-[#01404E] to-[#01404E] text-white shadow-[#01404E]/20',
+    luxury: 'from-[#01404E] to-[#01404E] text-white shadow-[#01404E]/20'
   };
 
   return (
@@ -471,11 +471,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
       {/* Main Table Container */}
       <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium overflow-hidden border border-white/20 animate-premium-in">
-        <div className="px-4 py-3 md:px-6 md:py-3 border-b border-[#033649]/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-l from-white/50 to-transparent">
+        <div className="px-4 py-3 md:px-6 md:py-3 border-b border-[#01404E]/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-l from-white/50 to-transparent">
           <div className="flex items-center gap-4">
             <div className={`w-3 h-10 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
             <div>
-              <h3 className="text-lg md:text-xl font-black text-[#033649] tracking-tight whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث المتقدم' : 'سجل العمليات اليومي'}</h3>
+              <h3 className="text-lg md:text-xl font-black text-[#01404E] tracking-tight whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث المتقدم' : 'سجل العمليات اليومي'}</h3>
               <p className="text-[10px] text-[#036564] font-black uppercase tracking-[0.3em] mt-1">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
             </div>
           </div>
@@ -490,7 +490,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               <button
                 onClick={handleRefreshClick}
                 disabled={isSyncing || isSubmitting || isRefreshCooldown}
-                className={`flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#033649] text-white hover:bg-[#01404E]'}`}
+                className={`flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
               >
                 <Clock className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
@@ -512,7 +512,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-[#033649] text-white/60 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+              <tr className="bg-[#01404E] text-white/60 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان الحركة</th>
                 <th className="py-5 px-8 text-center">الموظف</th>
                 <th className="py-5 px-8 text-center">المبلغ</th>
@@ -520,7 +520,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                 {userRole !== ROLES.VIEWER && <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#033649]/5 text-sm font-bold">
+            <tbody className="divide-y divide-[#01404E]/5 text-sm font-bold">
               {filteredEntries.length === 0 ? (
                 <tr><td colSpan={5} className="py-16 text-center text-gray-300 font-black">لا توجد عمليات اليوم</td></tr>
               ) : (
@@ -529,7 +529,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                     <td className="py-5 px-8">
                       <span
                         onClick={() => showCustomerDetails(entry)}
-                        className="cursor-pointer text-[#033649] group-hover:text-[#00A6A6] transition-colors font-black text-base"
+                        className="cursor-pointer text-[#01404E] group-hover:text-[#00A6A6] transition-colors font-black text-base"
                       >
                         {entry.clientName}
                       </span>
@@ -538,8 +538,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                         <span className="text-[11px] text-[#036564]/70 font-black">{entry.serviceType}</span>
                       </div>
                     </td>
-                    <td className="py-5 px-8 text-center font-black text-[#033649]/60 text-xs">{entry.recordedBy || '-'}</td>
-                    <td className="py-5 px-8 text-center font-black text-[#033649] text-lg">{toEnglishDigits(String(entry.amountPaid))}</td>
+                    <td className="py-5 px-8 text-center font-black text-[#01404E]/60 text-xs">{entry.recordedBy || '-'}</td>
+                    <td className="py-5 px-8 text-center font-black text-[#01404E] text-lg">{toEnglishDigits(String(entry.amountPaid))}</td>
                     <td className="py-5 px-8 text-center text-red-600 font-black text-lg">{toEnglishDigits(String(entry.remainingAmount))}</td>
                     {userRole !== ROLES.VIEWER && (
                       <td className="py-5 px-8 text-center">
@@ -570,7 +570,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                             <button
                               onClick={() => handleSettleThirdParty(entry)}
                               disabled={isSubmitting}
-                              className={`bg-[#033649] text-white px-4 py-1.5 rounded-xl text-[10px] font-black transition-all shadow-md ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#01404E]'}`}
+                              className={`bg-[#01404E] text-white px-4 py-1.5 rounded-xl text-[10px] font-black transition-all shadow-md ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#01404E]'}`}
                             >
                               تسوية
                             </button>
@@ -590,7 +590,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             </tbody>
           </table>
           {visibleEntriesCount < filteredEntries.length && (
-            <div className="p-6 text-center border-t border-[#033649]/5">
+            <div className="p-6 text-center border-t border-[#01404E]/5">
               <button
                 onClick={() => setVisibleEntriesCount(prev => prev + 50)}
                 className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"

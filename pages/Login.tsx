@@ -51,14 +51,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const inputClasses = "w-full pr-10 pl-4 py-3 border-none rounded-lg bg-gray-200 text-black font-bold placeholder-gray-500 focus:ring-2 focus:ring-[#00A6A6] focus:bg-white outline-none transition-all";
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#033649] to-[#036564] p-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#01404E] to-[#036564] p-4">
       <div className="absolute inset-0 bg-opacity-10 pointer-events-none" style={{ backgroundImage: `url('${import.meta.env.VITE_LOGIN_BG_PATTERN_URL}')` }}></div>
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative z-10 border border-white/20">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-br from-[#00A6A6] to-[#036564] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl shadow-[#00A6A6]/40 rotate-3">
             <Lock className={`w-10 h-10 text-white -rotate-3 ${isLoading ? 'animate-pulse' : ''}`} />
           </div>
-          <h1 className="text-3xl font-bold text-[#033649] mb-2">تارجت للخدمات الحكوميه</h1>
+          <h1 className="text-3xl font-bold text-[#01404E] mb-2">تارجت للخدمات الحكوميه</h1>
           <p className="text-gray-500 font-medium">سجل دخول للمتابعة</p>
         </div>
 

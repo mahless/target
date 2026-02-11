@@ -189,12 +189,12 @@ const Reports: React.FC<ReportsProps> = ({
     return Array.from(names).map(name => ({ id: name, name }));
   }, [entries, expenses]);
 
-  const inputClasses = "w-full p-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
+  const inputClasses = "w-full p-4 border border-[#01404E]/10 rounded-2xl bg-[#01404E]/5 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
 
   return (
     <div className="p-3 md:p-6 space-y-3 text-right animate-premium-in">
       {/* Header */}
-      <div className="bg-[#033649] p-4 md:p-5 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
+      <div className="bg-[#01404E] p-4 md:p-5 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
             <Receipt className="w-6 h-6" />
@@ -217,30 +217,30 @@ const Reports: React.FC<ReportsProps> = ({
 
       {/* Filters */}
       <div className="bg-white/80 backdrop-blur-xl p-4 md:p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-4 relative z-30">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-[#033649]/5">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-[#01404E]/5">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
-            <h3 className="font-black text-[#033649] text-xl">تخصيص البحث والفترة</h3>
+            <h3 className="font-black text-[#01404E] text-xl">تخصيص البحث والفترة</h3>
           </div>
 
           <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-1.5 rounded-2xl border border-white/40 shadow-premium">
             <div className="flex items-center gap-2 flex-1 md:flex-initial">
-              <span className="text-[10px] font-black text-[#033649]/40 whitespace-nowrap px-2">من:</span>
+              <span className="text-[10px] font-black text-[#01404E]/40 whitespace-nowrap px-2">من:</span>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
-                className="w-full bg-transparent border-none text-xs font-black text-[#033649] focus:ring-0 p-0"
+                className="w-full bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0"
               />
             </div>
-            <div className="w-px h-4 bg-[#033649]/10"></div>
+            <div className="w-px h-4 bg-[#01404E]/10"></div>
             <div className="flex items-center gap-2 flex-1 md:flex-initial">
-              <span className="text-[10px] font-black text-[#033649]/40 whitespace-nowrap px-2">إلى:</span>
+              <span className="text-[10px] font-black text-[#01404E]/40 whitespace-nowrap px-2">إلى:</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
-                className="w-full bg-transparent border-none text-xs font-black text-[#033649] focus:ring-0 p-0"
+                className="w-full bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0"
               />
             </div>
           </div>
@@ -301,11 +301,11 @@ const Reports: React.FC<ReportsProps> = ({
 
       {/* Tabs and Table */}
       < div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden" >
-        <div className="bg-[#033649]/5 p-4 border-b border-[#033649]/5">
-          <div className="flex bg-[#033649]/10 rounded-2xl p-1.5 gap-2 shadow-lux">
+        <div className="bg-[#01404E]/5 p-4 border-b border-[#01404E]/5">
+          <div className="flex bg-[#01404E]/10 rounded-2xl p-1.5 gap-2 shadow-lux">
             <button
               onClick={() => setActiveTab('entries')}
-              className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 ${activeTab === 'entries' ? 'bg-[#033649] text-white shadow-premium scale-[1.02]' : 'text-[#033649]/40 hover:text-[#033649] hover:bg-white/50'}`}
+              className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 ${activeTab === 'entries' ? 'bg-[#01404E] text-white shadow-premium scale-[1.02]' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'}`}
             >
               <ListChecks className="w-5 h-5" />
               سجل العمليات ({filteredData.entries.length})
@@ -325,7 +325,7 @@ const Reports: React.FC<ReportsProps> = ({
             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                  <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                     <th className="py-5 px-8 text-right">بيان الحركة والعميل</th>
                     <th className="py-5 px-6 text-center">المبلغ</th>
                     <th className="py-5 px-6 text-center">الفرع</th>
@@ -333,12 +333,12 @@ const Reports: React.FC<ReportsProps> = ({
                     <th className="py-5 px-8 text-center">التاريخ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#033649]/5 font-bold relative text-right">
+                <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-right">
                   {filteredData.entries.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-20 text-center">
                         <div className="flex flex-col items-center gap-4">
-                          <div className="w-16 h-16 bg-[#033649]/5 rounded-full flex items-center justify-center text-[#033649]/20">
+                          <div className="w-16 h-16 bg-[#01404E]/5 rounded-full flex items-center justify-center text-[#01404E]/20">
                             <ListChecks className="w-8 h-8" />
                           </div>
                           <span className="text-gray-300 font-black italic">لا توجد عمليات تطابق البحث</span>
@@ -350,7 +350,7 @@ const Reports: React.FC<ReportsProps> = ({
                       <tr key={e.id} className="hover:bg-[#036564]/5 transition-all group font-black text-right">
                         <td className="py-5 px-8">
                           <div className="flex flex-col gap-1 items-start">
-                            <span onClick={() => showCustomerDetails(e)} className="font-black text-[#033649] text-lg cursor-pointer hover:text-[#00A6A6] transition-colors">{e.clientName}</span>
+                            <span onClick={() => showCustomerDetails(e)} className="font-black text-[#01404E] text-lg cursor-pointer hover:text-[#00A6A6] transition-colors">{e.clientName}</span>
                             <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest w-fit">{e.serviceType}</span>
                           </div>
                         </td>
@@ -358,19 +358,19 @@ const Reports: React.FC<ReportsProps> = ({
                           <span className="text-2xl font-black text-emerald-600 tracking-tighter">+{e.amountPaid.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
                         </td>
                         <td className="py-5 px-6 text-center">
-                          <span className="bg-[#033649]/5 text-[#033649] px-3 py-1 rounded-xl text-[10px] font-black">{e.branchId}</span>
+                          <span className="bg-[#01404E]/5 text-[#01404E] px-3 py-1 rounded-xl text-[10px] font-black">{e.branchId}</span>
                         </td>
                         <td className="py-5 px-6 text-center">
                           <span className="bg-[#00A6A6]/5 text-[#00A6A6] px-3 py-1 rounded-xl text-[10px] font-black">{e.recordedBy || '-'}</span>
                         </td>
-                        <td className="py-5 px-8 text-center text-[#033649]/40 text-[11px] font-black tracking-tighter">{e.entryDate}</td>
+                        <td className="py-5 px-8 text-center text-[#01404E]/40 text-[11px] font-black tracking-tighter">{e.entryDate}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
               {visibleEntriesCount < filteredData.entries.length && (
-                <div className="p-6 text-center border-t border-[#033649]/5">
+                <div className="p-6 text-center border-t border-[#01404E]/5">
                   <button
                     onClick={() => setVisibleEntriesCount(prev => prev + 50)}
                     className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -420,7 +420,7 @@ const Reports: React.FC<ReportsProps> = ({
                           <span className="bg-red-50 text-red-900/60 px-3 py-1 rounded-xl text-[10px] font-black">{ex.branchId}</span>
                         </td>
                         <td className="py-5 px-6 text-center">
-                          <span className="bg-[#033649]/5 text-[#033649] px-3 py-1 rounded-xl text-[10px] font-black">{ex.recordedBy || '-'}</span>
+                          <span className="bg-[#01404E]/5 text-[#01404E] px-3 py-1 rounded-xl text-[10px] font-black">{ex.recordedBy || '-'}</span>
                         </td>
                         <td className="py-5 px-8 text-center text-red-900/40 text-[11px] font-black tracking-tighter">{ex.date}</td>
                       </tr>

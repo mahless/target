@@ -47,7 +47,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 <div className="fixed inset-0 pointer-events-none z-[2000] flex items-center justify-center animate-statusPopOut p-6">
                     <div className={`px-12 py-8 rounded-[2.5rem] shadow-premium flex flex-col items-center gap-4 backdrop-blur-xl border-2 transition-all duration-500 scale-110 ${quickStatus.type === 'error'
                         ? 'bg-red-600/90 text-white border-red-400/30'
-                        : 'bg-[#033649]/95 text-white border-[#00A6A6]/30'
+                        : 'bg-[#01404E]/95 text-white border-[#00A6A6]/30'
                         }`}>
                         <div className={`p-4 rounded-2xl ${quickStatus.type === 'error' ? 'bg-white/10' : 'bg-[#00A6A6]/20'} shadow-inner`}>
                             {quickStatus.type === 'error' ? <AlertTriangle className="w-10 h-10" /> : <CheckCircle2 className="w-10 h-10 text-[#00A6A6]" />}
@@ -62,7 +62,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                         }`}>
                         <button
                             onClick={hideModal}
-                            className="absolute top-6 left-6 p-2.5 text-gray-400 hover:text-[#033649] hover:bg-gray-100 rounded-2xl transition-all z-[110] active:scale-90"
+                            className="absolute top-6 left-6 p-2.5 text-gray-400 hover:text-[#01404E] hover:bg-gray-100 rounded-2xl transition-all z-[110] active:scale-90"
                             aria-label="إغلاق"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,14 +75,14 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                                 {modal.type === 'danger' ? <AlertTriangle className="w-7 h-7" /> : modal.type === 'success' ? <CheckCircle2 className="w-7 h-7" /> : <Info className="w-7 h-7" />}
                             </div>
                             <div>
-                                <h3 className={`text-2xl font-black tracking-tight ${modal.type === 'danger' ? 'text-red-700' : 'text-[#033649]'}`}>
+                                <h3 className={`text-2xl font-black tracking-tight ${modal.type === 'danger' ? 'text-red-700' : 'text-[#01404E]'}`}>
                                     {modal.title}
                                 </h3>
                                 <div className={`h-1 w-12 rounded-full mt-1 ${modal.type === 'danger' ? 'bg-red-600/30' : 'bg-[#00A6A6]/30'}`}></div>
                             </div>
                         </div>
 
-                        <div className="text-[#033649]/80 mb-8 font-bold leading-relaxed text-right overflow-y-auto custom-scrollbar px-1">
+                        <div className="text-[#01404E]/80 mb-8 font-bold leading-relaxed text-right overflow-y-auto custom-scrollbar px-1">
                             {modal.content}
                         </div>
 
@@ -90,7 +90,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                             <div className="flex gap-4 mt-auto">
                                 <button
                                     onClick={hideModal}
-                                    className="flex-1 px-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-[#033649]/60 hover:bg-gray-100 hover:text-[#033649] font-black transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
+                                    className="flex-1 px-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-[#01404E]/60 hover:bg-gray-100 hover:text-[#01404E] font-black transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
                                 >
                                     {modal.cancelIcon}
                                     {modal.cancelText || 'تراجع'}
@@ -105,7 +105,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                                         }}
                                         className={`flex-[1.5] relative overflow-hidden group px-6 py-4 text-white rounded-2xl font-black shadow-lux transition-all active:scale-95 flex items-center justify-center gap-2 text-sm ${modal.type === 'danger'
                                             ? 'bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 shadow-red-600/20'
-                                            : 'bg-gradient-to-r from-[#033649] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] shadow-[#033649]/20'
+                                            : 'bg-gradient-to-r from-[#01404E] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] shadow-[#01404E]/20'
                                             }`}
                                     >
                                         <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>

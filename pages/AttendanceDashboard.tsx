@@ -67,7 +67,7 @@ const AttendanceDashboard: React.FC = () => {
     return (
         <div className="px-4 pt-2 md:px-8 md:pt-4 pb-8 space-y-4 transition-opacity animate-premium-in" dir="rtl">
             {/* Header */}
-            <div className="bg-[#033649] p-3 md:p-4 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
+            <div className="bg-[#01404E] p-3 md:p-4 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
                         <Users className="w-6 h-6" />
@@ -106,7 +106,7 @@ const AttendanceDashboard: React.FC = () => {
             {loading ? (
                 <div className="flex flex-col items-center justify-center h-64 gap-4 bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white/20">
                     <div className="w-12 h-12 border-4 border-[#00A6A6] border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-[#033649] font-black">جاري تحميل تقرير الحضور...</p>
+                    <p className="text-[#01404E] font-black">جاري تحميل تقرير الحضور...</p>
                 </div>
             ) : (
                 <div className="space-y-6">
@@ -115,7 +115,7 @@ const AttendanceDashboard: React.FC = () => {
                         <div className="overflow-x-auto overflow-y-auto max-h-[600px] text-right custom-scrollbar">
                             <table className="w-full border-collapse">
                                 <thead className="sticky top-0 z-20">
-                                    <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                    <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                                         <th className="py-4 px-6 text-right first:rounded-tr-[2rem]">الموظف</th>
                                         <th className="py-4 px-6 text-center">حالة اليوم</th>
                                         <th className="py-4 px-6 text-center">وقت الحضور</th>
@@ -124,7 +124,7 @@ const AttendanceDashboard: React.FC = () => {
                                         <th className="py-4 px-6 text-center last:rounded-tl-[2rem]">تفاصيل</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#033649]/5 font-bold">
+                                <tbody className="divide-y divide-[#01404E]/5 font-bold">
                                     {filteredReport.length > 0 ? filteredReport.map((user) => (
                                         <React.Fragment key={user.id}>
                                             <tr
@@ -132,7 +132,7 @@ const AttendanceDashboard: React.FC = () => {
                                                 onClick={() => handleUserClick(user)}
                                             >
                                                 <td className="py-5 px-6 whitespace-nowrap">
-                                                    <span className="font-black text-[#033649] text-lg">{user.name}</span>
+                                                    <span className="font-black text-[#01404E] text-lg">{user.name}</span>
                                                 </td>
                                                 <td className="py-5 px-6 text-center whitespace-nowrap">
                                                     {user.todayStatus !== STATUS.PRESENT ? (
@@ -147,7 +147,7 @@ const AttendanceDashboard: React.FC = () => {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="py-5 px-6 text-center whitespace-nowrap font-mono font-black text-[#033649]/70">
+                                                <td className="py-5 px-6 text-center whitespace-nowrap font-mono font-black text-[#01404E]/70">
                                                     {user.checkIn !== '-' ? user.checkIn : '-'}
                                                 </td>
                                                 <td className="py-5 px-6 text-center whitespace-nowrap font-mono font-black text-[#036564]">
@@ -170,10 +170,10 @@ const AttendanceDashboard: React.FC = () => {
                                             {/* Expanded Section */}
                                             {selectedUser === user.id && (
                                                 <tr>
-                                                    <td colSpan={6} className="bg-[#033649]/5 p-0 overflow-hidden">
+                                                    <td colSpan={6} className="bg-[#01404E]/5 p-0 overflow-hidden">
                                                         <div className="max-w-4xl mx-auto py-8 px-6 animate-slideIn">
                                                             <div className="flex items-center justify-between mb-6">
-                                                                <h3 className="text-sm font-black text-[#033649] flex items-center gap-3">
+                                                                <h3 className="text-sm font-black text-[#01404E] flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-lg bg-[#00A6A6]/20 flex items-center justify-center text-[#00A6A6]">
                                                                         <Clock className="w-4 h-4" />
                                                                     </div>
@@ -189,19 +189,19 @@ const AttendanceDashboard: React.FC = () => {
                                                                     <div className="w-8 h-8 border-3 border-[#00A6A6] border-t-transparent rounded-full animate-spin"></div>
                                                                 </div>
                                                             ) : (
-                                                                <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-[#033649]/5 overflow-hidden shadow-lux">
+                                                                <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-[#01404E]/5 overflow-hidden shadow-lux">
                                                                     <table className="w-full text-right text-sm border-collapse">
                                                                         <thead>
-                                                                            <tr className="bg-[#033649]/5 text-[#033649]/60 font-black text-[10px] uppercase tracking-widest">
-                                                                                <th className="py-4 px-6 border-b border-[#033649]/5">التاريخ والوقت</th>
-                                                                                <th className="py-4 px-6 border-b border-[#033649]/5 text-center">النوع</th>
-                                                                                <th className="py-4 px-6 border-b border-[#033649]/5 text-center">الصافي (ساعات)</th>
+                                                                            <tr className="bg-[#01404E]/5 text-[#01404E]/60 font-black text-[10px] uppercase tracking-widest">
+                                                                                <th className="py-4 px-6 border-b border-[#01404E]/5">التاريخ والوقت</th>
+                                                                                <th className="py-4 px-6 border-b border-[#01404E]/5 text-center">النوع</th>
+                                                                                <th className="py-4 px-6 border-b border-[#01404E]/5 text-center">الصافي (ساعات)</th>
                                                                             </tr>
                                                                         </thead>
-                                                                        <tbody className="divide-y divide-[#033649]/5 font-bold">
+                                                                        <tbody className="divide-y divide-[#01404E]/5 font-bold">
                                                                             {userLogs.length > 0 ? userLogs.map((log, idx) => (
                                                                                 <tr key={idx} className="hover:bg-white transition-colors">
-                                                                                    <td className="py-3 px-6 font-mono text-[#033649]">{log.dateTime}</td>
+                                                                                    <td className="py-3 px-6 font-mono text-[#01404E]">{log.dateTime}</td>
                                                                                     <td className="py-3 px-6 text-center">
                                                                                         <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${log.type === STATUS.CHECK_IN
                                                                                             ? 'bg-blue-50 text-blue-600 border border-blue-100'
@@ -210,7 +210,7 @@ const AttendanceDashboard: React.FC = () => {
                                                                                             {log.type === STATUS.CHECK_IN ? 'دخول' : 'انصراف'}
                                                                                         </span>
                                                                                     </td>
-                                                                                    <td className="py-3 px-6 text-center font-black font-mono text-[#033649] text-base">
+                                                                                    <td className="py-3 px-6 text-center font-black font-mono text-[#01404E] text-base">
                                                                                         {log.type === STATUS.CHECK_OUT ? (
                                                                                             Number(log.hours) > 0 ? `${Number(log.hours).toFixed(2)}h` : '-'
                                                                                         ) : '-'}

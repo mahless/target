@@ -66,7 +66,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
   const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
 
-  const commonInputClass = "w-full p-3.5 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
+  const commonInputClass = "w-full p-3.5 border border-[#01404E]/10 rounded-2xl bg-[#01404E]/5 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
 
   // Search Logic
   const matchingClients = useMemo(() => {
@@ -301,7 +301,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   return (
     <div className="max-w-4xl mx-auto p-2 md:p-3">
       <div className={`bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium border border-white/20 transition-opacity animate-premium-in relative z-30 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
-        <div className="bg-[#033649] p-4 md:p-5 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5">
+        <div className="bg-[#01404E] p-4 md:p-5 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-[#00A6A6] rounded-full"></div>
             <h2 className="text-2xl font-black tracking-tight whitespace-nowrap">تسجيل معاملة جديدة</h2>
@@ -318,7 +318,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 setShowSearchResults(true);
               }}
               placeholder="بحث سريع عن عميل سابق..."
-              className="w-full pr-10 pl-4 py-2.5 border border-white/30 rounded-xl bg-white/5 text-white text-xs font-bold placeholder:text-white/50 focus:bg-white focus:text-[#033649] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-inner"
+              className="w-full pr-10 pl-4 py-2.5 border border-white/30 rounded-xl bg-white/5 text-white text-xs font-bold placeholder:text-white/50 focus:bg-white focus:text-[#01404E] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-inner"
             />
             {showSearchResults && matchingClients.length > 0 && (
               <div className="absolute top-full right-0 left-0 mt-2 bg-[#01404E] rounded-xl shadow-lux border border-white/10 z-[60] overflow-hidden backdrop-blur-xl">
@@ -347,17 +347,17 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
           <form onSubmit={handleSubmit} className="space-y-3">
 
             {/* Section: Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-1.5 bg-white/40 rounded-3xl border border-[#033649]/5 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-1.5 bg-white/40 rounded-3xl border border-[#01404E]/5 shadow-sm">
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-[#033649]/60 uppercase tracking-widest mb-1 mr-1">الاسم بالكامل {!isOtherService && <span className="text-red-500">*</span>}</label>
+                <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">الاسم بالكامل {!isOtherService && <span className="text-red-500">*</span>}</label>
                 <input required={!isOtherService} type="text" value={clientName} onChange={e => setClientName(e.target.value)} className={commonInputClass} placeholder="الاسم رباعي" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-[10px] font-black text-[#033649]/60 uppercase tracking-widest mb-1 mr-1">الرقم القومي {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
+                <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">الرقم القومي {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
                 <input required={!isOtherService && !isSellingForm} type="text" maxLength={14} value={nationalId} onChange={e => setNationalId(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="14 رقم" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-[10px] font-black text-[#033649]/60 uppercase tracking-widest mb-1 mr-1">رقم الهاتف {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
+                <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">رقم الهاتف {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
                 <input required={!isOtherService && !isSellingForm} type="tel" value={phoneNumber} onChange={e => setPhoneNumber(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="01xxxxxxxxx" />
               </div>
             </div>
@@ -378,16 +378,16 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 {serviceType === 'بطاقة رقم قومي' ? (
                   <div className="animate-slideIn space-y-2">
                     <div className="flex items-center justify-between px-1">
-                      <label className="block text-[10px] font-black text-[#033649]/60 uppercase tracking-[0.2em]">الباركود</label>
+                      <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-[0.2em]">الباركود</label>
                       <div className="flex items-center gap-3 group cursor-pointer" onClick={() => {
                         setIsExternalBarcode(!isExternalBarcode);
                         setBarcode('');
                         if (isExternalBarcode) setBarcodeNotFound(false);
                       }}>
-                        <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isExternalBarcode ? 'bg-[#00A6A6]' : 'bg-[#033649]/20'}`}>
+                        <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isExternalBarcode ? 'bg-[#00A6A6]' : 'bg-[#01404E]/20'}`}>
                           <div className={`w-3 h-3 bg-white rounded-full transition-transform ${isExternalBarcode ? 'translate-x-4' : 'translate-x-0'}`}></div>
                         </div>
-                        <label className="text-[10px] font-black text-[#033649]/60 cursor-pointer select-none">
+                        <label className="text-[10px] font-black text-[#01404E]/60 cursor-pointer select-none">
                           استمارة خارجية
                         </label>
                       </div>
@@ -404,7 +404,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                           className={`${commonInputClass} !py-4 !rounded-[1.5rem] border ${!isExternalBarcode && isFetchingBarcode ? 'border-amber-200 bg-amber-50/20' :
                             (!isExternalBarcode && barcodeNotFound) ? 'border-red-500 bg-red-50' :
                               (isExternalBarcode ? 'border-[#00A6A6] bg-white ring-4 ring-[#00A6A6]/5' :
-                                (barcode ? 'border-[#036564] ring-4 ring-[#036564]/5 bg-[#036564]/5' : 'border-[#033649]/10 bg-[#033649]/5')
+                                (barcode ? 'border-[#036564] ring-4 ring-[#036564]/5 bg-[#036564]/5' : 'border-[#01404E]/10 bg-[#01404E]/5')
                               )
                             } font-mono ${(!isExternalBarcode && barcodeNotFound) ? 'text-red-700' : (barcode && !isExternalBarcode ? 'text-[#036564] font-black' : '')}`}
                           placeholder={
@@ -455,7 +455,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                         key={s}
                         type="button"
                         onClick={() => setSpeed(s as ServiceSpeed)}
-                        className={`px-8 py-3 rounded-2xl text-xs font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-lg shadow-[#036564]/20 scale-105' : 'bg-white text-[#033649]/60 border-transparent hover:border-[#036564]/20'}`}
+                        className={`px-8 py-3 rounded-2xl text-xs font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-lg shadow-[#036564]/20 scale-105' : 'bg-white text-[#01404E]/60 border-transparent hover:border-[#036564]/20'}`}
                       >
                         {s}
                       </button>
@@ -598,7 +598,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full relative overflow-hidden group bg-gradient-to-r from-[#033649] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] text-white font-black py-5 rounded-[1.5rem] shadow-lux transition-all duration-500 active:scale-[0.98] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`w-full relative overflow-hidden group bg-gradient-to-r from-[#01404E] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] text-white font-black py-5 rounded-[1.5rem] shadow-lux transition-all duration-500 active:scale-[0.98] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
               <div className="relative z-10 flex items-center justify-center gap-4">

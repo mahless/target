@@ -261,7 +261,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
       >
         <div className="flex flex-col h-full">
           {/* Logo Area - Fixed at top */}
-          <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-4 border-[#033649] bg-white overflow-hidden mx-2 mt-2 rounded-2xl">
+          <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-4 border-[#01404E] bg-white overflow-hidden mx-2 mt-2 rounded-2xl">
             <div className="w-full h-3 bg-[#ffffff]"></div>
             <div className="w-full flex items-center justify-center drop-shadow-sm px-4">
               <img

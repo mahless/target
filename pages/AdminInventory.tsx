@@ -349,12 +349,12 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black text-[#033649]/40 block mb-3 mr-1 uppercase tracking-widest">الباركودات (رقم في كل سطر)</label>
+                            <label className="text-[10px] font-black text-[#01404E]/40 block mb-3 mr-1 uppercase tracking-widest">الباركودات (رقم في كل سطر)</label>
                             <textarea
                                 value={newBarcodes}
                                 onChange={e => setNewBarcodes(toEnglishDigits(e.target.value))}
                                 rows={6}
-                                className="w-full bg-[#033649]/5 border-2 border-[#00A6A6]/10 rounded-2xl py-4 px-5 font-mono text-xs outline-none focus:bg-white focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] shadow-inner transition-all"
+                                className="w-full bg-[#01404E]/5 border-2 border-[#00A6A6]/10 rounded-2xl py-4 px-5 font-mono text-xs outline-none focus:bg-white focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] shadow-inner transition-all"
                                 placeholder="أدخل الأرقام هنا..."
                             />
                         </div>
@@ -362,7 +362,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         <button
                             onClick={handleAddStock}
                             disabled={!canAddStock}
-                            className={`w-full py-5 rounded-2xl font-black text-sm transition-all shadow-lux active:scale-[0.98] ${canAddStock ? 'bg-gradient-to-r from-[#033649] to-[#01404E] text-white hover:from-[#00A6A6] hover:to-[#036564]' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
+                            className={`w-full py-5 rounded-2xl font-black text-sm transition-all shadow-lux active:scale-[0.98] ${canAddStock ? 'bg-gradient-to-r from-[#01404E] to-[#01404E]/80 text-white hover:from-[#00A6A6] hover:to-[#036564]' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
                         >
                             {canAddStock ? 'تأكيد إضافة المخزون' : 'لا تملك صلاحية الإضافة'}
                         </button>
@@ -375,13 +375,13 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                             {branches.map(b => (
                                 <div key={b.id} className="relative overflow-hidden bg-white/60 p-4 rounded-[2rem] border border-white flex flex-col gap-3 shadow-lux group">
                                     <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
-                                    <p className="text-[10px] font-black text-[#033649]/40 mb-2 border-b border-[#033649]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
+                                    <p className="text-[10px] font-black text-[#01404E]/40 mb-2 border-b border-[#01404E]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="text-center group-hover:scale-110 transition-transform">
-                                            <p className="text-[8px] font-black text-[#033649]/40 mb-1">عادي</p>
-                                            <p className="text-2xl font-black text-[#033649]">{stats[b.id]?.['عادي'] || 0}</p>
+                                            <p className="text-[8px] font-black text-[#01404E]/40 mb-1">عادي</p>
+                                            <p className="text-2xl font-black text-[#01404E]">{stats[b.id]?.['عادي'] || 0}</p>
                                         </div>
-                                        <div className="text-center border-x border-[#033649]/5 group-hover:scale-110 transition-transform">
+                                        <div className="text-center border-x border-[#01404E]/5 group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#036564]/60 mb-1">مستعجل</p>
                                             <p className="text-2xl font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
                                         </div>
@@ -396,8 +396,8 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-lux overflow-hidden">
-                        <div className="p-2 md:p-3 border-b border-[#033649]/5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gradient-to-l from-[#033649]/5 to-transparent">
-                            <h4 className="font-black text-xl text-[#033649] flex items-center gap-3 shrink-0">
+                        <div className="p-2 md:p-3 border-b border-[#01404E]/5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gradient-to-l from-[#01404E]/5 to-transparent">
+                            <h4 className="font-black text-xl text-[#01404E] flex items-center gap-3 shrink-0">
                                 <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
                             </h4>
                             <div className="flex flex-row gap-3 items-center justify-end flex-1 max-w-2xl bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
@@ -423,7 +423,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                             <table className="w-full border-collapse">
                                 <thead className="sticky top-0 z-20">
-                                    <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                    <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                                         <th className="py-3 px-4 text-center first:rounded-tr-[2rem]">الباركود</th>
                                         <th className="py-3 px-4 text-center">الفئة</th>
                                         <th className="py-3 px-4 text-center">الفرع</th>
@@ -432,7 +432,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         {userRole !== 'مشاهد' && <th className="py-3 px-4 text-center last:rounded-tl-[2rem]">إجراءات</th>}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#033649]/5 font-bold relative">
+                                <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
                                     {isSyncing && (
                                         <tr className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 backdrop-blur-[2px]">
                                             <td colSpan={6} className="py-20 text-center">
@@ -447,7 +447,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         <tr key={item.id || item.barcode || (item as any).Barcode} className="hover:bg-[#036564]/5 transition-all group">
                                             <td className="py-5 px-6 text-center font-mono">
                                                 {userRole === 'مشاهد' ? (
-                                                    <span className="font-black text-[#033649]">
+                                                    <span className="font-black text-[#01404E]">
                                                         {item.barcode || (item as any).Barcode}
                                                     </span>
                                                 ) : (
@@ -467,7 +467,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                                     {item.category || (item as any).Category}
                                                 </span>
                                             </td>
-                                            <td className="py-5 px-6 text-center text-[#033649] font-black">{branches.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
+                                            <td className="py-5 px-6 text-center text-[#01404E] font-black">{branches.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
                                             <td className="py-5 px-6 text-center">
                                                 <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${(item.status || (item as any).Status) === 'Used' ? 'bg-green-50 text-green-600' :
                                                     (item.status || (item as any).Status) === 'Error' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-500'
@@ -499,7 +499,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                 </tbody>
                             </table>
                             {visibleCount < filteredStock.length && (
-                                <div className="p-6 text-center border-t border-[#033649]/5">
+                                <div className="p-6 text-center border-t border-[#01404E]/5">
                                     <button
                                         onClick={() => setVisibleCount(prev => prev + 50)}
                                         className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"

@@ -181,7 +181,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
     };
 
 
-    const inputClasses = "w-full p-4 border border-[#033649]/10 rounded-2xl bg-[#033649]/5 text-[#033649] font-black placeholder-[#033649]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
+    const inputClasses = "w-full p-4 border border-[#01404E]/10 rounded-2xl bg-[#01404E]/5 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm";
 
     return (
         <div className={`p-3 md:p-6 space-y-3 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -191,7 +191,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                 <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-3 relative z-30">
                     <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
-                        <h3 className="font-black text-[#033649] text-lg">إضافة مصروف جديد</h3>
+                        <h3 className="font-black text-[#01404E] text-lg">إضافة مصروف جديد</h3>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-3 text-right">
@@ -207,7 +207,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-[#033649]/40 mb-1.5 ml-1 uppercase tracking-widest">القيمة المالية</label>
+                            <label className="block text-[10px] font-black text-[#01404E]/40 mb-1.5 ml-1 uppercase tracking-widest">القيمة المالية</label>
                             <div className="relative">
                                 <input
                                     type="text"
@@ -223,12 +223,12 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                             </div>
                             <p className="text-[10px] text-gray-400 mt-3 font-bold flex items-center gap-2 px-1">
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
-                                الرصيد المتاح: <span className="text-[#033649] dir-ltr">{currentBalance.toLocaleString()}</span> ج.م
+                                الرصيد المتاح: <span className="text-[#01404E] dir-ltr">{currentBalance.toLocaleString()}</span> ج.م
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-[#033649]/40 mb-1.5 ml-1 uppercase tracking-widest">بيان التفاصيل</label>
+                            <label className="block text-[10px] font-black text-[#01404E]/40 mb-1.5 ml-1 uppercase tracking-widest">بيان التفاصيل</label>
                             <textarea
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
@@ -269,8 +269,8 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
-                        <div className="p-4 md:p-5 border-b border-[#033649]/5 flex justify-between items-center bg-gradient-to-l from-[#033649]/5 to-transparent">
-                            <h3 className="font-black text-xl text-[#033649] flex items-center gap-3">
+                        <div className="p-4 md:p-5 border-b border-[#01404E]/5 flex justify-between items-center bg-gradient-to-l from-[#01404E]/5 to-transparent">
+                            <h3 className="font-black text-xl text-[#01404E] flex items-center gap-3">
                                 <Clock className="w-6 h-6 text-[#00A6A6]" />  سجل المصروفات
                             </h3>
                             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -278,13 +278,13 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                         <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                             <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-[#033649] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                    <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                                         <th className="py-5 px-6 text-center first:rounded-tr-[2rem]">البند</th>
                                         <th className="py-5 px-6 text-center">المبلغ</th>
                                         <th className="py-5 px-6 text-center last:rounded-tl-[2rem]">التفاصيل والإجراءات</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#033649]/5 font-bold relative">
+                                <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
                                     {todaysExpenses.length === 0 ? (
                                         <tr>
                                             <td colSpan={3} className="py-20 text-center">
@@ -325,7 +325,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                                     <td className="py-6 px-6 text-red-600 font-black text-2xl text-center tracking-tighter">{expense.amount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></td>
                                                     <td className="py-6 px-6">
                                                         <div className="flex justify-between items-center gap-4">
-                                                            <div className="bg-[#033649]/5 p-3 rounded-xl border border-[#033649]/5 flex-1 max-w-xs transition-colors group-hover:bg-white shadow-premium">
+                                                            <div className="bg-[#01404E]/5 p-3 rounded-xl border border-[#01404E]/5 flex-1 max-w-xs transition-colors group-hover:bg-white shadow-premium">
                                                                 <p className="text-[10px] text-gray-600 font-bold leading-relaxed">{expense.notes || '-'}</p>
                                                             </div>
                                                             <button
@@ -345,7 +345,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                 </tbody>
                             </table>
                             {visibleCount < todaysExpenses.length && (
-                                <div className="p-6 text-center border-t border-[#033649]/5">
+                                <div className="p-6 text-center border-t border-[#01404E]/5">
                                     <button
                                         onClick={() => setVisibleCount(prev => prev + 50)}
                                         className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
