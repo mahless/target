@@ -13,7 +13,7 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
     <tr className="hover:bg-blue-500/5 transition-all group">
         <td className="py-3.5 px-8 whitespace-nowrap">
             <div className="flex flex-col gap-1">
-                <span className="text-lg font-black text-[#01404E]">{user.name}</span>
+                <span className="text-base font-black text-[#01404E]">{user.name}</span>
                 <span className="text-[10px] text-gray-400 font-black font-mono tracking-widest flex items-center gap-1.5 uppercase">
                     <Shield className="w-3 h-3" />
                     معرف : {toEnglishDigits(String(user.id))}
@@ -61,12 +61,12 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
 ));
 
 const BranchCard = React.memo<{ branch: Branch; onDelete: (name: string) => void }>(({ branch, onDelete }) => (
-    <div className="relative overflow-hidden group bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-[#01404E]/5 hover:border-green-100 hover:bg-green-50/50 transition-all duration-300">
+    <div className="relative overflow-hidden group bg-white/50 backdrop-blur-md p-4 rounded-3xl border border-[#01404E]/5 hover:border-green-100 hover:bg-green-50/50 transition-all duration-300">
         <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-125 transition-transform" />
         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-600 shadow-sm">
-                    <MapPin className="w-6 h-6" />
+                <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-600 shadow-sm">
+                    <MapPin className="w-5 h-5" />
                 </div>
                 <div>
                     <div className="text-lg font-black text-[#01404E]">{branch.name}</div>
@@ -243,7 +243,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <Lock className="w-7 h-7" />
                     </div>
                     <div>
-                        <h2 className="text-xl md:text-2xl font-black tracking-tight">إدارة الموظفين والفروع</h2>
+                        <h2 className="text-xl font-black tracking-tight">إدارة الموظفين والفروع</h2>
                     </div>
                 </div>
 
@@ -279,7 +279,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
 
-                            <h2 className="text-xl font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
+                            <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                                 <div className="p-2 bg-blue-500/10 rounded-xl">
                                     <UserPlus className="w-6 h-6 text-blue-600" />
                                 </div>
@@ -408,7 +408,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="p-4 md:p-6 border-b border-[#01404E]/5 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                                    <h2 className="text-xl font-black text-[#01404E] flex items-center gap-2">
+                                    <h2 className="text-base font-black text-[#01404E] flex items-center gap-2">
                                         قائمة الموظفين
                                         <span className="bg-blue-500/10 text-blue-600 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">{users.length}</span>
                                     </h2>
@@ -418,14 +418,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse">
                                     <thead>
-                                        <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                        <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                                             <th className="py-5 px-8 text-right">الموظف والبيانات</th>
                                             <th className="py-5 px-6 text-center">الصلاحية والفرع</th>
                                             <th className="py-5 px-6 text-center">كلمة المرور</th>
                                             <th className="py-5 px-8 text-center">إجراءات</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
+                                    <tbody className="divide-y divide-[#01404E]/5 font-bold text-sm relative">
                                         {users.map((u) => (
                                             <UserRow key={u.id} user={u} onEdit={setEditingUser} onDelete={handleDeleteUser} />
                                         ))}
@@ -441,7 +441,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-8 overflow-hidden relative group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
 
-                            <h2 className="text-xl font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
+                            <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                                 <div className="p-2 bg-green-500/10 rounded-xl">
                                     <PlusCircle className="w-6 h-6 text-green-600" />
                                 </div>
@@ -498,7 +498,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="p-4 md:p-6 border-b border-[#01404E]/5 flex items-center">
                                 <div className="flex items-center gap-4">
                                     <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
-                                    <h2 className="text-xl font-black text-[#01404E] flex items-center gap-2">
+                                    <h2 className="text-base font-black text-[#01404E] flex items-center gap-2">
                                         قائمة الفروع المسجلة
                                         <span className="bg-green-500/10 text-green-600 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">{branches.length}</span>
                                     </h2>
@@ -519,7 +519,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {/* Services Management */}
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
-                        <h2 className="text-xl font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
+                        <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                             <div className="p-2 bg-blue-500/10 rounded-xl">
                                 <Shield className="w-6 h-6 text-blue-600" />
                             </div>
@@ -569,7 +569,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {/* Expenses Management */}
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
-                        <h2 className="text-xl font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
+                        <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                             <div className="p-2 bg-orange-500/10 rounded-xl">
                                 <Key className="w-6 h-6 text-orange-600" />
                             </div>

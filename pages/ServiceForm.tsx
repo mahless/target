@@ -304,7 +304,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         <div className="bg-[#01404E] p-4 md:p-5 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-[#00A6A6] rounded-full"></div>
-            <h2 className="text-2xl font-black tracking-tight whitespace-nowrap">تسجيل معاملة جديدة</h2>
+            <h2 className="text-xl font-black tracking-tight whitespace-nowrap">تسجيل معاملة جديدة</h2>
           </div>
 
           {/* Quick Client Lookup - Moved to Header */}
@@ -349,15 +349,15 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             {/* Section: Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-1.5 bg-white/40 rounded-3xl border border-[#01404E]/5 shadow-sm">
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">الاسم بالكامل {!isOtherService && <span className="text-red-500">*</span>}</label>
+                <label className="block text-xs font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">الاسم بالكامل {!isOtherService && <span className="text-red-500">*</span>}</label>
                 <input required={!isOtherService} type="text" value={clientName} onChange={e => setClientName(e.target.value)} className={commonInputClass} placeholder="الاسم رباعي" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">الرقم القومي {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
+                <label className="block text-xs font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">الرقم القومي {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
                 <input required={!isOtherService && !isSellingForm} type="text" maxLength={14} value={nationalId} onChange={e => setNationalId(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="14 رقم" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-[10px] font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">رقم الهاتف {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
+                <label className="block text-xs font-black text-[#01404E]/60 uppercase tracking-widest mb-1 mr-1">رقم الهاتف {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
                 <input required={!isOtherService && !isSellingForm} type="tel" value={phoneNumber} onChange={e => setPhoneNumber(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="01xxxxxxxxx" />
               </div>
             </div>
@@ -455,7 +455,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                         key={s}
                         type="button"
                         onClick={() => setSpeed(s as ServiceSpeed)}
-                        className={`px-8 py-3 rounded-2xl text-xs font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-lg shadow-[#036564]/20 scale-105' : 'bg-white text-[#01404E]/60 border-transparent hover:border-[#036564]/20'}`}
+                        className={`px-8 py-3 rounded-2xl text-sm font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-lg shadow-[#036564]/20 scale-105' : 'bg-white text-[#01404E]/60 border-transparent hover:border-[#036564]/20'}`}
                       >
                         {s}
                       </button>
@@ -488,7 +488,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">القيمة المحولة</label>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-lg`} placeholder="0" />
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-base`} placeholder="0" />
                   </div>
                 </div>
               )}
@@ -544,15 +544,15 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t pt-2.5">
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">إجمالي سعر الخدمة</label>
-                <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl`} placeholder="0" />
+                <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-lg`} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1 text-green-700">إجمالي المحصل (كاش + إلكتروني)</label>
-                <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-xl text-green-700 border-2 border-green-50`} placeholder="0" />
+                <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-lg text-green-700 border-2 border-green-50`} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">المتبقي الآجل</label>
-                <input readOnly type="number" value={remainingAmount} className={`w-full p-3.5 border-none rounded-xl font-black text-xl outline-none shadow-inner ${remainingAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-300 text-gray-500'}`} />
+                <input readOnly type="number" value={remainingAmount} className={`w-full p-3.5 border-none rounded-xl font-black text-lg outline-none shadow-inner ${remainingAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-300 text-gray-500'}`} />
               </div>
             </div>
 
@@ -603,7 +603,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
               <div className="relative z-10 flex items-center justify-center gap-4">
                 {isSubmitting ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-                <span className="text-xl tracking-tight">{isSubmitting ? 'جاري معالجة البيانات...' : 'حفظ وإتمام المعاملة'}</span>
+                <span className="text-lg tracking-tight">{isSubmitting ? 'جاري معالجة البيانات...' : 'حفظ وإتمام المعاملة'}</span>
               </div>
             </button>
           </form>

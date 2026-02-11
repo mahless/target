@@ -325,7 +325,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Expense Form */}
                 <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-5 relative z-30 animate-slideIn">
-                    <h3 className="font-black text-blue-900 flex items-center gap-2">
+                    <h3 className="font-black text-base text-blue-900 flex items-center gap-2">
                         <PlusCircle className="w-5 h-5" /> إضافة باركود جديد
                     </h3>
 
@@ -370,24 +370,24 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                 </div>
 
                 <div className="lg:col-span-2 space-y-4">
-                    <div className="max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                    <div className="max-h-[275px] overflow-y-auto custom-scrollbar pr-1">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {branches.map(b => (
-                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-4 rounded-[2rem] border border-white flex flex-col gap-3 shadow-lux group">
+                                <div key={b.id} className="relative overflow-hidden bg-white/60 p-3 rounded-[2rem] border border-white flex flex-col gap-2 shadow-lux group">
                                     <div className="absolute top-0 right-0 w-1 h-full bg-[#036564]"></div>
-                                    <p className="text-[10px] font-black text-[#01404E]/40 mb-2 border-b border-[#01404E]/5 pb-3 uppercase tracking-[0.2em]">{b.name}</p>
+                                    <p className="text-[10px] font-black text-[#01404E]/40 mb-1.5 border-b border-[#01404E]/5 pb-2 uppercase tracking-[0.2em]">{b.name}</p>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="text-center group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#01404E]/40 mb-1">عادي</p>
-                                            <p className="text-2xl font-black text-[#01404E]">{stats[b.id]?.['عادي'] || 0}</p>
+                                            <p className="text-[28px] font-black text-[#01404E]">{stats[b.id]?.['عادي'] || 0}</p>
                                         </div>
                                         <div className="text-center border-x border-[#01404E]/5 group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#036564]/60 mb-1">مستعجل</p>
-                                            <p className="text-2xl font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
+                                            <p className="text-[28px] font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
                                         </div>
                                         <div className="text-center group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#00A6A6]/60 mb-1">فوري</p>
-                                            <p className="text-2xl font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
+                                            <p className="text-[28px] font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -397,7 +397,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-lux overflow-hidden">
                         <div className="p-2 md:p-3 border-b border-[#01404E]/5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gradient-to-l from-[#01404E]/5 to-transparent">
-                            <h4 className="font-black text-xl text-[#01404E] flex items-center gap-3 shrink-0">
+                            <h4 className="font-black text-base text-[#01404E] flex items-center gap-3 shrink-0">
                                 <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
                             </h4>
                             <div className="flex flex-row gap-3 items-center justify-end flex-1 max-w-2xl bg-white/50 p-2 rounded-2xl border border-white/40 shadow-premium">
@@ -423,7 +423,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                         <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                             <table className="w-full border-collapse">
                                 <thead className="sticky top-0 z-20">
-                                    <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                    <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                                         <th className="py-3 px-4 text-center first:rounded-tr-[2rem]">الباركود</th>
                                         <th className="py-3 px-4 text-center">الفئة</th>
                                         <th className="py-3 px-4 text-center">الفرع</th>
@@ -432,7 +432,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         {userRole !== 'مشاهد' && <th className="py-3 px-4 text-center last:rounded-tl-[2rem]">إجراءات</th>}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
+                                <tbody className="divide-y divide-[#01404E]/5 font-bold text-sm relative">
                                     {isSyncing && (
                                         <tr className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 backdrop-blur-[2px]">
                                             <td colSpan={6} className="py-20 text-center">
@@ -447,13 +447,13 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         <tr key={item.id || item.barcode || (item as any).Barcode} className="hover:bg-[#036564]/5 transition-all group">
                                             <td className="py-5 px-6 text-center font-mono">
                                                 {userRole === 'مشاهد' ? (
-                                                    <span className="font-black text-[#01404E]">
+                                                    <span className="font-black text-[#01404E] text-base">
                                                         {item.barcode || (item as any).Barcode}
                                                     </span>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleEditBarcode(item)}
-                                                        className="text-[#00A6A6] hover:underline font-black group-hover:scale-110 transition-transform inline-block"
+                                                        className="text-[#00A6A6] hover:underline font-black group-hover:scale-110 transition-transform inline-block text-base"
                                                         title="تعديل الباركود"
                                                     >
                                                         {item.barcode || (item as any).Barcode}

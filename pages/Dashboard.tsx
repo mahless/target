@@ -44,7 +44,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
   };
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3.5 rounded-[2rem] shadow-lux transition-all duration-500 hover:translate-y-[-8px] hover:shadow-2xl group animate-premium-in`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3 rounded-[2rem] shadow-lux transition-all duration-500 hover:translate-y-[-8px] hover:shadow-2xl group animate-premium-in`}>
       {/* Decorative background circle */}
       <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
 
@@ -52,15 +52,15 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
         <div>
           <p className="text-xs text-white/70 font-black uppercase tracking-[0.2em] mb-1">{title}</p>
           <div className="flex items-baseline gap-1">
-            <p className="text-3xl font-black">{value?.toLocaleString('en-US')}</p>
+            <p className="text-[28px] font-black">{value?.toLocaleString('en-US')}</p>
             <span className="text-[10px] font-bold opacity-60">ج.م</span>
           </div>
         </div>
-        <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
-          {React.cloneElement(icon, { className: "w-5.5 h-5.5 text-white" })}
+        <div className="p-2 bg-white/10 backdrop-blur-md rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
+          {React.cloneElement(icon, { className: "w-5 h-5 text-white" })}
         </div>
       </div>
-      <div className="relative z-10 mt-3 pt-2 border-t border-white/5 text-[9px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
+      <div className="relative z-10 mt-2.5 pt-1.5 border-t border-white/5 text-[9px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-[#00A6A6] animate-pulse"></span>
         {footer}
       </div>
@@ -475,7 +475,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           <div className="flex items-center gap-4">
             <div className={`w-3 h-10 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
             <div>
-              <h3 className="text-lg md:text-xl font-black text-[#01404E] tracking-tight whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث المتقدم' : 'سجل العمليات اليومي'}</h3>
+              <h3 className="text-xl font-black text-[#01404E] tracking-tight whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث المتقدم' : 'سجل العمليات اليومي'}</h3>
               <p className="text-[10px] text-[#036564] font-black uppercase tracking-[0.3em] mt-1">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
             </div>
           </div>
@@ -535,12 +535,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                       </span>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></span>
-                        <span className="text-[11px] text-[#036564]/70 font-black">{entry.serviceType}</span>
+                        <span className="text-sm text-[#036564]/70 font-black">{entry.serviceType}</span>
                       </div>
                     </td>
-                    <td className="py-5 px-8 text-center font-black text-[#01404E]/60 text-xs">{entry.recordedBy || '-'}</td>
-                    <td className="py-5 px-8 text-center font-black text-[#01404E] text-lg">{toEnglishDigits(String(entry.amountPaid))}</td>
-                    <td className="py-5 px-8 text-center text-red-600 font-black text-lg">{toEnglishDigits(String(entry.remainingAmount))}</td>
+                    <td className="py-5 px-8 text-center font-black text-[#01404E]/60 text-sm">{entry.recordedBy || '-'}</td>
+                    <td className="py-5 px-8 text-center font-black text-[#01404E] text-base">{toEnglishDigits(String(entry.amountPaid))}</td>
+                    <td className="py-5 px-8 text-center text-red-600 font-black text-base">{toEnglishDigits(String(entry.remainingAmount))}</td>
                     {userRole !== ROLES.VIEWER && (
                       <td className="py-5 px-8 text-center">
                         <div className="flex justify-center gap-3">

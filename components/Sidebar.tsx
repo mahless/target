@@ -179,8 +179,8 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
           content: (
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-gray-50 text-gray-400 font-black">
+                <table className="w-full text-right text-sm">
+                  <thead className="bg-gray-50 text-gray-400 text-xs font-black">
                     <tr>
                       <th className="p-3">الموظف</th>
                       <th className="p-3 text-center bg-blue-50 text-blue-700">الإجمالي</th>
@@ -270,7 +270,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 className="w-full h-auto object-contain"
               />
             </div>
-            <h1 className="text-lg font-black text-black tracking-tight uppercase py-1.5">
+            <h1 className="text-base font-black text-black tracking-tight uppercase py-1.5">
               للخدمات الحكومية
             </h1>
           </div>

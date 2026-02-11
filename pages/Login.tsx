@@ -58,7 +58,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="w-20 h-20 bg-gradient-to-br from-[#00A6A6] to-[#036564] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl shadow-[#00A6A6]/40 rotate-3">
             <Lock className={`w-10 h-10 text-white -rotate-3 ${isLoading ? 'animate-pulse' : ''}`} />
           </div>
-          <h1 className="text-3xl font-bold text-[#01404E] mb-2">تارجت للخدمات الحكوميه</h1>
+          <h1 className="text-2xl font-bold text-[#01404E] mb-2">تارجت للخدمات الحكوميه</h1>
           <p className="text-gray-500 font-medium">سجل دخول للمتابعة</p>
         </div>
 

@@ -179,7 +179,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
       <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-premium border border-white/20 space-y-2 relative z-30">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
-          <h3 className="font-black text-[#01404E] text-xl">البحث في المديونيات</h3>
+          <h3 className="font-black text-[#01404E] text-base">البحث في المديونيات</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
           <div className="space-y-2 font-bold">
@@ -227,14 +227,14 @@ const Receivables: React.FC<ReceivablesProps> = ({
         <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+              <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان مديونية العميل</th>
                 <th className="py-5 px-6 text-center">الموظف</th>
                 <th className="py-5 px-6 text-center">المبلغ المتبقي</th>
                 <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
+            <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-sm">
               {filteredEntries.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-20 text-center">
@@ -253,7 +253,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
                       <div className="flex flex-col gap-1">
                         <span
                           onClick={() => showCustomerDetails(entry)}
-                          className="font-black text-[#01404E] text-lg cursor-pointer hover:text-[#00A6A6] transition-colors"
+                          className="font-black text-[#01404E] text-base cursor-pointer hover:text-[#00A6A6] transition-colors"
                         >
                           {entry.clientName}
                         </span>
@@ -270,7 +270,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
                     </td>
                     <td className="py-5 px-6 text-center">
                       <div className="flex flex-col items-center gap-1 group-hover:scale-110 transition-transform">
-                        <span className="text-2xl font-black text-red-600 tracking-tighter">{entry.remainingAmount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
+                        <span className="text-base font-black text-red-600 tracking-tighter">{entry.remainingAmount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
                         <span className="text-[9px] text-[#01404E]/40 font-black uppercase tracking-widest">من أصل {entry.serviceCost}</span>
                       </div>
                     </td>

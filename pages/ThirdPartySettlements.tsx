@@ -160,7 +160,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
             <div className="bg-white/80 backdrop-blur-xl p-4 rounded-[2.5rem] shadow-premium border border-white/20 space-y-2">
                 <div className="flex items-center gap-3">
                     <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
-                    <h3 className="font-black text-[#01404E] text-xl">بحث في التسويات</h3>
+                    <h3 className="font-black text-[#01404E] text-base">بحث في التسويات</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                     <div className="space-y-2 font-bold">
@@ -194,14 +194,14 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                            <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                                 <th className="py-5 px-8 text-right first:rounded-tr-[2rem]">بيان المعاملة والمكتب</th>
                                 <th className="py-5 px-6 text-center">الموظف</th>
                                 <th className="py-5 px-6 text-center">تكلفة المكتب الخارجي</th>
                                 <th className="py-5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
+                        <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-sm">
                             {filteredEntries.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="py-20 text-center">
@@ -238,7 +238,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                                         </td>
                                         <td className="py-5 px-6 text-center">
                                             <div className="flex flex-col items-center gap-1 group-hover:scale-110 transition-transform">
-                                                <span className="text-2xl font-black text-blue-600 tracking-tighter">{entry.thirdPartyCost?.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
+                                                <span className="text-base font-black text-blue-600 tracking-tighter">{entry.thirdPartyCost?.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
                                             </div>
                                         </td>
                                         <td className="py-5 px-8 text-center">

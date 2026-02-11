@@ -191,7 +191,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                 <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-3 relative z-30">
                     <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
-                        <h3 className="font-black text-[#01404E] text-lg">إضافة مصروف جديد</h3>
+                        <h3 className="font-black text-[#01404E] text-base">إضافة مصروف جديد</h3>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-3 text-right">
@@ -246,7 +246,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                             <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                             <div className="relative z-10 flex items-center gap-3">
                                 {isSubmitting ? <Clock className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 border-white group-hover:scale-110 transition-transform" />}
-                                <span className="text-lg">{isSubmitting ? 'جاري الحفظ...' : 'تسجيل المبلغ'}</span>
+                                <span className="text-base">{isSubmitting ? 'جاري الحفظ...' : 'تسجيل المبلغ'}</span>
                             </div>
                         </button>
                     </form>
@@ -254,23 +254,23 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
 
                 {/* Expenses List */}
                 <div className="lg:col-span-2 space-y-4">
-                    <div className="relative overflow-hidden bg-gradient-to-br from-red-600 to-red-900 p-8 rounded-[2.5rem] shadow-premium flex justify-between items-center group">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-red-600 to-red-900 p-6 rounded-[2.5rem] shadow-premium flex justify-between items-center group">
                         <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
                         <div className="relative z-10 flex flex-col">
                             <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">إجمالي مصروفات اليوم</span>
                             <span className="text-sm text-white/60 font-black">فرع {branchId} <span className="mx-2 opacity-30">|</span> {currentDate}</span>
                         </div>
                         <div className="relative z-10 flex items-center gap-6">
-                            <div className="p-5 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
-                                <TrendingDown className="w-8 h-8" />
+                            <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
+                                <TrendingDown className="w-7 h-7" />
                             </div>
-                            <span className="text-5xl font-black text-white tracking-tighter">{totalExpenses.toLocaleString()}<span className="text-lg mr-2 opacity-50">ج.م</span></span>
+                            <span className="text-[28px] font-black text-white tracking-tighter">{totalExpenses.toLocaleString()}<span className="text-lg mr-2 opacity-50">ج.م</span></span>
                         </div>
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
                         <div className="p-4 md:p-5 border-b border-[#01404E]/5 flex justify-between items-center bg-gradient-to-l from-[#01404E]/5 to-transparent">
-                            <h3 className="font-black text-xl text-[#01404E] flex items-center gap-3">
+                            <h3 className="font-black text-base text-[#01404E] flex items-center gap-3">
                                 <Clock className="w-6 h-6 text-[#00A6A6]" />  سجل المصروفات
                             </h3>
                             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -278,13 +278,13 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                         <div className="max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                             <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                    <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                                         <th className="py-5 px-6 text-center first:rounded-tr-[2rem]">البند</th>
                                         <th className="py-5 px-6 text-center">المبلغ</th>
                                         <th className="py-5 px-6 text-center last:rounded-tl-[2rem]">التفاصيل والإجراءات</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#01404E]/5 font-bold relative">
+                                <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-sm">
                                     {todaysExpenses.length === 0 ? (
                                         <tr>
                                             <td colSpan={3} className="py-20 text-center">
@@ -317,12 +317,12 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                                                     <div className="w-6 h-6 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                                                                         <User className="w-3.5 h-3.5" />
                                                                     </div>
-                                                                    <span className="text-xs font-black underline decoration-dotted underline-offset-4">{linkedEntry.clientName}</span>
+                                                                    <span className="text-base font-black underline decoration-dotted underline-offset-4">{linkedEntry.clientName}</span>
                                                                 </button>
                                                             )}
                                                         </div>
                                                     </td>
-                                                    <td className="py-6 px-6 text-red-600 font-black text-2xl text-center tracking-tighter">{expense.amount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></td>
+                                                    <td className="py-6 px-6 text-red-600 font-black text-lg text-center tracking-tighter">{expense.amount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></td>
                                                     <td className="py-6 px-6">
                                                         <div className="flex justify-between items-center gap-4">
                                                             <div className="bg-[#01404E]/5 p-3 rounded-xl border border-[#01404E]/5 flex-1 max-w-xs transition-colors group-hover:bg-white shadow-premium">

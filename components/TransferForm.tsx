@@ -53,8 +53,8 @@ const TransferForm: React.FC<TransferFormProps> = ({
                                 setIsPickingBranch(false);
                             }}
                             className={`w-full p-4 rounded-2xl text-right font-bold transition-all flex items-center justify-between border-2 ${selectedBranchId === b.id
-                                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                    : 'border-gray-100 bg-white text-gray-600 hover:border-blue-200'
+                                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                : 'border-gray-100 bg-white text-gray-600 hover:border-blue-200'
                                 }`}
                         >
                             <span>{b.name}</span>
@@ -72,20 +72,20 @@ const TransferForm: React.FC<TransferFormProps> = ({
             {/* Balance Card */}
             <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
                 <div>
-                    <p className="text-[10px] text-blue-700 font-black uppercase mb-1">كاش الخزنة الحالي</p>
-                    <p className="text-2xl font-black text-blue-600">{currentBalance.toLocaleString()} ج.م</p>
+                    <p className="text-xs text-blue-700 font-black uppercase mb-1">كاش الخزنة الحالي</p>
+                    <p className="text-xl font-black text-blue-600">{currentBalance.toLocaleString()} ج.م</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-blue-300 opacity-50" />
             </div>
 
             {/* Branch Selection Button */}
             <div className="space-y-2">
-                <label className="block text-[10px] font-black text-gray-900 uppercase pr-1">الفرع المستلم</label>
+                <label className="block text-xs font-black text-gray-900 uppercase pr-1">الفرع المستلم</label>
                 <button
                     onClick={() => setIsPickingBranch(true)}
                     className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${selectedBranchId
-                            ? 'bg-white border-blue-600 text-blue-800'
-                            : 'bg-gray-100 border-transparent text-gray-400'
+                        ? 'bg-white border-blue-600 text-blue-800'
+                        : 'bg-gray-100 border-transparent text-gray-400'
                         }`}
                 >
                     <span className={`font-bold text-sm ${selectedBranchId ? '' : 'text-gray-500'}`}>
@@ -97,13 +97,13 @@ const TransferForm: React.FC<TransferFormProps> = ({
 
             {/* Amount Input */}
             <div className="space-y-2">
-                <label className="block text-[10px] font-black text-gray-900 uppercase pr-1">مبلغ التحويل</label>
+                <label className="block text-xs font-black text-gray-900 uppercase pr-1">مبلغ التحويل</label>
                 <input
                     type="text"
                     inputMode="numeric"
                     placeholder="0.00"
                     onChange={(e) => setAmount(Number(toEnglishDigits(e.target.value)))}
-                    className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-600 font-black text-lg outline-none transition-all"
+                    className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-600 font-black text-base outline-none transition-all"
                 />
             </div>
 

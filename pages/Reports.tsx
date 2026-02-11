@@ -33,19 +33,19 @@ const StatCard = ({ title, value, icon, color, footer }: any) => {
   const theme = colorMap[color] || colorMap.blue;
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-4 rounded-[2.5rem] shadow-lux group transition-all duration-500 hover:scale-[1.02]`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-3.5 rounded-[2.5rem] shadow-lux group transition-all duration-500 hover:scale-[1.02]`}>
       <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
-      <div className="relative z-10 flex flex-col h-full justify-between gap-1.5">
+      <div className="relative z-10 flex flex-col h-full justify-between gap-0.5">
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
             <span className="text-xs font-black text-white/40 uppercase tracking-[0.3em] mb-1">{title}</span>
-            <span className="text-4xl font-black text-white tracking-tighter">{value.toLocaleString()}<span className="text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
+            <span className="text-[28px] font-black text-white tracking-tighter">{value.toLocaleString()}<span className="text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
           </div>
-          <div className="p-3 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
-            {React.cloneElement(icon, { className: 'w-7 h-7' })}
+          <div className="p-2.5 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
+            {React.cloneElement(icon, { className: 'w-6 h-6' })}
           </div>
         </div>
-        <div className="pt-2 border-t border-white/5 text-[10px] text-white/40 font-black tracking-widest uppercase">
+        <div className="pt-1.5 border-t border-white/5 text-[10px] text-white/40 font-black tracking-widest uppercase">
           {footer}
         </div>
       </div>
@@ -200,7 +200,7 @@ const Reports: React.FC<ReportsProps> = ({
             <Receipt className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-black tracking-tight">التقارير التحليلية</h2>
+            <h2 className="text-xl font-black tracking-tight">التقارير التحليلية</h2>
             <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الأداء والتدفقات النقدية</p>
           </div>
         </div>
@@ -220,7 +220,7 @@ const Reports: React.FC<ReportsProps> = ({
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-[#01404E]/5">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-[#00A6A6] rounded-full"></div>
-            <h3 className="font-black text-[#01404E] text-xl">تخصيص البحث والفترة</h3>
+            <h3 className="font-black text-[#01404E] text-base">تخصيص البحث والفترة</h3>
           </div>
 
           <div className="flex items-center gap-4 w-full md:w-auto bg-white/50 p-1.5 rounded-2xl border border-white/40 shadow-premium">
@@ -325,7 +325,7 @@ const Reports: React.FC<ReportsProps> = ({
             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                  <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                     <th className="py-5 px-8 text-right">بيان الحركة والعميل</th>
                     <th className="py-5 px-6 text-center">المبلغ</th>
                     <th className="py-5 px-6 text-center">الفرع</th>
@@ -333,7 +333,7 @@ const Reports: React.FC<ReportsProps> = ({
                     <th className="py-5 px-8 text-center">التاريخ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-right">
+                <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-right text-sm">
                   {filteredData.entries.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-20 text-center">
@@ -350,7 +350,7 @@ const Reports: React.FC<ReportsProps> = ({
                       <tr key={e.id} className="hover:bg-[#036564]/5 transition-all group font-black text-right">
                         <td className="py-5 px-8">
                           <div className="flex flex-col gap-1 items-start">
-                            <span onClick={() => showCustomerDetails(e)} className="font-black text-[#01404E] text-lg cursor-pointer hover:text-[#00A6A6] transition-colors">{e.clientName}</span>
+                            <span onClick={() => showCustomerDetails(e)} className="font-black text-[#01404E] text-base cursor-pointer hover:text-[#00A6A6] transition-colors">{e.clientName}</span>
                             <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest w-fit">{e.serviceType}</span>
                           </div>
                         </td>
@@ -384,7 +384,7 @@ const Reports: React.FC<ReportsProps> = ({
             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-red-900 text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                  <tr className="bg-red-900 text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
                     <th className="py-5 px-8 text-right">البند / التصنيف</th>
                     <th className="py-5 px-6 text-center">المبلغ</th>
                     <th className="py-5 px-6 text-center">الفرع</th>
@@ -392,7 +392,7 @@ const Reports: React.FC<ReportsProps> = ({
                     <th className="py-5 px-8 text-center">التاريخ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-red-900/5 font-bold relative text-right">
+                <tbody className="divide-y divide-red-900/5 font-bold relative text-right text-sm">
                   {filteredData.expenses.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-20 text-center">
@@ -409,7 +409,7 @@ const Reports: React.FC<ReportsProps> = ({
                       <tr key={ex.id} className="hover:bg-red-50 transition-all group font-black text-right">
                         <td className="py-5 px-8">
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="font-black text-red-900 text-lg uppercase">{ex.category}</span>
+                            <span className="font-black text-red-900 text-base uppercase">{ex.category}</span>
                             <span className="text-[11px] text-red-900/40 font-bold italic">{ex.notes || 'بدون تفاصيل'}</span>
                           </div>
                         </td>

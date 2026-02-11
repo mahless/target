@@ -73,7 +73,7 @@ const AttendanceDashboard: React.FC = () => {
                         <Users className="w-6 h-6" />
                     </div>
                     <div>
-                        <h2 className="text-lg md:text-xl font-black tracking-tight">بيانات الحضور والانصراف</h2>
+                        <h2 className="text-xl font-black tracking-tight">بيانات الحضور والانصراف</h2>
                         <p className="text-white/40 text-[9px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الموظفين والساعات الشهرية</p>
                     </div>
                 </div>
@@ -115,13 +115,13 @@ const AttendanceDashboard: React.FC = () => {
                         <div className="overflow-x-auto overflow-y-auto max-h-[600px] text-right custom-scrollbar">
                             <table className="w-full border-collapse">
                                 <thead className="sticky top-0 z-20">
-                                    <tr className="bg-[#01404E] text-white/50 text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
-                                        <th className="py-4 px-6 text-right first:rounded-tr-[2rem]">الموظف</th>
-                                        <th className="py-4 px-6 text-center">حالة اليوم</th>
-                                        <th className="py-4 px-6 text-center">وقت الحضور</th>
-                                        <th className="py-4 px-6 text-center">وقت الانصراف</th>
-                                        <th className="py-4 px-6 text-center bg-blue-50/10">إجمالي اليوم</th>
-                                        <th className="py-4 px-6 text-center last:rounded-tl-[2rem]">تفاصيل</th>
+                                    <tr className="bg-[#01404E] text-white/50 text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
+                                        <th className="py-3 px-6 text-right first:rounded-tr-[2rem]">الموظف</th>
+                                        <th className="py-3 px-6 text-center">حالة اليوم</th>
+                                        <th className="py-3 px-6 text-center">وقت الحضور</th>
+                                        <th className="py-3 px-6 text-center">وقت الانصراف</th>
+                                        <th className="py-3 px-6 text-center bg-blue-50/10">إجمالي اليوم</th>
+                                        <th className="py-3 px-6 text-center last:rounded-tl-[2rem]">تفاصيل</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#01404E]/5 font-bold">
@@ -131,10 +131,10 @@ const AttendanceDashboard: React.FC = () => {
                                                 className={`hover:bg-[#036564]/5 cursor-pointer transition-all group ${selectedUser === user.id ? 'bg-[#036564]/10' : ''}`}
                                                 onClick={() => handleUserClick(user)}
                                             >
-                                                <td className="py-5 px-6 whitespace-nowrap">
-                                                    <span className="font-black text-[#01404E] text-lg">{user.name}</span>
+                                                <td className="py-3.5 px-6 whitespace-nowrap">
+                                                    <span className="font-black text-[#01404E] text-base">{user.name}</span>
                                                 </td>
-                                                <td className="py-5 px-6 text-center whitespace-nowrap">
+                                                <td className="py-3.5 px-6 text-center whitespace-nowrap">
                                                     {user.todayStatus !== STATUS.PRESENT ? (
                                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase bg-red-50 text-red-600 border border-red-100">
                                                             <UserMinus className="w-3.5 h-3.5" />
@@ -147,16 +147,16 @@ const AttendanceDashboard: React.FC = () => {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="py-5 px-6 text-center whitespace-nowrap font-mono font-black text-[#01404E]/70">
+                                                <td className="py-3.5 px-6 text-center whitespace-nowrap font-mono font-black text-[#01404E]/70">
                                                     {user.checkIn !== '-' ? user.checkIn : '-'}
                                                 </td>
-                                                <td className="py-5 px-6 text-center whitespace-nowrap font-mono font-black text-[#036564]">
+                                                <td className="py-3.5 px-6 text-center whitespace-nowrap font-mono font-black text-[#036564]">
                                                     {user.checkOut !== '-' ? user.checkOut : '-'}
                                                 </td>
-                                                <td className="py-5 px-6 text-center whitespace-nowrap bg-blue-50/10">
+                                                <td className="py-3.5 px-6 text-center whitespace-nowrap bg-blue-50/10">
                                                     <span className="font-black text-[#00A6A6] font-mono text-xl">{user.todayTotal}h</span>
                                                 </td>
-                                                <td className="py-5 px-6 text-center">
+                                                <td className="py-3.5 px-6 text-center">
                                                     <div className="flex justify-center">
                                                         {selectedUser === user.id ? (
                                                             <ChevronUp className="w-5 h-5 text-[#00A6A6] animate-bounce" />
@@ -171,7 +171,7 @@ const AttendanceDashboard: React.FC = () => {
                                             {selectedUser === user.id && (
                                                 <tr>
                                                     <td colSpan={6} className="bg-[#01404E]/5 p-0 overflow-hidden">
-                                                        <div className="max-w-4xl mx-auto py-8 px-6 animate-slideIn">
+                                                        <div className="max-w-4xl mx-auto py-5 px-6 animate-slideIn">
                                                             <div className="flex items-center justify-between mb-6">
                                                                 <h3 className="text-sm font-black text-[#01404E] flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-lg bg-[#00A6A6]/20 flex items-center justify-center text-[#00A6A6]">
@@ -192,13 +192,13 @@ const AttendanceDashboard: React.FC = () => {
                                                                 <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-[#01404E]/5 overflow-hidden shadow-lux">
                                                                     <table className="w-full text-right text-sm border-collapse">
                                                                         <thead>
-                                                                            <tr className="bg-[#01404E]/5 text-[#01404E]/60 font-black text-[10px] uppercase tracking-widest">
+                                                                            <tr className="bg-[#01404E]/5 text-[#01404E]/60 font-black text-xs uppercase tracking-widest">
                                                                                 <th className="py-4 px-6 border-b border-[#01404E]/5">التاريخ والوقت</th>
                                                                                 <th className="py-4 px-6 border-b border-[#01404E]/5 text-center">النوع</th>
                                                                                 <th className="py-4 px-6 border-b border-[#01404E]/5 text-center">الصافي (ساعات)</th>
                                                                             </tr>
                                                                         </thead>
-                                                                        <tbody className="divide-y divide-[#01404E]/5 font-bold">
+                                                                        <tbody className="divide-y divide-[#01404E]/5 font-bold text-sm">
                                                                             {userLogs.length > 0 ? userLogs.map((log, idx) => (
                                                                                 <tr key={idx} className="hover:bg-white transition-colors">
                                                                                     <td className="py-3 px-6 font-mono text-[#01404E]">{log.dateTime}</td>
@@ -210,7 +210,7 @@ const AttendanceDashboard: React.FC = () => {
                                                                                             {log.type === STATUS.CHECK_IN ? 'دخول' : 'انصراف'}
                                                                                         </span>
                                                                                     </td>
-                                                                                    <td className="py-3 px-6 text-center font-black font-mono text-[#01404E] text-base">
+                                                                                    <td className="py-3 px-6 text-center font-black font-mono text-[#01404E] text-sm">
                                                                                         {log.type === STATUS.CHECK_OUT ? (
                                                                                             Number(log.hours) > 0 ? `${Number(log.hours).toFixed(2)}h` : '-'
                                                                                         ) : '-'}
