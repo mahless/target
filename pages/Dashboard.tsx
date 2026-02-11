@@ -539,7 +539,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                       </div>
                     </td>
                     <td className="py-5 px-8 text-center font-black text-[#01404E]/60 text-sm">{entry.recordedBy || '-'}</td>
-                    <td className="py-5 px-8 text-center font-black text-[#01404E] text-base">{toEnglishDigits(String(entry.amountPaid))}</td>
+                    <td className="py-5 px-8 text-center font-black text-[#01404E] text-base">
+                      {entry.serviceType === 'تحويل وارد'
+                        ? toEnglishDigits(String(entry.serviceCost))
+                        : toEnglishDigits(String(entry.amountPaid))
+                      }
+                    </td>
                     <td className="py-5 px-8 text-center text-red-600 font-black text-base">{toEnglishDigits(String(entry.remainingAmount))}</td>
                     {userRole !== ROLES.VIEWER && (
                       <td className="py-5 px-8 text-center">

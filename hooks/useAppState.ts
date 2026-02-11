@@ -506,19 +506,60 @@ export const useAppState = () => {
     startSubmitting();
     try {
       const result = await GoogleSheetsService.branchTransfer({ ...data, recordedBy: user?.name || '' }, user?.role || 'موظف');
+
       if (result.success) {
+        // 1. Update balances locally
         setBranches(prev => prev.map(b => {
           const bName = normalizeArabic(b.Branch_Name);
           if (bName === normalizeArabic(data.fromBranch)) return { ...b, Current_Balance: (Number(b.Current_Balance) || 0) - data.amount };
           if (bName === normalizeArabic(data.toBranch)) return { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + data.amount };
           return b;
         }));
+
+        // 2. Create "Incoming Transfer" Entry for Receiver Dashboard
+        // NOTE: We set amountPaid to 0 to avoid double-counting the balance on the backend,
+        // because the 'branchTransfer' API action already updates the branch balance column.
+        // We will store the actual value in 'serviceCost' and handle the display in Dashboard.tsx.
+        const incomingEntry: ServiceEntry = {
+          id: `transfer-${Date.now()}`,
+          entryDate: currentDate,
+          timestamp: Date.now(),
+          clientName: `تحويل من ${data.fromBranch}`,
+          nationalId: '-',
+          phoneNumber: '-',
+          serviceType: 'تحويل وارد',
+          serviceCost: data.amount,
+          amountPaid: 0, // Critical: 0 to prevents double balance add
+          remainingAmount: 0,
+          branchId: data.toBranch,
+          status: 'تم التسليم',
+          recordedBy: user?.name || 'System',
+          notes: `تحويل وارد بقيمة ${data.amount} من فرع ${data.fromBranch}`,
+          hasThirdParty: false,
+          isCostPaid: false,
+          isElectronic: false
+        };
+
+        // Add to local state
+        setEntries(prev => [incomingEntry, ...prev]);
+
+        // Persist to Google Sheets
+        GoogleSheetsService.addRow('Entries', {
+          ...incomingEntry,
+          date: incomingEntry.entryDate,
+          'اسم العميل': incomingEntry.clientName,
+          'الفرع': incomingEntry.branchId,
+          'التكلفة': incomingEntry.serviceCost,
+          'المحصل': incomingEntry.amountPaid,
+          'المتبقي': 0,
+          'الحالة': 'تم التسليم'
+        }, user?.role || 'موظف').catch(err => console.error("Failed to save incoming transfer entry", err));
       }
       return result;
     } finally {
       stopSubmitting();
     }
-  }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role]);
+  }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, currentDate]);
 
   /*
    * Attendance State
