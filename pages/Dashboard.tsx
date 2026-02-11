@@ -56,7 +56,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
             <span className="text-[10px] font-bold opacity-60">ج.م</span>
           </div>
         </div>
-        <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
+        <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
           {React.cloneElement(icon, { className: "w-5.5 h-5.5 text-white" })}
         </div>
       </div>

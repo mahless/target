@@ -33,7 +33,7 @@ const StatCard = ({ title, value, icon, color, footer }: any) => {
   const theme = colorMap[color] || colorMap.blue;
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-4 rounded-[2.5rem] ${theme.shadow} shadow-premium group transition-all duration-500 hover:scale-[1.02]`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-4 rounded-[2.5rem] shadow-lux group transition-all duration-500 hover:scale-[1.02]`}>
       <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
       <div className="relative z-10 flex flex-col h-full justify-between gap-1.5">
         <div className="flex justify-between items-start">
