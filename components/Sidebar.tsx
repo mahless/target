@@ -311,6 +311,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                     disabled={userRole === 'موظف'}
                     showAllOption={false}
                     dark={true}
+                    className="p-2.5 rounded-xl border text-xs"
                   />
                 </div>
 
