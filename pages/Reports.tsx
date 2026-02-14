@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ServiceEntry, Expense, Branch } from '../types';
-import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt } from 'lucide-react';
+import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt, X } from 'lucide-react';
 import { generateReceipt } from '../services/pdfService';
 import { useModal } from '../context/ModalContext';
-import { normalizeArabic, normalizeDate, toEnglishDigits } from '../utils';
+import { normalizeArabic, normalizeDate, toEnglishDigits, searchMultipleFields, useDebounce } from '../utils';
+import SearchInput from '../components/SearchInput';
 import CustomSelect from '../components/CustomSelect';
 
 interface ReportsProps {
@@ -57,22 +58,48 @@ const Reports: React.FC<ReportsProps> = ({
   entries, expenses, serviceTypes, expenseCategories, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
 }) => {
   const today = new Date().toISOString().split('T')[0];
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
-    if (userRole === 'مدير') return 'الكل';
-    return branchId || (branches.length > 0 ? branches[0].id : 'الكل');
-  });
-  const [selectedService, setSelectedService] = useState<string>('الكل');
-  const [selectedExpenseType, setSelectedExpenseType] = useState<string>('الكل'); // New Filter State
-  const [selectedEmployee, setSelectedEmployee] = useState<string>(() => {
-    return userRole === 'مدير' ? 'الكل' : username;
-  });
-  const [activeTab, setActiveTab] = useState<'entries' | 'expenses'>('entries');
+  const defaultBranch = userRole === 'مدير' ? 'الكل' : (branchId || (branches.length > 0 ? branches[0].id : 'الكل'));
+  const defaultEmployee = userRole === 'مدير' ? 'الكل' : username;
+
+  // Helper to persist filter values in sessionStorage
+  const usePersistedState = <T extends string>(key: string, defaultValue: T): [T, (val: T) => void] => {
+    const [value, setValue] = useState<T>(() => {
+      const stored = sessionStorage.getItem(key);
+      return (stored !== null ? stored : defaultValue) as T;
+    });
+    const setPersistedValue = (val: T) => {
+      sessionStorage.setItem(key, val);
+      setValue(val);
+    };
+    return [value, setPersistedValue];
+  };
+
+  const [startDate, setStartDate] = usePersistedState('rpt_startDate', today);
+  const [endDate, setEndDate] = usePersistedState('rpt_endDate', today);
+  const [selectedBranchId, setSelectedBranchId] = usePersistedState('rpt_branch', defaultBranch);
+  const [selectedService, setSelectedService] = usePersistedState('rpt_service', 'الكل');
+  const [selectedExpenseType, setSelectedExpenseType] = usePersistedState('rpt_expenseType', 'الكل');
+  const [selectedEmployee, setSelectedEmployee] = usePersistedState('rpt_employee', defaultEmployee);
+  const [activeTab, setActiveTab] = usePersistedState<'entries' | 'expenses'>('rpt_tab', 'entries');
+  const [searchTerm, setSearchTerm] = usePersistedState('rpt_search', '');
+
   const [visibleEntriesCount, setVisibleEntriesCount] = useState(50);
   const [visibleExpensesCount, setVisibleExpensesCount] = useState(50);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { showModal, setIsProcessing } = useModal();
+
+  const isFilterActive = startDate !== today || endDate !== today || selectedBranchId !== defaultBranch || selectedService !== 'الكل' || selectedExpenseType !== 'الكل' || selectedEmployee !== defaultEmployee || searchTerm !== '';
+
+  const resetFilters = () => {
+    setStartDate(today);
+    setEndDate(today);
+    setSelectedBranchId(defaultBranch);
+    setSelectedService('الكل');
+    setSelectedExpenseType('الكل');
+    setSelectedEmployee(defaultEmployee);
+    setSearchTerm('');
+  };
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
@@ -156,21 +183,32 @@ const Reports: React.FC<ReportsProps> = ({
       const matchesBranch = selectedBranchId === 'الكل' || normalizeArabic(e.branchId) === normalizedSelectedBranch;
       const matchesService = selectedService === 'الكل' || e.serviceType === selectedService;
       const matchesEmployee = selectedEmployee === 'الكل' || normalizeArabic(e.recordedBy || '') === normalizedSelectedEmployee;
-      return matchesDate && matchesBranch && matchesService && matchesEmployee;
+      // Add search filtering
+      const matchesSearch = !debouncedSearchTerm || searchMultipleFields(debouncedSearchTerm, [
+        e.clientName,
+        e.nationalId,
+        e.phoneNumber
+      ]);
+      return matchesDate && matchesBranch && matchesService && matchesEmployee && matchesSearch;
     });
 
     const filteredExpenses = expenses.filter(ex => {
       const d = normalizeDate(ex.date);
       const matchesDate = d >= sDate && d <= eDate;
       const matchesBranch = selectedBranchId === 'الكل' || normalizeArabic(ex.branchId) === normalizedSelectedBranch;
-      const matchesService = selectedService === 'الكل' || (ex.notes && ex.notes.includes(selectedService));
+      const matchesService = selectedService === 'الكل' || (ex.notes && String(ex.notes).includes(selectedService));
       const matchesExpenseType = selectedExpenseType === 'الكل' || ex.category === selectedExpenseType; // New Filter Logic
       const matchesEmployee = selectedEmployee === 'الكل' || normalizeArabic(ex.recordedBy || '') === normalizedSelectedEmployee;
-      return matchesDate && matchesBranch && matchesService && matchesExpenseType && matchesEmployee;
+      // Add search filtering for expenses
+      const matchesSearch = !debouncedSearchTerm || searchMultipleFields(debouncedSearchTerm, [
+        ex.notes || '',
+        ex.category
+      ]);
+      return matchesDate && matchesBranch && matchesService && matchesExpenseType && matchesEmployee && matchesSearch;
     });
 
     return { entries: filteredEntries, expenses: filteredExpenses };
-  }, [entries, expenses, startDate, endDate, selectedBranchId, selectedService, selectedExpenseType, selectedEmployee]);
+  }, [entries, expenses, startDate, endDate, selectedBranchId, selectedService, selectedExpenseType, selectedEmployee, debouncedSearchTerm]);
 
   const stats = useMemo(() => {
     const totalRevenue = filteredData.entries.reduce((sum, e) => sum + e.amountPaid, 0);
@@ -194,25 +232,40 @@ const Reports: React.FC<ReportsProps> = ({
   return (
     <div className="p-3 md:p-6 space-y-3 text-right animate-premium-in">
       {/* Header */}
-      <div className="bg-[#01404E] p-4 md:p-5 rounded-[2.5rem] shadow-premium flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 text-white">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
-            <Receipt className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black tracking-tight">التقارير التحليلية</h2>
-            <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الأداء والتدفقات النقدية</p>
-          </div>
-        </div>
-        {userRole !== 'مدير' && (
-          <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
+      <div className="bg-[#01404E] p-4 md:p-5 rounded-[2.5rem] shadow-premium border-b border-white/5 text-white">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#00A6A6]/20 rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-lg border border-[#00A6A6]/20 backdrop-blur-md">
+              <Receipt className="w-6 h-6" />
+            </div>
             <div>
-              <p className="text-[10px] text-white/40 font-black uppercase">الموظف الحالي</p>
-              <p className="text-xs font-black text-white">{username}</p>
+              <h2 className="text-xl font-black tracking-tight">التقارير التحليلية</h2>
+              <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase mt-0.5">متابعة الأداء والتدفقات النقدية</p>
             </div>
           </div>
-        )}
+
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+            {/* Search Input in Header */}
+            <div className="w-full lg:w-[350px]">
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="ابحث بالاسم، رقم قومي، أو هاتف..."
+                className="w-full"
+              />
+            </div>
+
+            {userRole !== 'مدير' && (
+              <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3 whitespace-nowrap">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
+                <div>
+                  <p className="text-[10px] text-white/40 font-black uppercase">الموظف الحالي</p>
+                  <p className="text-xs font-black text-white">{username}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -243,6 +296,18 @@ const Reports: React.FC<ReportsProps> = ({
                 className="w-full bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0"
               />
             </div>
+            {isFilterActive && (
+              <>
+                <div className="w-px h-4 bg-[#01404E]/10"></div>
+                <button
+                  onClick={resetFilters}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-xl text-[10px] font-black whitespace-nowrap transition-all duration-200 hover:scale-105 border border-red-500/20"
+                >
+                  <X className="w-3 h-3" />
+                  إلغاء الفلترة
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">

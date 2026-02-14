@@ -233,8 +233,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                 </div>
                 <div className="col-span-2 pt-1 border-t border-blue-100 flex justify-between items-center">
                   <span className="text-[10px] font-black text-blue-500">حالة تسوية المصاريف:</span>
-                  <span className={`text - [10px] font - black px - 2 py - 0.5 rounded - full ${entry.isCostPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} `}>
-                    {entry.isCostPaid ? `تم الدفع(${entry.costPaidDate}) بواسطة ${entry.costPaidBy || 'غير مسجل'} ` : 'لم يتم الدفع بعد'}
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${entry.isCostPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {entry.isCostPaid ? `تم الدفع (${entry.costPaidDate}) بواسطة ${entry.costPaidBy || 'غير مسجل'}` : 'لم يتم الدفع بعد'}
                   </span>
                 </div>
               </div>
@@ -553,7 +553,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                             normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) &&
                             !entry.parentEntryId && (
                               <>
-                                {!entry.notes?.includes('بيع استمارة لطرف اخر') && (
+                                {!String(entry.notes || '').includes('بيع استمارة لطرف اخر') && (
                                   <button
                                     onClick={() => handleDeliver(entry)}
                                     disabled={isSubmitting}
