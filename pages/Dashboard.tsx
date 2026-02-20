@@ -567,14 +567,14 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               <p className="text-[10px] text-[#036564] font-black uppercase tracking-[0.3em] mt-1">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+          <div className="flex flex-col xl:flex-row items-center gap-3 w-full lg:w-auto">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder="ابحث بالاسم، رقم قومي، هاتف، أو أمر شغل..."
-              className="w-full lg:w-[350px]"
+              className="w-full xl:w-[350px]"
             />
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={(e) => {
@@ -583,10 +583,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                   handleRefreshClick();
                 }}
                 disabled={isSyncing || isSubmitting || isRefreshCooldown}
-                className={`flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
+                className={`flex-1 flex items-center justify-center gap-2 h-[50px] md:h-[58px] px-3 md:px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
               >
                 <Clock className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
+                <span className="text-[11px] md:text-xs whitespace-nowrap">{isSyncing ? 'جاري...' : 'تحديث البيانات'}</span>
               </button>
               {(userRole === ROLES.MANAGER || userRole === ROLES.ASSISTANT || userRole === ROLES.ADMIN) && (
                 <button
@@ -597,10 +597,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                     handleTransfer();
                   }}
                   disabled={isSyncing || isSubmitting}
-                  className="flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black bg-[#036564] text-white hover:bg-[#01404E] transition-all shadow-md active:scale-95 group"
+                  className="flex-1 flex items-center justify-center gap-2 h-[50px] md:h-[58px] px-3 md:px-6 rounded-2xl font-black bg-[#036564] text-white hover:bg-[#01404E] transition-all shadow-md active:scale-95 group"
                 >
                   <DollarSign className="w-4 h-4 shrink-0 group-hover:scale-125 transition-transform" />
-                  <span className="text-xs whitespace-nowrap">تحويل مالي</span>
+                  <span className="text-[11px] md:text-xs whitespace-nowrap">تحويل مالي</span>
                 </button>
               )}
             </div>
