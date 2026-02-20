@@ -235,11 +235,11 @@ const TrackingPage = () => {
                         <div className="flex flex-col items-center gap-3">
                             <p className="text-[10px] font-black text-[#01404E]/50">تارجت للخدمات الحكومية © 2026</p>
                             <div className="flex items-center justify-center gap-4 text-[9px] font-bold text-[#01404E]/60">
-                                <a href="#" className="hover:text-[#00A6A6] transition-colors">الشروط والأحكام</a>
+                                <span>الشروط والأحكام</span>
                                 <div className="w-1 h-1 rounded-full bg-[#01404E]/10"></div>
-                                <a href="#" className="hover:text-[#00A6A6] transition-colors">سياسة الخصوصية</a>
+                                <span>سياسة الخصوصية</span>
                                 <div className="w-1 h-1 rounded-full bg-[#01404E]/10"></div>
-                                <a href="#" className="hover:text-[#00A6A6] transition-colors">تواصل معنا</a>
+                                <span>تواصل معنا</span>
                             </div>
                         </div>
                     </div>
