@@ -135,6 +135,16 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                 <button
                                     onClick={async () => {
                                         if (newBarcode === barcode && newBranchId === branchId) return;
+
+                                        // Check for duplicates in local stock
+                                        if (newBarcode !== barcode) {
+                                            const isDuplicate = stock.some(s => (s.barcode || (s as any).Barcode) === newBarcode);
+                                            if (isDuplicate) {
+                                                showQuickStatus('هذا الباركود مسجل مسبقاً', 'error');
+                                                return;
+                                            }
+                                        }
+
                                         startSubmitting();
                                         try {
                                             const success = await GoogleSheetsService.updateStockItem(barcode, newBarcode, newBranchId, userRole);
@@ -142,7 +152,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                                 onRefresh();
                                                 onClose();
                                             } else {
-                                                alert('فشل تحديث البيانات');
+                                                showQuickStatus('فشل تجديث البيانات', 'error');
                                             }
                                         } finally {
                                             stopSubmitting();
@@ -251,6 +261,27 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
     const handleAddStock = async () => {
         const list = newBarcodes.split(/[\n, ]+/).filter(b => b.trim().length > 0);
         if (list.length === 0 || isSubmitting) return;
+
+        // Pre-validation for duplicates
+        const existingBarcodes = stock.map(s => (s.barcode || (s as any).Barcode));
+        const duplicates = list.filter(b => existingBarcodes.includes(b.trim()));
+
+        if (duplicates.length > 0) {
+            showModal({
+                title: 'تنبيه: باركودات مكررة',
+                type: 'danger',
+                content: (
+                    <div className="space-y-2">
+                        <p className="text-sm font-bold text-gray-700">الباركودات التالية موجودة بالفعل في المخزن وسيتم تجاهلها:</p>
+                        <div className="bg-red-50 p-3 rounded-xl font-mono text-red-600 text-xs break-all">
+                            {duplicates.join(', ')}
+                        </div>
+                    </div>
+                ),
+                confirmText: 'فهمت'
+            });
+            return;
+        }
 
         startSubmitting();
         try {
@@ -446,10 +477,13 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                     {filteredStock.slice(0, visibleCount).map(item => (
                                         <tr key={item.barcode || (item as any).Barcode} className="hover:bg-[#036564]/5 transition-all group">
                                             <td className="py-2 px-6 text-center font-mono">
-                                                {userRole === 'مشاهد' ? (
-                                                    <span className="font-black text-[#01404E] text-base">
-                                                        {item.barcode || (item as any).Barcode}
-                                                    </span>
+                                                {userRole === 'مشاهد' || (item.status || (item as any).Status) === 'Used' ? (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {(item.status || (item as any).Status) === 'Used' && <AlertCircle className="w-3.5 h-3.5 text-gray-400" />}
+                                                        <span className="font-black text-[#01404E] text-base opacity-70">
+                                                            {item.barcode || (item as any).Barcode}
+                                                        </span>
+                                                    </div>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleEditBarcode(item)}

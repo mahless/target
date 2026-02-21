@@ -468,6 +468,7 @@ function handleDeliverOrder(data) {
     const map = getHeaderMapping(sheetEntries, SHEET_NAMES.ENTRIES);
     const idColIdx = getColIndex(SHEET_NAMES.ENTRIES, "id");
     const statusColIdx = getColIndex(SHEET_NAMES.ENTRIES, "status");
+    const remainingAmountColIdx = getColIndex(SHEET_NAMES.ENTRIES, "remainingAmount");
     const deliveredDateColIdx = getColIndex(SHEET_NAMES.ENTRIES, "deliveredDate");
 
     if (idColIdx === undefined) return createJSONResponse({ status: "error", message: "ID Column not found" });
@@ -476,9 +477,14 @@ function handleDeliverOrder(data) {
     const values = dataRange.getValues();
     
     let rowIndex = -1;
+    let currentRemaining = 0;
+
     for (let i = 1; i < values.length; i++) {
       if (String(values[i][idColIdx]) === String(data.orderId)) {
         rowIndex = i;
+        if (remainingAmountColIdx !== undefined) {
+          currentRemaining = parseFloat(values[i][remainingAmountColIdx] || 0);
+        }
         break;
       }
     }
@@ -486,17 +492,25 @@ function handleDeliverOrder(data) {
     if (rowIndex === -1) return createJSONResponse({ status: "error", message: "Order not found" });
 
     const cairoTime = getCairoDate();
+    const remainingCollected = parseFloat(data.remainingCollected || 0);
+    const newRemaining = Math.max(0, parseFloat((currentRemaining - remainingCollected).toFixed(2)));
 
-    // 1. تحديث حالة الطلب وتاريخ التسليم
-    if (statusColIdx !== undefined) {
-      sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue(ENTRY_STATUS.DELIVERED);
-    }
-    if (deliveredDateColIdx !== undefined) {
-      sheetEntries.getRange(rowIndex + 1, deliveredDateColIdx + 1).setValue(cairoTime);
+    // 1. تحديث حالة الطلب وتاريخ التسليم (فقط إذا أصبح المتبقي صفر)
+    if (newRemaining <= 0) {
+      if (statusColIdx !== undefined) {
+        sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue(ENTRY_STATUS.DELIVERED);
+      }
+      if (deliveredDateColIdx !== undefined) {
+        sheetEntries.getRange(rowIndex + 1, deliveredDateColIdx + 1).setValue(cairoTime);
+      }
+    } else {
+      // إذا كان هناك متبقي، نقوم بتحديث المبلغ المتبقي في العملية الأصلية مباشرة أيضاً لضمان المزامنة
+      if (remainingAmountColIdx !== undefined) {
+        sheetEntries.getRange(rowIndex + 1, remainingAmountColIdx + 1).setValue(newRemaining);
+      }
     }
 
     // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
-    const remainingCollected = parseFloat(data.remainingCollected || 0);
     if (remainingCollected > 0) {
       const headerKeys = SHEET_CONFIG[SHEET_NAMES.ENTRIES];
       const newRow = headerKeys.map(key => {
@@ -505,11 +519,11 @@ function handleDeliverOrder(data) {
         if (k === 'clientname') return data.clientName;
         if (k === 'servicetype') return SERVICE_TYPES.DEBT_SETTLEMENT;
         if (k === 'amountpaid') return remainingCollected;
-        if (k === 'servicecost') return 0; // سداد المديونية تكلفته صفرية لأنه تحصيل فقط
+        if (k === 'servicecost') return 0;
         if (k === 'remainingamount') return 0;
-        if (k === 'thirdpartycost') return 0; // فصل منطق الطرف الثالث: السداد لا يحمل تكلفة مورد
+        if (k === 'thirdpartycost') return 0;
         if (k === 'hasthirdparty') return false;
-        if (k === 'thirdpartyname') return ""; // مسح اسم المورد لضمان عدم الفلترة الخاطئة
+        if (k === 'thirdpartyname') return "";
         if (k === 'iscostpaid') return false;
         if (k === 'entrydate') return cairoTime;
         if (k === 'timestamp') return Date.now();
@@ -1144,6 +1158,21 @@ function handleAddRow(sheetName, data) {
       if (amountPaid > 0) {
         updateBranchBalance(branch, amountPaid);
       }
+
+      // Check for barcode uniqueness in Entries sheet
+      const barcode = data['barcode'] || data['الباركود'];
+      if (barcode && String(barcode).trim() !== "") {
+        const barcodeColIdx = getColIndex(SHEET_NAMES.ENTRIES, "barcode");
+        if (barcodeColIdx !== undefined) {
+          const barcodeValues = sheet.getRange(2, barcodeColIdx + 1, sheet.getLastRow() > 1 ? sheet.getLastRow() - 1 : 1).getValues().flat().map(v => String(v).trim());
+          if (barcodeValues.includes(String(barcode).trim())) {
+            return createJSONResponse({ 
+              status: "error", 
+              message: "هذا الباركود (" + barcode + ") مسجل مسبقاً في عملية أخرى" 
+            });
+          }
+        }
+      }
     }
 
     sheet.appendRow(newRow);
@@ -1297,6 +1326,20 @@ function handleAddStockBatch(items) {
     }
     
     const map = getHeaderMapping(sheet, SHEET_NAMES.STOCK);
+    const barcodeCol = map['Barcode'];
+    
+    // Check for duplicates within the current stock
+    const existingValues = sheet.getRange(2, barcodeCol + 1, sheet.getLastRow() > 1 ? sheet.getLastRow() - 1 : 1).getValues().flat().map(v => String(v).trim());
+    const incomingBarcodes = items.map(item => String(item.barcode).trim());
+    
+    const duplicates = incomingBarcodes.filter(b => existingValues.includes(b));
+    if (duplicates.length > 0) {
+      return createJSONResponse({ 
+        status: "error", 
+        message: "عذراً، الباركودات موجودة مسبقاً في المخزن: " + duplicates.join(", ") 
+      });
+    }
+
     const headerKeys = Object.keys(map).sort((a, b) => map[a] - map[b]);
 
     const rows = items.map(item => {
@@ -1395,6 +1438,15 @@ function handleUpdateStockItem(data) {
 
     const values = sheet.getDataRange().getValues();
     const oldBarcode = String(data.oldBarcode).trim();
+    const newBarcode = String(data.newBarcode).trim();
+
+    // Check if the NEW barcode already exists (if it's different from the old one)
+    if (oldBarcode !== newBarcode) {
+      const isDuplicate = values.some((row, idx) => idx > 0 && String(row[barcodeCol]).trim() === newBarcode);
+      if (isDuplicate) {
+        return createJSONResponse({ status: "error", message: "هذا الباركود (" + newBarcode + ") مسجل مسبقاً في فروع أخرى" });
+      }
+    }
 
     for (let i = 1; i < values.length; i++) {
       if (String(values[i][barcodeCol]) === oldBarcode) {

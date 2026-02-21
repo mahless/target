@@ -35,8 +35,8 @@ const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry }) => {
                     <p className="font-black text-gray-800 text-[11px]">{entry.speed || '-'}</p>
                 </div>
                 <div className="bg-gray-50 p-1.5 rounded-xl border border-gray-100">
-                    <span className="text-[9px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">مصدر الباركود</span>
-                    <p className="font-black text-gray-800 text-[11px]">{entry.Barcode_Source || '-'}</p>
+                    <span className="text-[9px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">رقم الباركود</span>
+                    <p className="font-black text-gray-800 text-[11px]">{entry.barcode || entry.Barcode_Source || '-'}</p>
                 </div>
 
                 {/* Row 3 */}

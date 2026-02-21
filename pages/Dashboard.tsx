@@ -203,7 +203,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             <input
               type="text"
               defaultValue={workOrderValue}
-              onChange={(e) => workOrderValue = e.target.value.trim()}
+              onChange={(e) => {
+                e.target.value = toEnglishDigits(e.target.value);
+                workOrderValue = e.target.value.trim();
+              }}
               placeholder="أدخل رقم أمر الشغل"
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-lg outline-none transition-all"
               dir="ltr"
@@ -295,7 +298,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               inputMode="numeric"
               pattern="[0-9]*"
               placeholder="0 = استرداد كامل"
-              onChange={(e) => expenseAmount = Number(toEnglishDigits(e.target.value))}
+              onChange={(e) => {
+                e.target.value = toEnglishDigits(e.target.value);
+                expenseAmount = Number(e.target.value);
+              }}
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-red-600 font-bold text-sm outline-none transition-all"
             />
             <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* أترك الخانة (0) لاسترداد المبلغ بالكامل للعميل. في حالة كتابة مبلغ، سيتم خصمه كمصاريف وإرجاع الباقي.</p>
@@ -397,7 +403,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             <input
               type="text"
               defaultValue={nationalId}
-              onChange={(e) => nationalId = e.target.value.trim()}
+              onChange={(e) => {
+                e.target.value = toEnglishDigits(e.target.value);
+                nationalId = e.target.value.trim();
+              }}
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
             />
           </div>
@@ -406,7 +415,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             <input
               type="text"
               defaultValue={phoneNumber}
-              onChange={(e) => phoneNumber = e.target.value.trim()}
+              onChange={(e) => {
+                e.target.value = toEnglishDigits(e.target.value);
+                phoneNumber = e.target.value.trim();
+              }}
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
             />
           </div>
@@ -489,7 +501,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                 inputMode="numeric"
                 pattern="[0-9]*"
                 defaultValue={remaining}
-                onChange={(e) => amountToCollect = Number(toEnglishDigits(e.target.value))}
+                onChange={(e) => {
+                  e.target.value = toEnglishDigits(e.target.value);
+                  amountToCollect = Number(e.target.value);
+                }}
                 className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
               />
               <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>

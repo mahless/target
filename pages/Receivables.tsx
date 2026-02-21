@@ -70,7 +70,10 @@ const Receivables: React.FC<ReceivablesProps> = ({
               autoFocus
               className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-xl text-center outline-none transition-all"
               defaultValue={entry.remainingAmount}
-              onChange={(e) => amount = Number(toEnglishDigits(e.target.value))}
+              onChange={(e) => {
+                e.target.value = toEnglishDigits(e.target.value);
+                amount = Number(e.target.value);
+              }}
             />
           </div>
         </div>

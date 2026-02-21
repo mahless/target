@@ -314,7 +314,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               type="text"
               value={clientSearchTerm}
               onChange={(e) => {
-                setClientSearchTerm(e.target.value);
+                setClientSearchTerm(toEnglishDigits(e.target.value));
                 setShowSearchResults(true);
               }}
               placeholder="بحث سريع عن عميل سابق..."

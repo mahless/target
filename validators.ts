@@ -82,7 +82,7 @@ export const validateServiceSubmission = (ctx: ServiceValidationContext): string
     if (isExternalBarcode && barcode) {
         const duplicate = entries.find(e => e.barcode === barcode);
         if (duplicate) {
-            return `هذا الباركود (${barcode}) مسجل مسبقاً للعميل ${duplicate.clientName}`;
+            return `هذا الباركود (${barcode}) مستخدم بالفعل في عملية أخرى للعميل: ${duplicate.clientName}`;
         }
     }
 
