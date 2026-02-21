@@ -21,7 +21,7 @@ import {
 
 // Service lifecycle steps
 const STEPS = [
-    { key: 'received', label: 'تم الاستلام', icon: ClipboardCheck, color: '#6366f1' },
+    { key: 'received', label: 'قيد المراجعة', icon: ClipboardCheck, color: '#6366f1' },
     { key: 'in-progress', label: 'قيد التنفيذ', icon: Settings, color: '#3b82f6' },
     { key: 'ready', label: 'جاهز للاستلام', icon: CheckCircle2, color: '#10b981' },
     { key: 'completed', label: 'تم التسليم', icon: PartyPopper, color: '#059669' },
@@ -219,6 +219,14 @@ const TrackingPage = () => {
                                     })}
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Status Specific Messages */}
+                    {entry.status === STATUS.READY && (
+                        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center justify-center gap-2 mt-4 animate-pulse">
+                            <AlertCircle size={20} className="text-emerald-600" />
+                            <p className="text-emerald-700 font-black text-sm">رجاء التوجه للمكتب</p>
                         </div>
                     )}
 
