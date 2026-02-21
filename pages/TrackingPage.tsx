@@ -224,9 +224,11 @@ const TrackingPage = () => {
 
                     {/* Status Specific Messages */}
                     {entry.status === STATUS.READY && (
-                        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center justify-center gap-2 mt-4 animate-pulse">
-                            <AlertCircle size={20} className="text-emerald-600" />
-                            <p className="text-emerald-700 font-black text-sm">رجاء التوجه للمكتب</p>
+                        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center justify-center gap-2 mt-4 animate-pulse text-center">
+                            <AlertCircle size={20} className="text-emerald-600 shrink-0" />
+                            <p className="text-emerald-700 font-black text-sm">
+                                برجاء التوجه للمكتب لاستلام {entry.serviceType}
+                            </p>
                         </div>
                     )}
 
