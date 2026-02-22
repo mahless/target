@@ -144,6 +144,7 @@ const AppContent: React.FC = () => {
                           username={user?.name || ''}
                           userRole={userRole}
                           isSubmitting={isSubmitting}
+                          stock={stock}
                         />
                       )
                     } />

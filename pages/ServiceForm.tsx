@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ID_CARD_SPEEDS, PASSPORT_SPEEDS, ELECTRONIC_METHODS } from '../constants';
-import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory } from '../types';
+import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory, StockItem } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { generateReceipt } from '../services/pdfService';
 import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw, Check } from 'lucide-react';
@@ -19,9 +19,10 @@ interface ServiceFormProps {
   username: string;
   userRole: string;
   isSubmitting?: boolean;
+  stock: StockItem[];
 }
 
-const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, entries, serviceTypes, branchId, currentDate, username, userRole, isSubmitting = false }) => {
+const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, entries, serviceTypes, branchId, currentDate, username, userRole, isSubmitting = false, stock }) => {
   const { showModal, showQuickStatus, setIsProcessing } = useModal();
   // Client Lookup State
   const [clientSearchTerm, setClientSearchTerm] = useState('');
@@ -115,57 +116,23 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     setRemainingAmount((Number(serviceCost) || 0) - (Number(amountPaid) || 0));
   }, [serviceCost, amountPaid]);
 
-  // منطق جلب الباركود تلقائياً
-  const fetchBarcode = async (targetCategory?: StockCategory) => {
-    if (!branchId || isFetchingBarcode || isExternalBarcode) return;
+  // منطق تصفية الباركود المتاح للفرع والنوع المختار
+  const availableBarcodes = useMemo(() => {
+    if (!branchId || isExternalBarcode || serviceType !== 'بطاقة رقم قومي') return [];
 
-    setIsFetchingBarcode(true);
-    setBarcodeNotFound(false);
-    setError(null);
-
-    // التحويل ليكون مطابقاً لفئات المخزن الذكية
     let category: StockCategory = 'عادي';
-    const currentSpeed = targetCategory || (speed as ServiceSpeed);
+    if (speed === 'فوري' || speed === 'سوبر فوري') category = 'فوري';
+    else if (speed === 'مستعجل') category = 'مستعجل';
 
-    if (currentSpeed === 'فوري' || currentSpeed === 'سوبر فوري') category = 'فوري';
-    else if (currentSpeed === 'مستعجل') category = 'مستعجل';
-    else category = 'عادي';
+    return stock
+      .filter(s =>
+        normalizeArabic(s.branch) === normalizeArabic(branchId) &&
+        s.category === category &&
+        s.status === 'Available'
+      )
+      .map(s => ({ id: s.barcode, name: s.barcode }));
+  }, [stock, branchId, speed, isExternalBarcode, serviceType]);
 
-    const newBarcode = await GoogleSheetsService.getAvailableBarcode(branchId, category);
-
-    if (newBarcode) {
-      setBarcode(newBarcode);
-      setBarcodeNotFound(false);
-    } else {
-      setBarcode('');
-      setBarcodeNotFound(true);
-      setError(`عذراً، مخزن فرعك من النوع (${category}) فارغ ...`);
-    }
-    setIsFetchingBarcode(false);
-  };
-
-  const handleSkipBarcode = async () => {
-    if (!barcode) return;
-
-    showModal({
-      title: 'تأكيد الإبلاغ عن باركود تالف',
-      type: 'danger',
-      content: (
-        <div className="space-y-3 text-right">
-          <p className="text-gray-600">هل أنت متأكد أن الباركود <span className="font-mono font-black text-red-600">{barcode}</span> تالف أو غير مطابق؟</p>
-          <p className="text-[10px] text-gray-400 font-bold">• سيتم تمييز هذا الكود كنصي بالخطأ في السجلات.</p>
-          <p className="text-[10px] text-gray-400 font-bold">• سيقوم النظام بسحب الباركود التالي المتاح فوراً.</p>
-        </div>
-      ),
-      confirmText: 'نعم، الباركود تالف',
-      onConfirm: async () => {
-        // 1. تمييز الحالي كخطأ
-        await GoogleSheetsService.updateStockStatus(barcode, 'Error', username, userRole);
-        // 2. سحب كود جديد
-        await fetchBarcode();
-      }
-    });
-  };
 
   // Reset logic when service changes
   useEffect(() => {
@@ -180,11 +147,6 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   }, [serviceType]);
 
   // Auto-fetch barcode when speed is selected for specific services
-  useEffect(() => {
-    if (serviceType === 'بطاقة رقم قومي' && speed && !isExternalBarcode) {
-      fetchBarcode();
-    }
-  }, [speed, serviceType, isExternalBarcode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -395,37 +357,26 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
                     <div className="flex gap-3">
                       <div className="relative flex-1">
-                        <input
-                          readOnly={!isExternalBarcode}
-                          required
-                          type="text"
-                          value={(!isExternalBarcode && barcodeNotFound) ? 'لا يوجد باركود متاح' : barcode}
-                          onChange={(e) => isExternalBarcode && setBarcode(toEnglishDigits(e.target.value))}
-                          className={`${commonInputClass} !py-4 !rounded-[1.5rem] border ${!isExternalBarcode && isFetchingBarcode ? 'border-amber-200 bg-amber-50/20' :
-                            (!isExternalBarcode && barcodeNotFound) ? 'border-red-500 bg-red-50' :
-                              (isExternalBarcode ? 'border-[#00A6A6] bg-white ring-4 ring-[#00A6A6]/5' :
-                                (barcode ? 'border-[#036564] ring-4 ring-[#036564]/5 bg-[#036564]/5' : 'border-[#01404E]/10 bg-[#01404E]/5')
-                              )
-                            } font-mono ${(!isExternalBarcode && barcodeNotFound) ? 'text-red-700' : (barcode && !isExternalBarcode ? 'text-[#036564] font-black' : '')}`}
-                          placeholder={
-                            isExternalBarcode ? 'اكتب رقم الباركود هنا...' :
-                              (isFetchingBarcode ? 'جاري السحب...' : (barcodeNotFound ? 'لا يوجد أكواد' : 'اختر السرعة أولاً'))
-                          }
-                        />
-                        {!isExternalBarcode && isFetchingBarcode && <RefreshCw className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 animate-spin" />}
-                        {!isExternalBarcode && barcode && !isFetchingBarcode && <Check className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#036564]" />}
+                        {isExternalBarcode ? (
+                          <input
+                            required
+                            type="text"
+                            value={barcode}
+                            onChange={(e) => setBarcode(toEnglishDigits(e.target.value))}
+                            className={`${commonInputClass} !py-4 !rounded-[1.5rem] border border-[#00A6A6] bg-white ring-4 ring-[#00A6A6]/5 font-mono text-[#01404E] font-black`}
+                            placeholder="اكتب رقم الباركود هنا..."
+                          />
+                        ) : (
+                          <CustomSelect
+                            label=""
+                            options={availableBarcodes}
+                            value={barcode}
+                            onChange={setBarcode}
+                            placeholder={availableBarcodes.length > 0 ? "اختر الباركود..." : "لا يوجد باركود متاح لهذا النوع"}
+                            showAllOption={false}
+                          />
+                        )}
                       </div>
-
-                      {!isExternalBarcode && barcode && !isFetchingBarcode && (
-                        <button
-                          type="button"
-                          onClick={handleSkipBarcode}
-                          className="bg-red-50 text-red-600 px-5 rounded-[1.5rem] border border-red-100 hover:bg-red-600 hover:text-white transition-all flex flex-col items-center justify-center text-[9px] font-black leading-tight shadow-sm active:scale-95"
-                        >
-                          <AlertTriangle className="w-4 h-4 mb-1" />
-                          <span>تالف؟</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 ) : (
