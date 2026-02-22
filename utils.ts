@@ -83,3 +83,61 @@ export const useDebounce = <T,>(value: T, delay: number = 300): T => {
 
   return debouncedValue;
 };
+
+// ==========================================
+// ID Obfuscation (Base62 for short URLs)
+// ==========================================
+const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+export const encodeId = (id: string): string => {
+  if (!id) return '';
+  // Check if purely numeric
+  if (/^\d+$/.test(id)) {
+    let num = BigInt(id);
+    if (num === 0n) return "N0";
+    let encoded = "";
+    while (num > 0n) {
+      encoded = BASE62[Number(num % 62n)] + encoded;
+      num = num / 62n;
+    }
+    return "N" + encoded;
+  }
+  // Otherwise, fallback to url-safe base64
+  try {
+    const b64 = btoa(id).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    return "S" + b64;
+  } catch {
+    return id; // fallback
+  }
+};
+
+export const decodeId = (encoded: string): string => {
+  if (!encoded) return '';
+  const type = encoded.charAt(0);
+  const data = encoded.substring(1);
+
+  if (type === 'N') {
+    let num = 0n;
+    for (let i = 0; i < data.length; i++) {
+      const idx = BASE62.indexOf(data[i]);
+      if (idx === -1) return encoded; // invalid format, return original
+      num = num * 62n + BigInt(idx);
+    }
+    return num.toString();
+  }
+
+  if (type === 'S') {
+    try {
+      // Restore padding
+      let b64 = data.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) {
+        b64 += '=';
+      }
+      return atob(b64);
+    } catch {
+      return encoded; // fallback
+    }
+  }
+
+  return encoded; // Fallback for old unencoded IDs
+};

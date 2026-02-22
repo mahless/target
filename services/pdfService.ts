@@ -1,5 +1,6 @@
 import { ServiceEntry } from '../types';
 import QRCode from 'qrcode';
+import { encodeId } from '../utils';
 
 /* =========================
    🔐 HTML Escape Protection
@@ -19,7 +20,7 @@ const escapeHtml = (value: unknown): string => {
  */
 const generateQRDataUrl = async (entryId: string): Promise<string> => {
   try {
-    const trackingUrl = `${window.location.origin}/#/track/${entryId}`;
+    const trackingUrl = `${window.location.origin}/#/track/${encodeId(entryId)}`;
     return await QRCode.toDataURL(trackingUrl, {
       width: 150,
       margin: 1,

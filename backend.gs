@@ -390,9 +390,9 @@ function handleDeleteExpense(data) {
       return undefined;
     };
 
-    const idCol = findCol(["id", "ID", "المعرف", "مسلسل", "كود"]);
-    const amountCol = findCol(["amount", "المبلغ", "القيمة", "السعر"]);
-    const branchCol = findCol(["branchId", "branch", "الفرع", "فرع", "اسم الفرع"]);
+    const idCol = map["id"] !== undefined ? map["id"] : findCol(["id", "ID", "المعرف", "مسلسل", "كود"]);
+    const amountCol = map["amount"] !== undefined ? map["amount"] : findCol(["amount", "المبلغ", "القيمة", "السعر"]);
+    const branchCol = map["branchId"] !== undefined ? map["branchId"] : findCol(["branchId", "branch", "الفرع", "فرع", "اسم الفرع"]);
 
     console.log("Column Mapping - ID: " + idCol + ", Amount: " + amountCol + ", Branch: " + branchCol);
 
@@ -533,11 +533,15 @@ function handleDeliverOrder(data) {
         if (k === 'parententryid') return data.orderId;
         return "";
       });
+      // 3. تحديث رصيد الفرع المحصل
+      // تحديث الرصيد قبل إضافة الصف للتأكد من نجاحه
+      const updateSuccess = updateBranchBalance(data.branchId, remainingCollected);
+      if (!updateSuccess) {
+         return createJSONResponse({ status: "error", message: "حدث خطأ أثناء تحديث رصيد الفرع" });
+      }
+
       sheetEntries.appendRow(newRow);
       applyTextFormatting(sheetEntries, map, sheetEntries.getLastRow());
-      
-      // 3. تحديث رصيد الفرع المحصل
-      updateBranchBalance(data.branchId, remainingCollected);
     }
 
     return createJSONResponse({ status: "success" });
@@ -622,48 +626,73 @@ function handleAttendance(data) {
     
     let totalHours = 0;
 
-    // منطق حساب الساعات عند الانصراف
-    if (data.type === 'check-out') {
-      const rows = sheet.getDataRange().getValues();
-      const targetUserID = String(data.users_ID || "").trim();
-      let foundCheckIn = false;
-
-      for (let i = rows.length - 1; i > 0; i--) {
-        const row = rows[i];
-        const rowUserID = String(row[idxUserID] || "").trim();
-        const rowType = String(row[idxType] || "").trim();
+    // ----------------------------------------------------
+    // Strict State Tracking (تتبع الحالة الصارمة)
+    // ----------------------------------------------------
+    const rows = sheet.getDataRange().getValues();
+    const targetUserID = String(data.users_ID || "").trim();
+    let lastActionType = null;
+    let lastActionTimestamp = null;
+    
+    for (let i = rows.length - 1; i > 0; i--) {
+      const row = rows[i];
+      const rowUserID = String(row[idxUserID] || "").trim();
+      
+      if (rowUserID === targetUserID) {
+        lastActionType = String(row[idxType] || "").trim().toLowerCase();
         const rowTimestamp = row[idxTimestamp];
-
-        if (rowUserID === targetUserID && rowType === 'check-in') {
-          let checkInDate;
-          if (rowTimestamp instanceof Date) {
-            checkInDate = rowTimestamp;
-          } else {
-            const parts = String(rowTimestamp).split(' ');
-            if (parts.length >= 2) {
-              const d = parts[0].split('-');
-              const t = parts[1].split(':');
-              checkInDate = new Date(d[0], d[1]-1, d[2], t[0], t[1], t[2]);
-            }
-          }
-
-          if (checkInDate && !isNaN(checkInDate.getTime())) {
-            const diffMs = today.getTime() - checkInDate.getTime();
-            const diffHours = diffMs / (1000 * 60 * 60);
-
-            if (diffHours >= 0 && diffHours <= 24) {
-              totalHours = parseFloat(diffHours.toFixed(2));
-              foundCheckIn = true;
-              break;
-            }
+        
+        if (rowTimestamp instanceof Date) {
+          lastActionTimestamp = rowTimestamp;
+        } else {
+          const parts = String(rowTimestamp).split(' ');
+          if (parts.length >= 2) {
+             const d = parts[0].split('-');
+             const t = parts[1].split(':');
+             lastActionTimestamp = new Date(d[0], d[1]-1, d[2], t[0], t[1], t[2]);
           }
         }
+        break; // Found the most recent action
       }
+    }
 
-      if (!foundCheckIn) {
+    if (data.type === 'check-in') {
+      // إذا كانت آخر حركة للعمل هي حضور، وكان ذلك خلال آخر 16 ساعة (مناوبة مفتوحة)
+      if (lastActionType === 'check-in' && lastActionTimestamp) {
+        const diffHours = (today.getTime() - lastActionTimestamp.getTime()) / (1000 * 60 * 60);
+        if (diffHours < 16) {
+          return createJSONResponse({ 
+            status: "error", 
+            message: "لقد قمت بتسجيل الحضور مسبقاً. يرجى تسجيل الانصراف أولاً." 
+          });
+        }
+      }
+    } else if (data.type === 'check-out') {
+      // إذا كانت آخر حركة ليست حضوراً (أو لم يسجل من قبل)
+      if (lastActionType !== 'check-in') {
         return createJSONResponse({ 
           status: "error", 
-          message: "لا يوجد تسجيل حضور مفتوح لهذا اليوم (خلال آخر 24 ساعة). يرجى تسجيل الحضور أولاً." 
+          message: "لا يوجد تسجيل حضور مفتوح حالياً. يرجى تسجيل الحضور أولاً." 
+        });
+      }
+
+      // حساب عدد الساعات الدقيق للـ Check-out
+      if (lastActionTimestamp && !isNaN(lastActionTimestamp.getTime())) {
+        const diffMs = today.getTime() - lastActionTimestamp.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours >= 0 && diffHours <= 24) {
+          totalHours = parseFloat(diffHours.toFixed(2));
+        } else {
+          return createJSONResponse({ 
+            status: "error", 
+            message: "وقت الحضور السابق يتجاوز 24 ساعة، يرجى مراجعة إدارة النظام لتسويته." 
+          });
+        }
+      } else {
+        return createJSONResponse({ 
+          status: "error", 
+          message: "حدث خطأ في قراءة وقت الحضور السابق." 
         });
       }
     }
@@ -752,9 +781,23 @@ function handleLogin(id, password) {
  * @returns {ContentService.TextOutput} JSON response
  */
 function handleGetData(sheetName, role, username) {
+  let lock;
   try {
-    if (sheetName === SHEET_NAMES.BRANCHES_CONFIG) checkAndResetDailyBalances();
+    if (sheetName === SHEET_NAMES.BRANCHES_CONFIG) {
+       checkAndResetDailyBalances();
+    }
     const ss = getSS();
+    
+    // We only need a read lock if it's the stock or users where simultaneous edits matter,
+    // but typically read doesn't require lock in Sheets API unless we just modified it.
+    // For safety, we can sync read operations on critical sheets.
+    const isCritical = sheetName === SHEET_NAMES.STOCK || sheetName === SHEET_NAMES.ENTRIES || sheetName === SHEET_NAMES.EXPENSES;
+    
+    if (isCritical) {
+      lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+    }
+
     const sheet = ss.getSheetByName(sheetName);
     if (!sheet) return createJSONResponse([]);
     
@@ -812,6 +855,8 @@ function handleGetData(sheetName, role, username) {
     return createJSONResponse(result);
   } catch (err) {
     return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    if (lock) lock.releaseLock();
   }
 }
 
@@ -1135,6 +1180,22 @@ function handleAddRow(sheetName, data) {
       const amountPaid = parseFloat(data['amountPaid'] || data['المدفوع'] || 0);
       const branch = data['branchId'] || data['الفرع'];
       
+      // Check for barcode uniqueness in Entries sheet FIRST
+      const barcode = data['barcode'] || data['الباركود'];
+      if (barcode && String(barcode).trim() !== "") {
+        const barcodeColIdx = getColIndex(SHEET_NAMES.ENTRIES, "barcode");
+        if (barcodeColIdx !== undefined) {
+          const barcodeValues = sheet.getRange(2, barcodeColIdx + 1, sheet.getLastRow() > 1 ? sheet.getLastRow() - 1 : 1).getValues().flat().map(v => String(v).trim());
+          if (barcodeValues.includes(String(barcode).trim())) {
+            return createJSONResponse({ 
+              status: "error", 
+              message: "هذا الباركود (" + barcode + ") مسجل مسبقاً في عملية أخرى" 
+            });
+          }
+        }
+      }
+
+      // If we reach here, barcode is valid/unique. Now we can safely update financial balances.
       if (isSettlement) {
         // تحديث المبلع المتبقي في المعاملة الأصلية (Parent Entry)
         const parentId = data['parentEntryId'] || data['المعاملة الأصلية'];
@@ -1157,21 +1218,6 @@ function handleAddRow(sheetName, data) {
 
       if (amountPaid > 0) {
         updateBranchBalance(branch, amountPaid);
-      }
-
-      // Check for barcode uniqueness in Entries sheet
-      const barcode = data['barcode'] || data['الباركود'];
-      if (barcode && String(barcode).trim() !== "") {
-        const barcodeColIdx = getColIndex(SHEET_NAMES.ENTRIES, "barcode");
-        if (barcodeColIdx !== undefined) {
-          const barcodeValues = sheet.getRange(2, barcodeColIdx + 1, sheet.getLastRow() > 1 ? sheet.getLastRow() - 1 : 1).getValues().flat().map(v => String(v).trim());
-          if (barcodeValues.includes(String(barcode).trim())) {
-            return createJSONResponse({ 
-              status: "error", 
-              message: "هذا الباركود (" + barcode + ") مسجل مسبقاً في عملية أخرى" 
-            });
-          }
-        }
       }
     }
 
@@ -2036,8 +2082,11 @@ function archiveDataByRange(startDate, endDate) {
       applyTextFormatting(sheetArchive, archiveMap, sheetArchive.getLastRow() - rowsToArchive.length + j + 1);
     }
 
-    // Delete rows from Entries in reverse order
-    for (let k = rowIndicesToDelete.length - 1; k >= 0; k--) {
+    // Delete rows from Entries in reverse order (ensure safe deletion)
+    // Sort descending to be absolutely safe (largest number first)
+    rowIndicesToDelete.sort((a, b) => b - a);
+    
+    for (let k = 0; k < rowIndicesToDelete.length; k++) {
       sheetEntries.deleteRow(rowIndicesToDelete[k]);
     }
 

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { ServiceEntry } from '../types';
 import { STATUS } from '../constants';
+import { decodeId } from '../utils';
 import {
     ClipboardCheck,
     Settings,
@@ -64,7 +65,8 @@ const TrackingPage = () => {
                 return;
             }
             try {
-                const result = await GoogleSheetsService.getEntryById(id);
+                const decodedId = decodeId(id);
+                const result = await GoogleSheetsService.getEntryById(decodedId);
                 if (result) {
                     setEntry(result);
                 } else {
