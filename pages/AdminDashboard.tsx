@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { normalizeArabic, toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
-import { ROLES, BRANCHES } from '../constants';
+import { ROLES, BRANCHES, STORAGE_KEYS } from '../constants';
 
 // Memoized components for list items (S8: Performance optimization)
 const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete: (id: string, name: string) => void }>(({ user, onEdit, onDelete }) => (
@@ -22,11 +22,11 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
         </td>
         <td className="py-2 px-4 whitespace-nowrap text-center">
             <div className="flex flex-col items-center gap-1">
-                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${user.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
-                    user.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
-                        user.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
-                            'bg-[#00A6A6]/10 text-[#00A6A6]'
-                    }`}>
+                <span className={`px - 2 py - 0.5 rounded - md text - [9px] font - black uppercase tracking - widest ${user.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
+                        user.role === ROLES.ASSISTANT ? 'bg-orange-100 text-orange-700' :
+                            user.role === ROLES.VIEWER ? 'bg-blue-100 text-blue-700' :
+                                'bg-[#00A6A6]/10 text-[#00A6A6]'
+                    } `}>
                     {user.role}
                 </span>
                 <span className="text-[9px] font-black text-gray-400 flex items-center gap-1 opacity-60">
@@ -121,15 +121,15 @@ interface AdminDashboardProps {
     isSubmitting: boolean;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({
+const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
     users, branches, serviceTypes, expenseCategories, onManageUsers, onManageBranches, onUpdateSettings, isSubmitting
 }) => {
     const [activeTab, setActiveTab] = useState<'employees' | 'branches' | 'lists'>(() => {
-        return (sessionStorage.getItem('admin-dashboard-active-tab') as any) || 'employees';
+        return (sessionStorage.getItem(STORAGE_KEYS.ADMIN_DASHBOARD_TAB) as any) || 'employees';
     });
 
     useEffect(() => {
-        sessionStorage.setItem('admin-dashboard-active-tab', activeTab);
+        sessionStorage.setItem(STORAGE_KEYS.ADMIN_DASHBOARD_TAB, activeTab);
     }, [activeTab]);
     const { showModal, showQuickStatus } = useModal();
 
@@ -235,7 +235,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     return (
-        <div className={`px-3 pb-3 pt-1 md:px-5 md:pb-5 md:pt-2 space-y-4 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`px - 3 pb - 3 pt - 1 md: px - 5 md: pb - 5 md: pt - 2 space - y - 4 transition - opacity animate - premium -in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''} `}>
             {/* Header sitting on background */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[#01404E]">
                 <div className="flex items-center gap-4">
@@ -250,21 +250,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="flex bg-white/50 p-1.5 rounded-[1.5rem] border border-white/40 shadow-premium overflow-x-auto max-w-full">
                     <button
                         onClick={() => setActiveTab('employees')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'employees' ? 'bg-[#00A6A6] text-white shadow-lux' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'}`}
+                        className={`flex items - center gap - 2 px - 4 py - 2 rounded - xl font - black text - xs md: text - sm transition - all duration - 300 whitespace - nowrap ${activeTab === 'employees' ? 'bg-[#00A6A6] text-white shadow-lux' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'} `}
                     >
                         <Users className="w-3.5 h-3.5" />
                         الموظفين
                     </button>
                     <button
                         onClick={() => setActiveTab('branches')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'branches' ? 'bg-[#00A6A6] text-white shadow-lux' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'}`}
+                        className={`flex items - center gap - 2 px - 4 py - 2 rounded - xl font - black text - xs md: text - sm transition - all duration - 300 whitespace - nowrap ${activeTab === 'branches' ? 'bg-[#00A6A6] text-white shadow-lux' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'} `}
                     >
                         <Building2 className="w-3.5 h-3.5" />
                         الفروع
                     </button>
                     <button
                         onClick={() => setActiveTab('lists')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'lists' ? 'bg-[#00A6A6] text-white shadow-lux' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'}`}
+                        className={`flex items - center gap - 2 px - 4 py - 2 rounded - xl font - black text - xs md: text - sm transition - all duration - 300 whitespace - nowrap ${activeTab === 'lists' ? 'bg-[#00A6A6] text-white shadow-lux' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'} `}
                     >
                         <List className="w-3.5 h-3.5" />
                         القوائم
@@ -373,7 +373,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <button
                                         disabled={isSubmitting}
                                         type="submit"
-                                        className={`flex-1 relative overflow-hidden group/btn font-black py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-500 shadow-lux active:scale-[0.98] ${isSubmitting ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:shadow-blue-600/20'}`}
+                                        className={`flex - 1 relative overflow - hidden group / btn font - black py - 4 rounded - 2xl flex items - center justify - center gap - 3 transition - all duration - 500 shadow - lux active: scale - [0.98] ${isSubmitting ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:shadow-blue-600/20'} `}
                                     >
                                         <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform"></div>
                                         <div className="relative z-10 flex items-center gap-2">
@@ -481,7 +481,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <button
                                     disabled={isSubmitting}
                                     type="submit"
-                                    className={`w-full relative overflow-hidden group/btn font-black py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-500 shadow-lux active:scale-[0.98] ${isSubmitting ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-green-600 to-green-800 text-white hover:shadow-green-600/20'}`}
+                                    className={`w - full relative overflow - hidden group / btn font - black py - 4 rounded - 2xl flex items - center justify - center gap - 3 transition - all duration - 500 shadow - lux active: scale - [0.98] ${isSubmitting ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-green-600 to-green-800 text-white hover:shadow-green-600/20'} `}
                                 >
                                     <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform"></div>
                                     <div className="relative z-10 flex items-center gap-2">
@@ -619,6 +619,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
         </div>
     );
-};
+});
 
 export default AdminDashboard;

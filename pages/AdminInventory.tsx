@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { StockItem, Branch, StockCategory, StockStatus } from '../types';
-import { GoogleSheetsService } from '../services/googleSheetsService';
 import { PlusCircle, Package, AlertCircle, CheckCircle2, Filter, History, Trash2, Edit, ChevronDown, RefreshCw } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { toEnglishDigits } from '../utils';
+import { ROLES } from '../constants';
 import CustomSelect from '../components/CustomSelect';
 import SearchInput from '../components/SearchInput';
 
@@ -11,6 +11,9 @@ interface AdminInventoryProps {
     stock: StockItem[];
     onRefresh: () => void;
     onDeleteStock: (barcode: string, role: string) => Promise<boolean>;
+    onAddStockBatch: (items: Partial<StockItem>[], role: string) => Promise<boolean>;
+    onUpdateStockStatus: (barcode: string, newStatus: StockStatus, usedBy: string, role: string) => Promise<boolean>;
+    onUpdateStockItem: (oldBarcode: string, newBarcode: string, newBranchId: string, role: string) => Promise<boolean>;
     isSyncing: boolean;
     userRole: string;
     username: string;
@@ -20,13 +23,13 @@ interface AdminInventoryProps {
     branches: Branch[];
 }
 
-const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDeleteStock, isSyncing, userRole, username, isSubmitting = false, startSubmitting, stopSubmitting, branches }) => {
+const AdminInventory: React.FC<AdminInventoryProps> = React.memo(({ stock, onRefresh, onDeleteStock, onAddStockBatch, onUpdateStockStatus, onUpdateStockItem, isSyncing, userRole, username, isSubmitting = false, startSubmitting, stopSubmitting, branches }) => {
     const { showModal, hideModal, showQuickStatus } = useModal();
     const [newBarcodes, setNewBarcodes] = useState('');
     const [selectedBranch, setSelectedBranch] = useState(branches.length > 0 ? branches[0].id : '');
     const [selectedCategory, setSelectedCategory] = useState<StockCategory>('عادي');
 
-    const canAddStock = userRole === 'مدير' || userRole === 'مساعد';
+    const canAddStock = userRole === ROLES.MANAGER || userRole === ROLES.ASSISTANT;
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
@@ -47,13 +50,13 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
     const BarcodeEditForm: React.FC<{
         item: StockItem;
         onClose: () => void;
-        onRefresh: () => void;
         onDeleteStock: (barcode: string, role: string) => Promise<boolean>;
+        onUpdateStockItem: (oldBarcode: string, newBarcode: string, newBranchId: string, role: string) => Promise<boolean>;
         userRole: string;
         startSubmitting: () => void;
         stopSubmitting: () => void;
         branches: Branch[];
-    }> = ({ item, onClose, onRefresh, onDeleteStock, userRole, startSubmitting, stopSubmitting, branches }) => {
+    }> = ({ item, onClose, onDeleteStock, onUpdateStockItem, userRole, startSubmitting, stopSubmitting, branches }) => {
         const barcode = item.barcode || (item as any).Barcode;
         const branchId = item.branch || (item as any).Branch;
 
@@ -147,9 +150,9 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
 
                                         startSubmitting();
                                         try {
-                                            const success = await GoogleSheetsService.updateStockItem(barcode, newBarcode, newBranchId, userRole);
+                                            const success = await onUpdateStockItem(barcode, newBarcode, newBranchId, userRole);
                                             if (success) {
-                                                onRefresh();
+                                                showQuickStatus('تم تحديث البيانات بنجاح');
                                                 onClose();
                                             } else {
                                                 showQuickStatus('فشل تجديث البيانات', 'error');
@@ -193,7 +196,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         const success = await onDeleteStock(barcode, userRole);
                                         if (success) {
                                             showQuickStatus('تم الحذف بنجاح');
-                                            onRefresh();
                                             onClose();
                                         } else {
                                             showQuickStatus('فشل الحذف', 'error');
@@ -220,8 +222,8 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                 <BarcodeEditForm
                     item={item}
                     onClose={hideModal}
-                    onRefresh={onRefresh}
                     onDeleteStock={onDeleteStock}
+                    onUpdateStockItem={onUpdateStockItem}
                     userRole={userRole}
                     startSubmitting={startSubmitting}
                     stopSubmitting={stopSubmitting}
@@ -283,7 +285,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
             return;
         }
 
-        startSubmitting();
         try {
             const items = list.map(barcode => ({
                 barcode: barcode.trim(),
@@ -293,18 +294,15 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                 created_at: Date.now()
             }));
 
-            const success = await GoogleSheetsService.addStockBatch(items, userRole);
+            const success = await onAddStockBatch(items, userRole);
             if (success) {
                 showQuickStatus('تمت إضافة المخزون');
                 setNewBarcodes('');
-                onRefresh();
             } else {
                 showQuickStatus('فشل التحميل', 'error');
             }
         } catch (err) {
             showQuickStatus('حدث خطأ', 'error');
-        } finally {
-            stopSubmitting();
         }
     };
 
@@ -320,7 +318,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
             const matchStatus = statusFilter === 'All' || status === statusFilter;
 
             // إذا كان المستخدم "مشاهد"، نعرض فقط الباركودات التي استخدمها هو
-            if (userRole === 'مشاهد') {
+            if (userRole === ROLES.VIEWER) {
                 return matchSearch && matchStatus && usedBy.toLowerCase().trim() === normalizedUsername;
             }
 
@@ -334,19 +332,15 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
 
     const updateStatus = async (barcode: string, newStatus: StockStatus) => {
         if (isSubmitting) return;
-        startSubmitting();
         try {
-            const success = await GoogleSheetsService.updateStockStatus(barcode, newStatus, 'Admin Override', userRole);
+            const success = await onUpdateStockStatus(barcode, newStatus, 'Admin Override', userRole);
             if (success) {
                 showQuickStatus('تم تحديث الحالة');
-                onRefresh();
             } else {
                 showQuickStatus('فشل التحديث', 'error');
             }
         } catch (err) {
             showQuickStatus('حدث خطأ', 'error');
-        } finally {
-            stopSubmitting();
         }
     };
 
@@ -460,7 +454,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                         <th className="py-3 px-4 text-center">الفرع</th>
                                         <th className="py-3 px-4 text-center">الحالة</th>
                                         <th className="py-3 px-4 text-center">الموظف</th>
-                                        {userRole !== 'مشاهد' && <th className="py-3 px-4 text-center last:rounded-tl-[2rem]">إجراءات</th>}
+                                        {userRole !== ROLES.VIEWER && <th className="py-3 px-4 text-center last:rounded-tl-[2rem]">إجراءات</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#01404E]/5 font-bold text-sm relative">
@@ -477,7 +471,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                     {filteredStock.slice(0, visibleCount).map(item => (
                                         <tr key={item.barcode || (item as any).Barcode} className="hover:bg-[#036564]/5 transition-all group">
                                             <td className="py-2 px-6 text-center font-mono">
-                                                {userRole === 'مشاهد' || (item.status || (item as any).Status) === 'Used' ? (
+                                                {userRole === ROLES.VIEWER || (item.status || (item as any).Status) === 'Used' ? (
                                                     <div className="flex items-center justify-center gap-2">
                                                         {(item.status || (item as any).Status) === 'Used' && <AlertCircle className="w-3.5 h-3.5 text-gray-400" />}
                                                         <span className="font-black text-[#01404E] text-base opacity-70">
@@ -513,7 +507,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
                                                 {item.used_by || (item as any).Used_By || '-'}
                                                 {(item.order_id || (item as any).Order_ID) && <span className="block text-[8px] text-blue-500">#{String(item.order_id || (item as any).Order_ID).substring(0, 6)}</span>}
                                             </td>
-                                            {userRole !== 'مشاهد' && (
+                                            {userRole !== ROLES.VIEWER && (
                                                 <td className="py-2 px-4 text-center">
                                                     <div className="flex justify-center gap-1">
                                                         {(item.status || (item as any).Status) === 'Error' && (
@@ -551,6 +545,6 @@ const AdminInventory: React.FC<AdminInventoryProps> = ({ stock, onRefresh, onDel
             </div>
         </div>
     );
-};
+});
 
 export default AdminInventory;

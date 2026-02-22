@@ -31,6 +31,14 @@ const generateQRDataUrl = async (entryId: string): Promise<string> => {
   }
 };
 
+/**
+ * Generates the raw HTML content for the printable receipt.
+ * Injects a QR code, dynamic date timestamps, and service details.
+ * 
+ * @param entry The service entry to print
+ * @param qrDataUrl Base64 image URL of the tracking QR code
+ * @returns Complete HTML string ready for iframe rendering
+ */
 export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): string => {
   return `
     <!DOCTYPE html>
@@ -333,6 +341,17 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
   `;
 };
 
+/**
+ * Coordinates the entire receipt printing lifecycle in the browser:
+ * 1. Generates the QR code.
+ * 2. Creates a hidden iframe to hold the receipt HTML.
+ * 3. Waits for images/components inside the iframe to load (`receipt-ready` message).
+ * 4. Triggers the browser's native print dialog.
+ * 5. Safely cleans up and removes the iframe from the DOM when done or failed.
+ * 
+ * @param entry The service entry to print
+ * @returns A promise that resolves when printing is complete or cancelled
+ */
 export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
   // Generate QR code data URL before creating the receipt
   const qrDataUrl = await generateQRDataUrl(entry.id);

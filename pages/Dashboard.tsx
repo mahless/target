@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ServiceEntry, Expense, Branch } from '../types';
 import TransferForm from '../components/TransferForm';
 import SearchInput from '../components/SearchInput';
@@ -6,7 +6,7 @@ import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, A
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import ActionDropdown from '../components/ActionDropdown';
 import { generateReceipt } from '../services/pdfService';
-import { normalizeArabic, normalizeDate, searchMultipleFields, useDebounce, toEnglishDigits } from '../utils';
+import { normalizeArabic, normalizeDate, toEnglishDigits, searchMultipleFields, useDebounce, getTodayDate } from '../utils';
 import { useModal } from '../context/ModalContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { GoogleSheetsService } from '../services/googleSheetsService';
@@ -79,7 +79,14 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Refresh debounce state (S7: Performance optimization)
-  const [lastRefreshTime, setLastRefreshTime] = useState(0);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
   const [isRefreshCooldown, setIsRefreshCooldown] = useState(false);
   const [visibleEntriesCount, setVisibleEntriesCount] = useState(50);
 
@@ -151,8 +158,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     setIsRefreshCooldown(true);
     onRefresh();
 
-    // Reset cooldown after 300ms
-    setTimeout(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
       setIsRefreshCooldown(false);
     }, 300);
   }, [lastRefreshTime, onRefresh]);
@@ -227,12 +234,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
             ...entry,
             workOrderNumber: workOrderValue,
             status: STATUS.IN_PROGRESS as ServiceEntry['status'],
-            statusUpdateDate: new Date().toISOString().split('T')[0]
+            statusUpdateDate: getTodayDate()
           };
           const success = await onUpdateEntry(updatedEntry);
           if (success) {
             showQuickStatus('تم حفظ رقم أمر الشغل وتحديث الحالة بنجاح');
-            onRefresh();
+            // onRefresh(); removed to prevent excessive API calls
           } else {
             showQuickStatus('فشل الحفظ على السيرفر', 'error');
           }
@@ -261,12 +268,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           const updatedEntry: ServiceEntry = {
             ...entry,
             status: newStatus,
-            statusUpdateDate: new Date().toISOString().split('T')[0]
+            statusUpdateDate: getTodayDate()
           };
           const success = await onUpdateEntry(updatedEntry);
           if (success) {
             showQuickStatus('تم تحديث الحالة بنجاح');
-            onRefresh();
+            // onRefresh(); removed to prevent excessive API calls
           } else {
             showQuickStatus('فشل تحديث الحالة على السيرفر', 'error');
           }
@@ -322,7 +329,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         const result = await onUpdateEntry(updatedEntry);
         if (result) {
           showQuickStatus('تم إلغاء المعاملة بنجاح');
-          onRefresh();
+          // onRefresh(); removed to prevent excessive API calls
         } else {
           showQuickStatus('فشل تحديث البيانات على السيرفر', 'error');
         }
@@ -352,7 +359,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         const updatedEntry: ServiceEntry = {
           ...entry,
           isCostPaid: true,
-          costPaidDate: new Date().toISOString().split('T')[0],
+          costPaidDate: getTodayDate(),
           costPaidBy: username
         };
 
@@ -372,7 +379,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
           await onAddExpense(thirdPartyExpense);
           showQuickStatus('تمت التسوية وتسجيل المصروف بنجاح');
-          onRefresh();
+          // onRefresh(); removed to prevent excessive API calls
         } else {
           showQuickStatus('فشل السيرفر في التحديث', 'error');
         }
@@ -441,7 +448,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           const success = await onUpdateEntry(updatedEntry);
           if (success) {
             showQuickStatus('تم تحديث البيانات بنجاح');
-            onRefresh();
+            // onRefresh(); removed to prevent excessive API calls
           } else {
             showQuickStatus('فشل السيرفر في التحديث', 'error');
           }
@@ -453,69 +460,61 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     });
   }, [showModal, showQuickStatus, setIsProcessing, onUpdateEntry, onRefresh]);
 
-  const handleDeliver = useCallback(async (entry: ServiceEntry) => {
+  const handleCollectDebt = useCallback(async (entry: ServiceEntry) => {
     const remaining = entry.remainingAmount;
     let amountToCollect = remaining;
 
-    const performDelivery = async (collectedAmount: number) => {
-      const success = await onDeliverOrder(
-        entry.id,
-        collectedAmount,
-        entry.clientName,
-        username,
-        branchId
-      );
-
-      if (success) {
-        showQuickStatus('تم تسليم المعاملة وتحديث البيانات بنجاح');
-      } else {
-        showQuickStatus('فشل تحديث البيانات على السيرفر', 'error');
+    showModal({
+      title: 'تحصيل المتبقي وسداد المديونية',
+      content: (
+        <div className="space-y-4 text-right">
+          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+            <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest mb-1">المبلغ المتبقي</p>
+            <p className="text-2xl font-black text-amber-600">{remaining} ج.م</p>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المبلغ المستلم الآن</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              defaultValue={remaining}
+              onChange={(e) => {
+                e.target.value = toEnglishDigits(e.target.value);
+                amountToCollect = Number(e.target.value);
+              }}
+              className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
+            />
+            <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>
+          </div>
+        </div>
+      ),
+      confirmText: 'تأكيد التحصيل',
+      onConfirm: async () => {
+        if (amountToCollect <= 0 || amountToCollect > remaining) {
+          showQuickStatus('مبلغ غير صالح', 'error');
+          return;
+        }
+        setIsProcessing(true);
+        try {
+          const success = await onDeliverOrder(
+            entry.id,
+            amountToCollect,
+            entry.clientName,
+            username,
+            branchId
+          );
+          if (success) {
+            showQuickStatus('تم التحصيل بنجاح');
+          } else {
+            showQuickStatus('فشل في عملية التحصيل', 'error');
+          }
+        } finally {
+          setIsProcessing(false);
+        }
       }
-    };
-
-    if (remaining === 0) {
-      showModal({
-        title: 'تأكيد التسليم',
-        content: (
-          <div className="text-right p-2">
-            <p className="font-bold text-gray-700">متأكد من إتمام عملية التسليم؟</p>
-            <p className="text-[10px] text-gray-400 mt-2 italic">لا توجد مديونية متبقية على هذه المعاملة.</p>
-          </div>
-        ),
-        confirmText: 'تأكيد التسليم',
-        onConfirm: () => performDelivery(0)
-      });
-    } else {
-      showModal({
-        title: 'تحصيل المتبقي وتسليم المعاملة',
-        content: (
-          <div className="space-y-4 text-right">
-            <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-              <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest mb-1">المبلغ المتبقي</p>
-              <p className="text-2xl font-black text-amber-600">{remaining} ج.م</p>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المبلغ المستلم الآن</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                defaultValue={remaining}
-                onChange={(e) => {
-                  e.target.value = toEnglishDigits(e.target.value);
-                  amountToCollect = Number(e.target.value);
-                }}
-                className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
-              />
-              <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>
-            </div>
-          </div>
-        ),
-        confirmText: 'تأكيد التحصيل والتسليم',
-        onConfirm: () => performDelivery(amountToCollect)
-      });
-    }
-  }, [onDeliverOrder, showModal, showQuickStatus, branchId, username]);
+    });
+  }, [onDeliverOrder, showModal, showQuickStatus, branchId, username, setIsProcessing]);
 
   const handleTransfer = () => {
     showModal({
@@ -670,7 +669,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                           <ActionDropdown
                             entry={entry}
                             userRole={userRole}
-                            onDeliver={handleDeliver}
+                            onDeliver={(entry) => handleUpdateServiceStatus(entry, STATUS.DELIVERED as ServiceEntry['status'], 'تم التسليم')}
+                            onCollectDebt={handleCollectDebt}
                             onSetWorkOrder={handleSetWorkOrderNumber}
                             onUpdateStatus={handleUpdateServiceStatus}
                             onCancel={handleCancelService}

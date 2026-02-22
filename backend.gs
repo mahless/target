@@ -390,6 +390,8 @@ function handleDeleteExpense(data) {
       return undefined;
     };
 
+    const map = getHeaderMapping(sheet, SHEET_NAMES.EXPENSES);
+
     const idCol = map["id"] !== undefined ? map["id"] : findCol(["id", "ID", "المعرف", "مسلسل", "كود"]);
     const amountCol = map["amount"] !== undefined ? map["amount"] : findCol(["amount", "المبلغ", "القيمة", "السعر"]);
     const branchCol = map["branchId"] !== undefined ? map["branchId"] : findCol(["branchId", "branch", "الفرع", "فرع", "اسم الفرع"]);
@@ -495,19 +497,9 @@ function handleDeliverOrder(data) {
     const remainingCollected = parseFloat(data.remainingCollected || 0);
     const newRemaining = Math.max(0, parseFloat((currentRemaining - remainingCollected).toFixed(2)));
 
-    // 1. تحديث حالة الطلب وتاريخ التسليم (فقط إذا أصبح المتبقي صفر)
-    if (newRemaining <= 0) {
-      if (statusColIdx !== undefined) {
-        sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue(ENTRY_STATUS.DELIVERED);
-      }
-      if (deliveredDateColIdx !== undefined) {
-        sheetEntries.getRange(rowIndex + 1, deliveredDateColIdx + 1).setValue(cairoTime);
-      }
-    } else {
-      // إذا كان هناك متبقي، نقوم بتحديث المبلغ المتبقي في العملية الأصلية مباشرة أيضاً لضمان المزامنة
-      if (remainingAmountColIdx !== undefined) {
-        sheetEntries.getRange(rowIndex + 1, remainingAmountColIdx + 1).setValue(newRemaining);
-      }
+    // 1. تحديث المبلغ المتبقي (دون تغيير الحالة)
+    if (remainingAmountColIdx !== undefined) {
+      sheetEntries.getRange(rowIndex + 1, remainingAmountColIdx + 1).setValue(newRemaining);
     }
 
     // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
@@ -515,7 +507,7 @@ function handleDeliverOrder(data) {
       const headerKeys = SHEET_CONFIG[SHEET_NAMES.ENTRIES];
       const newRow = headerKeys.map(key => {
         const k = key.toLowerCase();
-        if (k === 'id') return Date.now().toString() + "-collect";
+        if (k === 'id') return data.collectionId || (Date.now().toString() + "-collect");
         if (k === 'clientname') return data.clientName;
         if (k === 'servicetype') return SERVICE_TYPES.DEBT_SETTLEMENT;
         if (k === 'amountpaid') return remainingCollected;
@@ -1394,7 +1386,7 @@ function handleAddStockBatch(items) {
        if (map['Category'] !== undefined) rowData[map['Category']] = item.category;
        if (map['Branch'] !== undefined) rowData[map['Branch']] = item.branch;
        if (map['Status'] !== undefined) rowData[map['Status']] = "Available";
-       if (map['Created_At'] !== undefined) rowData[map['Created_At']] = new Date().toISOString();
+       if (map['Created_At'] !== undefined) rowData[map['Created_At']] = getCairoDateTime();
        return rowData;
     });
     
@@ -1446,7 +1438,7 @@ function handleUpdateStockStatus(params) {
         
         if (statusCol !== undefined) rowData[statusCol] = params.status;
         if (usedByCol !== undefined) rowData[usedByCol] = isAvailable ? "" : (params.usedBy || "");
-        if (usageDateCol !== undefined) rowData[usageDateCol] = isAvailable ? "" : new Date().toISOString();
+        if (usageDateCol !== undefined) rowData[usageDateCol] = isAvailable ? "" : getCairoDateTime();
         if (orderIdCol !== undefined) rowData[orderIdCol] = isAvailable ? "" : (params.orderId || "");
         
         sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
@@ -1725,7 +1717,8 @@ function handleBranchTransfer(data) {
     // 3. تسجيل كمصروف في الفرع المرسل للتوثيق
     if (sheetExpenses) {
       const headers = SHEET_CONFIG[SHEET_NAMES.EXPENSES];
-      const cairoDate = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+      const lock = LockService.getScriptLock();
+      const cairoDate = getCairoDate();
       const rowFrom = headers.map(key => {
         const k = key.toLowerCase();
         if (k === 'id') return Date.now() + "-tf-out";
@@ -2060,8 +2053,8 @@ function archiveDataByRange(startDate, endDate) {
       return { status: "success", movedCount: 0, message: "لا توجد عمليات منتهية في هذا النطاق الزمني أو تأكد من مسميات الحالة" };
     }
 
-    // Determine archive sheet name based on current year or start date year
-    const archiveYear = new Date().getFullYear();
+    // Determine archive sheet name based on current Cairo year
+    const archiveYear = parseInt(Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy"));
     const archiveSheetName = `Archive_${archiveYear}`;
     let sheetArchive = ss.getSheetByName(archiveSheetName);
 

@@ -7,6 +7,7 @@ import {
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { useModal } from '../context/ModalContext';
 import { ArchiveEntry, User } from '../types';
+import { ROLES } from '../constants';
 import { useDebounce, normalizeArabic, searchMultipleFields } from '../utils';
 import SearchInput from '../components/SearchInput';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -31,7 +32,7 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     const isAdmin = useMemo(() =>
-        normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin',
+        normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN,
         [userRole]
     );
 

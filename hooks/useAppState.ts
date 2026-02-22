@@ -1,10 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ServiceEntry, Expense, Branch, StockItem, User } from '../types';
+import { ServiceEntry, Expense, Branch, StockItem, StockStatus, User } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
-import { normalizeArabic, normalizeDate } from '../utils';
+import { normalizeArabic, normalizeDate, getTodayDate } from '../utils';
 import { useModal } from '../context/ModalContext';
-import { SERVICE_TYPES, EXPENSE_CATEGORIES, ROLES } from '../constants';
+import { SERVICE_TYPES, EXPENSE_CATEGORIES, ROLES, STORAGE_KEYS } from '../constants';
 
+/**
+ * Global application state management hook.
+ * Acts as the primary Controller connecting the React UI to the Google Sheets backend.
+ * 
+ * Responsibilities:
+ * - Bootstraps local cache (`localStorage`) on initial load.
+ * - Manages centralized state for entries, expenses, stock, users, and branches.
+ * - Handles optimistic UI updates and background synchronization (`syncAll`).
+ * - Exposes mutation wrappers (`addEntry`, `updateStatus`, `deliverOrder`) to components.
+ * - Manages global `isProcessing` lock to prevent duplicate submissions.
+ * 
+ * @returns The global state slice and its associated mutation handlers.
+ */
 export const useAppState = () => {
   const { setIsProcessing } = useModal();
   const hasAutoAssigned = useRef(false);
@@ -12,12 +25,12 @@ export const useAppState = () => {
 
   // Initialize state from localStorage if available
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('target_user');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_USER);
     return saved ? JSON.parse(saved) : null;
   });
 
   const [branch, setBranch] = useState<Branch | null>(() => {
-    const saved = localStorage.getItem('target_branch');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_BRANCH);
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -35,37 +48,37 @@ export const useAppState = () => {
   };
 
   const [entries, setEntries] = useState<ServiceEntry[]>(() => {
-    const saved = localStorage.getItem('target_entries');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_ENTRIES);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('target_expenses');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_EXPENSES);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [stock, setStock] = useState<StockItem[]>(() => {
-    const saved = localStorage.getItem('target_stock');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_STOCK);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [branches, setBranches] = useState<Branch[]>(() => {
-    const saved = localStorage.getItem('target_branches');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_BRANCHES);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('target_admin_users');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_ADMIN_USERS);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [serviceTypes, setServiceTypes] = useState<string[]>(() => {
-    const saved = localStorage.getItem('target_service_types');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_SERVICE_TYPES);
     return saved ? JSON.parse(saved) : SERVICE_TYPES;
   });
 
   const [expenseCategories, setExpenseCategories] = useState<string[]>(() => {
-    const saved = localStorage.getItem('target_expense_categories');
+    const saved = localStorage.getItem(STORAGE_KEYS.TARGET_EXPENSE_CATEGORIES);
     return saved ? JSON.parse(saved) : EXPENSE_CATEGORIES;
   });
 
@@ -243,7 +256,7 @@ export const useAppState = () => {
             const isSame = mappedStock.every((s, i) => s.barcode === prev[i].barcode && s.status === prev[i].status);
             if (isSame) return prev;
           }
-          localStorage.setItem('target_stock', JSON.stringify(mappedStock));
+          localStorage.setItem(STORAGE_KEYS.TARGET_STOCK, JSON.stringify(mappedStock));
           return mappedStock;
         });
       }
@@ -267,7 +280,7 @@ export const useAppState = () => {
             const isSame = mappedBranches.every((b, i) => b.id === prev[i].id && b.Current_Balance === prev[i].Current_Balance);
             if (isSame) return prev;
           }
-          localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
+          localStorage.setItem(STORAGE_KEYS.TARGET_BRANCHES, JSON.stringify(mappedBranches));
           return mappedBranches;
         });
       }
@@ -277,18 +290,18 @@ export const useAppState = () => {
         if (settings.Service_List) {
           const list = settings.Service_List.split(',').map((s: string) => s.trim()).filter(Boolean);
           setServiceTypes(list);
-          localStorage.setItem('target_service_types', JSON.stringify(list));
+          localStorage.setItem(STORAGE_KEYS.TARGET_SERVICE_TYPES, JSON.stringify(list));
         }
         if (settings.Expense_List) {
           const list = settings.Expense_List.split(',').map((s: string) => s.trim()).filter(Boolean);
           setExpenseCategories(list);
-          localStorage.setItem('target_expense_categories', JSON.stringify(list));
+          localStorage.setItem(STORAGE_KEYS.TARGET_EXPENSE_CATEGORIES, JSON.stringify(list));
         }
       }
 
       if (remoteUsers && remoteUsers.length > 0) {
         setUsers(remoteUsers);
-        localStorage.setItem('target_admin_users', JSON.stringify(remoteUsers));
+        localStorage.setItem(STORAGE_KEYS.TARGET_ADMIN_USERS, JSON.stringify(remoteUsers));
       }
     } catch (error) {
       console.error("Sync Error:", error);
@@ -305,30 +318,30 @@ export const useAppState = () => {
 
   // حفظ البيانات محلياً عند تغييرها
   useEffect(() => {
-    if (user) localStorage.setItem('target_user', JSON.stringify(user));
+    if (user) localStorage.setItem(STORAGE_KEYS.TARGET_USER, JSON.stringify(user));
     else localStorage.removeItem('target_user');
   }, [user]);
 
   useEffect(() => {
-    if (branch) localStorage.setItem('target_branch', JSON.stringify(branch));
+    if (branch) localStorage.setItem(STORAGE_KEYS.TARGET_BRANCH, JSON.stringify(branch));
     else localStorage.removeItem('target_branch');
   }, [branch]);
 
   useEffect(() => {
-    if (currentDate) localStorage.setItem('target_date', JSON.stringify(currentDate));
+    if (currentDate) localStorage.setItem(STORAGE_KEYS.TARGET_DATE, JSON.stringify(currentDate));
     else localStorage.removeItem('target_date');
   }, [currentDate]);
 
   useEffect(() => {
-    localStorage.setItem('target_entries', JSON.stringify(entries));
+    localStorage.setItem(STORAGE_KEYS.TARGET_ENTRIES, JSON.stringify(entries));
   }, [entries]);
 
   useEffect(() => {
-    localStorage.setItem('target_expenses', JSON.stringify(expenses));
+    localStorage.setItem(STORAGE_KEYS.TARGET_EXPENSES, JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    localStorage.setItem('target_stock', JSON.stringify(stock));
+    localStorage.setItem(STORAGE_KEYS.TARGET_STOCK, JSON.stringify(stock));
   }, [stock]);
 
 
@@ -348,7 +361,7 @@ export const useAppState = () => {
       );
       if (assignedBranch) {
         setBranch(assignedBranch);
-        localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
+        localStorage.setItem(STORAGE_KEYS.TARGET_BRANCH, JSON.stringify(assignedBranch));
         hasAutoAssigned.current = true;
       }
     }
@@ -357,16 +370,16 @@ export const useAppState = () => {
 
   const handleLogin = useCallback((userData: User) => {
     setUser(userData);
-    localStorage.setItem('target_user', JSON.stringify(userData));
-    localStorage.setItem('target_is_logged_in', 'true');
+    localStorage.setItem(STORAGE_KEYS.TARGET_USER, JSON.stringify(userData));
+    localStorage.setItem(STORAGE_KEYS.TARGET_IS_LOGGED_IN, 'true');
     if (userData.assignedBranchId) {
       const assignedBranch = branches.find(b => b.id === userData.assignedBranchId);
       if (assignedBranch) {
         setBranch(assignedBranch);
-        localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
-        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem(STORAGE_KEYS.TARGET_BRANCH, JSON.stringify(assignedBranch));
+        const today = getTodayDate();
         setCurrentDate(today);
-        localStorage.setItem('target_date', JSON.stringify(today));
+        localStorage.setItem(STORAGE_KEYS.TARGET_DATE, JSON.stringify(today));
       }
     }
   }, [branches]);
@@ -375,10 +388,10 @@ export const useAppState = () => {
     setUser(null);
     setBranch(null);
     setCurrentDate(null);
-    localStorage.removeItem('target_user');
-    localStorage.removeItem('target_branch');
-    localStorage.removeItem('target_date');
-    localStorage.removeItem('target_is_logged_in');
+    localStorage.removeItem(STORAGE_KEYS.TARGET_USER);
+    localStorage.removeItem(STORAGE_KEYS.TARGET_BRANCH);
+    localStorage.removeItem(STORAGE_KEYS.TARGET_DATE);
+    localStorage.removeItem(STORAGE_KEYS.TARGET_IS_LOGGED_IN);
   }, []);
 
   const addEntry = useCallback(async (entry: ServiceEntry): Promise<boolean> => {
@@ -399,7 +412,7 @@ export const useAppState = () => {
         statusUpdateDate: entry.statusUpdateDate || entry.entryDate
       };
       setEntries(prev => [entry, ...prev]);
-      const result = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || 'موظف');
+      const result = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || ROLES.EMPLOYEE);
       if (!result.success) {
         setEntries(prev => prev.filter(e => e.id !== entry.id));
       } else {
@@ -435,7 +448,7 @@ export const useAppState = () => {
         'workOrderNumber': updatedEntry.workOrderNumber || '',
         'statusUpdateDate': updatedEntry.statusUpdateDate || ''
       };
-      const success = await GoogleSheetsService.updateEntry('Entries', sheetEntry, user?.role || 'موظف');
+      const success = await GoogleSheetsService.updateEntry('Entries', sheetEntry, user?.role || ROLES.EMPLOYEE);
       if (success) {
         const oldPaid = Number(entries.find(e => e.id === updatedEntry.id)?.amountPaid || 0);
         const diff = updatedEntry.amountPaid - oldPaid;
@@ -447,7 +460,7 @@ export const useAppState = () => {
           ));
         }
         if (updatedEntry.status === 'cancelled' && updatedEntry.barcode) {
-          await GoogleSheetsService.updateStockStatus(updatedEntry.barcode, 'Available', '', user?.role || 'موظف');
+          await GoogleSheetsService.updateStockStatus(updatedEntry.barcode, 'Available', '', user?.role || ROLES.EMPLOYEE);
         }
       } else {
         setEntries(prev => prev.map(e => e.id === updatedEntry.id ? entries.find(x => x.id === updatedEntry.id)! : e));
@@ -464,7 +477,7 @@ export const useAppState = () => {
     try {
       const sheetExpense = { ...expense, 'التاريخ': expense.date, 'البند': expense.category, 'المبلغ': expense.amount, 'الفرع': expense.branchId };
       setExpenses(prev => [{ ...expense, recordedBy: user?.name || '' }, ...prev]);
-      const result = await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || 'موظف');
+      const result = await GoogleSheetsService.addRow('Expenses', sheetExpense, user?.role || ROLES.EMPLOYEE);
       if (!result.success) setExpenses(prev => prev.filter(e => e.id !== expense.id));
       else {
         setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(expense.branchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) - expense.amount } : b));
@@ -492,11 +505,41 @@ export const useAppState = () => {
 
   const deliverOrder = useCallback(async (orderId: string, collectedAmount: number, clientName: string, collectorName: string, targetBranchId: string): Promise<boolean> => {
     if (isSubmitting) return false;
+    const collectionId = Date.now().toString() + "-collect";
     startSubmitting();
     try {
-      const success = await GoogleSheetsService.deliverOrder(orderId, collectedAmount, clientName, collectorName, targetBranchId);
+      const success = await GoogleSheetsService.deliverOrder(orderId, collectedAmount, clientName, collectorName, targetBranchId, collectionId);
       if (success) {
-        setEntries(prev => prev.map(e => e.id === orderId ? { ...e, status: 'تم التسليم', remainingAmount: e.remainingAmount - collectedAmount, amountPaid: e.amountPaid + collectedAmount } : e));
+        // 1. تحديث المعاملة الأصلية
+        setEntries(prev => {
+          const updated = prev.map(e => e.id === orderId ? { ...e, remainingAmount: e.remainingAmount - collectedAmount, amountPaid: e.amountPaid + collectedAmount } : e);
+
+          // 2. إذا تم تحصيل مبلغ، أضف بنداً جديداً لسداد المديونية (Optimistic UI)
+          if (collectedAmount > 0) {
+            const settlementEntry: ServiceEntry = {
+              id: collectionId, // استخدام نفس المعرف الذي سيرسله السيرفر
+              clientName: clientName,
+              nationalId: '-',
+              phoneNumber: '-',
+              serviceType: SERVICE_TYPES.DEBT_SETTLEMENT,
+              serviceCost: 0,
+              amountPaid: collectedAmount,
+              remainingAmount: 0,
+              hasThirdParty: false,
+              isElectronic: false,
+              notes: `سداد مديونية لطلب ${orderId}`,
+              branchId: targetBranchId,
+              entryDate: getTodayDate(),
+              timestamp: Date.now(),
+              recordedBy: collectorName,
+              status: 'active',
+              parentEntryId: orderId
+            };
+            return [settlementEntry, ...updated];
+          }
+          return updated;
+        });
+
         if (collectedAmount > 0) {
           setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(targetBranchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + collectedAmount } : b));
         }
@@ -511,7 +554,7 @@ export const useAppState = () => {
     if (isSubmitting) return { success: false, message: 'جاري التنفيذ...' };
     startSubmitting();
     try {
-      const result = await GoogleSheetsService.branchTransfer({ ...data, recordedBy: user?.name || '' }, user?.role || 'موظف');
+      const result = await GoogleSheetsService.branchTransfer({ ...data, recordedBy: user?.name || '' }, user?.role || ROLES.EMPLOYEE);
 
       if (result.success) {
         // 1. Update balances locally
@@ -559,7 +602,7 @@ export const useAppState = () => {
           'المحصل': incomingEntry.amountPaid,
           'المتبقي': 0,
           'الحالة': 'تم التسليم'
-        }, user?.role || 'موظف').catch(err => console.error("Failed to save incoming transfer entry", err));
+        }, user?.role || ROLES.EMPLOYEE).catch(err => console.error("Failed to save incoming transfer entry", err));
       }
       return result;
     } finally {
@@ -575,9 +618,9 @@ export const useAppState = () => {
 
   // Initialize attendance from local storage
   useEffect(() => {
-    const savedStatus = localStorage.getItem('target_attendance_status');
-    const savedDate = localStorage.getItem('target_attendance_date');
-    const today = new Date().toISOString().split('T')[0];
+    const savedStatus = localStorage.getItem(STORAGE_KEYS.TARGET_ATTENDANCE_STATUS);
+    const savedDate = localStorage.getItem(STORAGE_KEYS.TARGET_ATTENDANCE_DATE);
+    const today = getTodayDate();
 
     if (savedStatus && savedDate === today) {
       setAttendanceStatus(savedStatus as 'checked-in' | 'checked-out');
@@ -599,11 +642,11 @@ export const useAppState = () => {
       const users_ID = localStorage.getItem('active_employee_id') || user?.id || '';
       const result = await GoogleSheetsService.recordAttendance(users_ID, username, branchId, 'check-in', ip);
       if (result.success) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
         setAttendanceStatus('checked-in');
         setAttendanceDate(today);
-        localStorage.setItem('target_attendance_status', 'checked-in');
-        localStorage.setItem('target_attendance_date', today);
+        localStorage.setItem(STORAGE_KEYS.TARGET_ATTENDANCE_STATUS, 'checked-in');
+        localStorage.setItem(STORAGE_KEYS.TARGET_ATTENDANCE_DATE, today);
         return { success: true };
       }
       return { success: false, message: result.message };
@@ -623,7 +666,7 @@ export const useAppState = () => {
       const result = await GoogleSheetsService.recordAttendance(users_ID, username, branchId, 'check-out', ip);
       if (result.success) {
         setAttendanceStatus('checked-out');
-        localStorage.setItem('target_attendance_status', 'checked-out');
+        localStorage.setItem(STORAGE_KEYS.TARGET_ATTENDANCE_STATUS, 'checked-out');
         handleLogout();
         return { success: true };
       }
@@ -647,9 +690,51 @@ export const useAppState = () => {
     }
   }, [isSubmitting, startSubmitting, stopSubmitting]);
 
+  const addStockBatch = useCallback(async (items: Partial<StockItem>[], role: string): Promise<boolean> => {
+    if (isSubmitting) return false;
+    startSubmitting();
+    try {
+      const success = await GoogleSheetsService.addStockBatch(items as any, role);
+      if (success) {
+        setStock(prev => [...(items as StockItem[]), ...prev]);
+      }
+      return success;
+    } finally {
+      stopSubmitting();
+    }
+  }, [isSubmitting, startSubmitting, stopSubmitting]);
+
+  const updateStockStatus = useCallback(async (barcode: string, newStatus: StockStatus, usedBy: string, role: string): Promise<boolean> => {
+    if (isSubmitting) return false;
+    startSubmitting();
+    try {
+      const success = await GoogleSheetsService.updateStockStatus(barcode, newStatus, usedBy, role);
+      if (success) {
+        setStock(prev => prev.map(item => (item.barcode || (item as any).Barcode) === barcode ? { ...item, status: newStatus, used_by: usedBy } : item));
+      }
+      return success;
+    } finally {
+      stopSubmitting();
+    }
+  }, [isSubmitting, startSubmitting, stopSubmitting]);
+
+  const updateStockItem = useCallback(async (oldBarcode: string, newBarcode: string, newBranchId: string, role: string): Promise<boolean> => {
+    if (isSubmitting) return false;
+    startSubmitting();
+    try {
+      const success = await GoogleSheetsService.updateStockItem(oldBarcode, newBarcode, newBranchId, role);
+      if (success) {
+        setStock(prev => prev.map(item => (item.barcode || (item as any).Barcode) === oldBarcode ? { ...item, barcode: newBarcode, branch: newBranchId } : item));
+      }
+      return success;
+    } finally {
+      stopSubmitting();
+    }
+  }, [isSubmitting, startSubmitting, stopSubmitting]);
+
   return {
     user,
-    userRole: user?.role || 'موظف',
+    userRole: user?.role || ROLES.EMPLOYEE,
     branch,
     currentDate,
     entries,
@@ -708,8 +793,8 @@ export const useAppState = () => {
         if (res.success) {
           setServiceTypes(serviceList);
           setExpenseCategories(expenseList);
-          localStorage.setItem('target_service_types', JSON.stringify(serviceList));
-          localStorage.setItem('target_expense_categories', JSON.stringify(expenseList));
+          localStorage.setItem(STORAGE_KEYS.TARGET_SERVICE_TYPES, JSON.stringify(serviceList));
+          localStorage.setItem(STORAGE_KEYS.TARGET_EXPENSE_CATEGORIES, JSON.stringify(expenseList));
         }
         return res;
       } finally {
@@ -723,6 +808,9 @@ export const useAppState = () => {
     setBranch,
     setCurrentDate,
     branches,
-    users
+    users,
+    addStockBatch,
+    updateStockStatus,
+    updateStockItem
   };
 };

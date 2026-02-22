@@ -8,8 +8,9 @@ export const useDashboardStats = (entries: ServiceEntry[], expenses: Expense[], 
 
     // 1. حساب المحصل الفعلي اليوم (Cash In):
     // نستخدم الـ entries الممررة مباشرة لأنها مفلترة فعلاً في الـ Dashboard
-    const activeToday = entries.filter(e => e.status === 'active' || !e.status);
-    const totalCollectedToday = activeToday.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
+    // نشمل جميع الحالات باستثناء "الملغي" لضمان دقة الإحصائيات أثناء المعالجة
+    const nonCancelledToday = entries.filter(e => e.status !== 'cancelled');
+    const totalCollectedToday = nonCancelledToday.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
 
     // 2. حساب إجمالي رسوم الإلغاء (لليوم)
     const cancelledToday = entries.filter(e => e.status === 'cancelled');
@@ -18,21 +19,13 @@ export const useDashboardStats = (entries: ServiceEntry[], expenses: Expense[], 
     const totalRevenueToday = totalCollectedToday + adminFeesToday;
 
     // 3. حساب مبالغ آجلة لخدمات بدأت اليوم (Market Debt Today)
-    const newServicesToday = activeToday.filter(e => !e.parentEntryId);
-    const paymentsToday = activeToday.filter(e => e.parentEntryId);
-
-    // الدفعات التي تمت اليوم لخدمات بدأت أيضاً اليوم (سداد فوري أو جزئي)
-    const paymentsAgainstTodayServices = paymentsToday.filter(p =>
-      newServicesToday.some(ns => ns.id === p.parentEntryId)
-    );
-
-    const initialRemainingToday = newServicesToday.reduce((acc, curr) => acc + (Number(curr.remainingAmount) || 0), 0);
-    const settledTodayFromTodayNew = paymentsAgainstTodayServices.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
-
-    const netRemainingToday = initialRemainingToday - settledTodayFromTodayNew;
+    // ملاحظة: الحقل remainingAmount محدث بالفعل ليشمل أي تحصيلات تمت اليوم، 
+    // لذا لا داعي لطرح settledTodayFromTodayNew مرة أخرى لضمان عدم الحساب بالسالب.
+    const newServicesToday = nonCancelledToday.filter(e => !e.parentEntryId);
+    const netRemainingToday = newServicesToday.reduce((acc, curr) => acc + (Number(curr.remainingAmount) || 0), 0);
 
     // 4. مبالغ الطرف الثالث المعلقة
-    const pendingThirdPartyToday = activeToday.reduce((acc, curr) => {
+    const pendingThirdPartyToday = nonCancelledToday.reduce((acc, curr) => {
       return acc + (!curr.isCostPaid ? (Number(curr.thirdPartyCost) || 0) : 0);
     }, 0);
 

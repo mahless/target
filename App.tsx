@@ -33,7 +33,8 @@ const AppContent: React.FC = () => {
     isSyncing, syncAll, isSubmitting, startSubmitting, stopSubmitting,
     attendanceStatus, checkIn, checkOut, deliverOrder, branchTransfer, branches,
     users, manageUsers, manageBranches,
-    serviceTypes, expenseCategories, updateSettings, deleteStock
+    serviceTypes, expenseCategories, updateSettings, deleteStock,
+    addStockBatch, updateStockStatus, updateStockItem
   } = useAppState();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -73,7 +74,7 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isSubmitting]);
 
-  const isAccessLocked = userRole !== 'مدير' && userRole !== 'مشاهد' && attendanceStatus !== 'checked-in';
+  const isAccessLocked = userRole !== ROLES.MANAGER && userRole !== ROLES.VIEWER && attendanceStatus !== 'checked-in';
 
   return (
     <Routes>
@@ -132,7 +133,7 @@ const AppContent: React.FC = () => {
                       />
                     } />
                     <Route path="/new-service" element={
-                      userRole === 'مشاهد' ? <Navigate to="/dashboard" /> : (
+                      userRole === ROLES.VIEWER ? <Navigate to="/dashboard" /> : (
                         <ServiceForm
                           onAddEntry={addEntry}
                           onAddExpense={addExpense}
@@ -147,7 +148,7 @@ const AppContent: React.FC = () => {
                       )
                     } />
                     <Route path="/receivables" element={
-                      userRole === 'مشاهد' ? <Navigate to="/dashboard" /> : (
+                      userRole === ROLES.VIEWER ? <Navigate to="/dashboard" /> : (
                         <Receivables
                           entries={entries}
                           serviceTypes={serviceTypes}
@@ -160,11 +161,12 @@ const AppContent: React.FC = () => {
                           onRefresh={syncAll}
                           isSubmitting={isSubmitting}
                           userRole={userRole}
+                          deliverOrder={deliverOrder}
                         />
                       )
                     } />
                     <Route path="/expenses" element={
-                      userRole === 'مشاهد' ? <Navigate to="/dashboard" /> : (
+                      userRole === ROLES.VIEWER ? <Navigate to="/dashboard" /> : (
                         <Expenses
                           expenses={expenses}
                           entries={entries}
@@ -197,7 +199,7 @@ const AppContent: React.FC = () => {
                       />
                     } />
                     <Route path="/third-party-settlements" element={
-                      userRole === 'مشاهد' ? <Navigate to="/dashboard" /> : (
+                      userRole === ROLES.VIEWER ? <Navigate to="/dashboard" /> : (
                         <ThirdPartySettlements
                           entries={entries}
                           onUpdateEntry={updateEntry}
@@ -219,6 +221,9 @@ const AppContent: React.FC = () => {
                         stock={stock}
                         onRefresh={syncAll}
                         onDeleteStock={deleteStock}
+                        onAddStockBatch={addStockBatch}
+                        onUpdateStockStatus={updateStockStatus}
+                        onUpdateStockItem={updateStockItem}
                         isSyncing={isSyncing}
                         userRole={userRole}
                         username={user?.name || ''}

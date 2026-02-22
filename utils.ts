@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
 
+/**
+ * Normalizes Arabic text by removing diacritics (Tashkeel) and standardizing 
+ * variations of characters like Alef and Yaa to ensure robust search matching.
+ * 
+ * @param text The raw Arabic string
+ * @returns The normalized Arabic string
+ */
 export const normalizeArabic = (text: string) => {
   if (!text) return '';
   return text.toString().trim()
@@ -14,6 +21,13 @@ export const normalizeArabic = (text: string) => {
     .replace(/\s+/g, ' ');
 };
 
+/**
+ * Converts various date formats into a standardized 'yyyy-MM-dd' string.
+ * Supports handling of DD/MM/YYYY, DD-MM-YYYY, and localized Arabic formats.
+ * 
+ * @param dateStr The input date string
+ * @returns Standard ISO-like date string 'yyyy-MM-dd' or empty string if invalid
+ */
 export const normalizeDate = (dateStr: string) => {
   if (!dateStr) return '';
   // Strip time part if it's an ISO string or contains time
@@ -34,6 +48,30 @@ export const normalizeDate = (dateStr: string) => {
   return s;
 };
 
+
+/**
+ * Retrieves the current date formatted as 'yyyy-MM-dd'.
+ * Useful for initializing date pickers or comparing daily logs.
+ * 
+ * @returns The current date string
+ */
+export const getTodayDate = (): string => new Date().toISOString().split('T')[0];
+
+
+/**
+ * Formats a numeric amount into a localized currency string.
+ * 
+ * @param amount The numeric value to format
+ * @returns The localized formatted string (e.g., 1,234.56)
+ */
+export const formatCurrency = (amount: number): string => amount.toLocaleString();
+
+/**
+ * Converts Arabic/Persian digits (٠١٢٣٤٥٦٧٨٩) embedded in a string to standard English digits (0-9).
+ * 
+ * @param str The string possibly containing Arabic numbers
+ * @returns The string with all numerals converted to English digits
+ */
 export const toEnglishDigits = (str: string) => {
   const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
   const englishDigits = '0123456789';
@@ -43,11 +81,14 @@ export const toEnglishDigits = (str: string) => {
   }).join('');
 };
 
+
 /**
- * Search across multiple fields with Arabic normalization
- * @param searchTerm - The search term to look for
- * @param fields - Array of field values to search in
- * @returns true if any field matches the search term
+ * Multi-field search utility. Checks if the `searchTerm` exists within any of the provided fields.
+ * Applies continuous Arabic normalization on both the search term and the fields out of the box.
+ * 
+ * @param searchTerm The user's input search query
+ * @param fields Array of string values mapped from the item being searched
+ * @returns True if the search term matches any field, false otherwise
  */
 export const searchMultipleFields = (searchTerm: string, fields: (string | undefined | null)[]): boolean => {
   if (!searchTerm || searchTerm.length === 0) return true;
@@ -63,10 +104,14 @@ export const searchMultipleFields = (searchTerm: string, fields: (string | undef
   });
 };
 
+
 /**
- * Custom hook for debouncing a value
- * @param value - The value to debounce
- * @param delay - Delay in milliseconds (default: 300)
+ * Standard debounce hook. Delays updating the returned value until after the specified delay 
+ * has passed without any new updates to the input value.
+ * 
+ * @param value The fast-changing value (e.g., text input)
+ * @param delay MS to wait before resolving the debounced value (default: 300ms)
+ * @returns The slowly updated debounced value
  */
 export const useDebounce = <T,>(value: T, delay: number = 300): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -89,6 +134,13 @@ export const useDebounce = <T,>(value: T, delay: number = 300): T => {
 // ==========================================
 const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
+/**
+ * Encodes a numeric ID into a secure, obfuscated short-string (e.g., base62)
+ * for use in shareable links, preventing predictable ID guessing.
+ * 
+ * @param id The raw numeric ID to encode
+ * @returns The obfuscated short ID string
+ */
 export const encodeId = (id: string): string => {
   if (!id) return '';
   // Check if purely numeric
@@ -111,6 +163,12 @@ export const encodeId = (id: string): string => {
   }
 };
 
+/**
+ * Decodes an obfuscated short-string back into the original numeric ID.
+ * 
+ * @param encoded The obfuscated short ID string
+ * @returns The original numeric ID
+ */
 export const decodeId = (encoded: string): string => {
   if (!encoded) return '';
   const type = encoded.charAt(0);

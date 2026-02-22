@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
 import { AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import LoadingOverlay from '../components/LoadingOverlay';
 
@@ -30,6 +30,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [modal, setModal] = useState<ModalOptions | null>(null);
     const [quickStatus, setQuickStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const quickStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const showModal = (options: ModalOptions) => setModal(options);
     const hideModal = () => setModal(null);
@@ -48,8 +49,15 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const showQuickStatus = (message: string, type: 'success' | 'error' = 'success') => {
         setQuickStatus({ message, type });
-        setTimeout(() => setQuickStatus(null), 1500);
+        if (quickStatusTimeoutRef.current) clearTimeout(quickStatusTimeoutRef.current);
+        quickStatusTimeoutRef.current = setTimeout(() => setQuickStatus(null), 2500);
     };
+
+    useEffect(() => {
+        return () => {
+            if (quickStatusTimeoutRef.current) clearTimeout(quickStatusTimeoutRef.current);
+        };
+    }, []);
 
     const contextValue = React.useMemo(() => ({
         showModal,

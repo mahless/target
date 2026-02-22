@@ -115,7 +115,24 @@ export const EXPENSE_CATEGORIES = {
  */
 export const STORAGE_KEYS = {
   ACTIVE_EMPLOYEE_ID: 'active_employee_id',
-  DASHBOARD_SEARCH_TERM: 'dashboard_search_term'
+  DASHBOARD_SEARCH_TERM: 'dashboard_search_term',
+  // Local Storage Data Caches
+  TARGET_STOCK: 'target_stock',
+  TARGET_BRANCHES: 'target_branches',
+  TARGET_SERVICE_TYPES: 'target_service_types',
+  TARGET_EXPENSE_CATEGORIES: 'target_expense_categories',
+  TARGET_ADMIN_USERS: 'target_admin_users',
+  TARGET_USER: 'target_user',
+  TARGET_BRANCH: 'target_branch',
+  TARGET_DATE: 'target_date',
+  TARGET_ENTRIES: 'target_entries',
+  TARGET_EXPENSES: 'target_expenses',
+  TARGET_IS_LOGGED_IN: 'target_is_logged_in',
+  TARGET_ATTENDANCE_STATUS: 'target_attendance_status',
+  TARGET_ATTENDANCE_DATE: 'target_attendance_date',
+  // Session Storage UI State
+  ADMIN_DASHBOARD_TAB: 'admin-dashboard-active-tab',
+  SIDEBAR_SCROLL: 'sidebar-scroll'
 } as const;
 
 /**

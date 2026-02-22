@@ -5,9 +5,10 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import { generateReceipt } from '../services/pdfService';
 import { useModal } from '../context/ModalContext';
-import { normalizeArabic, normalizeDate, toEnglishDigits, searchMultipleFields, useDebounce } from '../utils';
+import { normalizeArabic, normalizeDate, toEnglishDigits, searchMultipleFields, useDebounce, getTodayDate } from '../utils';
 import SearchInput from '../components/SearchInput';
 import CustomSelect from '../components/CustomSelect';
+import { ROLES, STORAGE_KEYS } from '../constants';
 
 interface ReportsProps {
   entries: ServiceEntry[];
@@ -27,7 +28,7 @@ interface ReportsProps {
 
 
 
-const StatCard = ({ title, value, icon, color, footer }: any) => {
+const StatCard = React.memo(({ title, value, icon, color, footer }: any) => {
   const colorMap: any = {
     blue: { bg: 'from-blue-600 to-blue-900', icon: 'text-blue-500', shadow: 'shadow-blue-900/20' },
     red: { bg: 'from-red-600 to-red-900', icon: 'text-red-500', shadow: 'shadow-red-900/20' },
@@ -54,23 +55,23 @@ const StatCard = ({ title, value, icon, color, footer }: any) => {
       </div>
     </div>
   );
-};
+});
 
-const Reports: React.FC<ReportsProps> = ({
+const Reports: React.FC<ReportsProps> = React.memo(({
   entries, expenses, serviceTypes, expenseCategories, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
 }) => {
-  const today = new Date().toISOString().split('T')[0];
-  const defaultBranch = userRole === 'مدير' ? 'الكل' : (branchId || (branches.length > 0 ? branches[0].id : 'الكل'));
-  const defaultEmployee = userRole === 'مدير' ? 'الكل' : username;
+  const today = getTodayDate();
+  const defaultBranch = userRole === ROLES.MANAGER ? 'الكل' : (branchId || (branches.length > 0 ? branches[0].id : 'الكل'));
+  const defaultEmployee = userRole === ROLES.MANAGER ? 'الكل' : username;
 
   // Helper to persist filter values in sessionStorage
   const usePersistedState = <T extends string>(key: string, defaultValue: T): [T, (val: T) => void] => {
     const [value, setValue] = useState<T>(() => {
-      const stored = sessionStorage.getItem(key);
+      const stored = sessionStorage.getItem(`${STORAGE_KEYS.ADMIN_DASHBOARD_TAB}_reports_${key}`);
       return (stored !== null ? stored : defaultValue) as T;
     });
     const setPersistedValue = (val: T) => {
-      sessionStorage.setItem(key, val);
+      sessionStorage.setItem(`${STORAGE_KEYS.ADMIN_DASHBOARD_TAB}_reports_${key}`, val);
       setValue(val);
     };
     return [value, setPersistedValue];
@@ -230,7 +231,7 @@ const Reports: React.FC<ReportsProps> = ({
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-xl font-black tracking-tight">التقارير التحليلية</h2>
-                {userRole === 'مدير' && (
+                {userRole === ROLES.MANAGER && (
                   <button
                     onClick={() => setActiveTab(activeTab === 'performance' ? 'entries' : 'performance')}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-black text-[10px] transition-all border ${activeTab === 'performance'
@@ -258,7 +259,7 @@ const Reports: React.FC<ReportsProps> = ({
               />
             </div>
 
-            {userRole !== 'مدير' && (
+            {userRole !== ROLES.MANAGER && (
               <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3 whitespace-nowrap">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
                 <div>
@@ -565,7 +566,7 @@ const Reports: React.FC<ReportsProps> = ({
                 />
               </div>
 
-              {userRole === 'مدير' && (
+              {userRole === ROLES.MANAGER && (
                 <div className="w-full md:w-[160px]">
                   <CustomSelect
                     options={employeeOptions}
@@ -780,6 +781,6 @@ const Reports: React.FC<ReportsProps> = ({
       )}
     </div >
   );
-};
+});
 
 export default Reports;

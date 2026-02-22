@@ -5,6 +5,7 @@ import { Wallet, Clock, Printer, ArrowLeftRight, Filter } from 'lucide-react';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import { useModal } from '../context/ModalContext';
 import { searchMultipleFields, useDebounce, toEnglishDigits, normalizeArabic } from '../utils';
+import { SERVICE_TYPES, ROLES } from '../constants';
 import { generateReceipt } from '../services/pdfService';
 import CustomSelect from '../components/CustomSelect';
 
@@ -20,10 +21,11 @@ interface ReceivablesProps {
   onRefresh: () => void;
   isSubmitting?: boolean;
   userRole: string;
+  deliverOrder: (orderId: string, collectedAmount: number, clientName: string, collectorName: string, targetBranchId: string) => Promise<boolean>;
 }
 
 const Receivables: React.FC<ReceivablesProps> = ({
-  entries, serviceTypes, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false, userRole
+  entries, serviceTypes, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false, userRole, deliverOrder
 }) => {
   /* Update destructuring */
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,26 +86,22 @@ const Receivables: React.FC<ReceivablesProps> = ({
           showQuickStatus('مبلغ غير صالح', 'error');
           return;
         }
-        const settlementEntry: ServiceEntry = {
-          ...entry,
-          id: `SET-${Date.now()}`,
-          clientName: entry.clientName,
-          serviceType: 'سداد مديونية',
-          amountPaid: amount,
-          serviceCost: 0,
-          remainingAmount: 0,
-          hasThirdParty: false,
-          thirdPartyCost: 0,
-          isCostPaid: false,
-          notes: `سداد متبقي من عملية: ${entry.serviceType}`,
-          timestamp: Date.now(),
-          entryDate: currentDate || '',
-          barcode: entry.barcode
-        };
-        const success = await onAddEntry(settlementEntry);
+
+        // Use the global deliverOrder to correctly process partial/full settlements
+        // via backend API rather than a naive local addition.
+        const success = await deliverOrder(
+          entry.id,
+          amount,
+          entry.clientName,
+          username,
+          entry.branchId
+        );
+
         if (success) {
-          onUpdateEntry({ ...entry, remainingAmount: entry.remainingAmount - amount });
+          // Note: remainingAmount update is handled automatically by deliverOrder in useAppState
           showQuickStatus('تم التحصيل بنجاح');
+        } else {
+          showQuickStatus('فشل في عملية التحصيل', 'error');
         }
       }
     });
@@ -232,7 +230,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
                       </div>
                     </td>
                     <td className="py-2.5 px-8 text-center">
-                      {userRole !== 'مشاهد' && !entry.parentEntryId && normalizeArabic(entry.serviceType) !== normalizeArabic('سداد مديونية') && (
+                      {userRole !== ROLES.VIEWER && !entry.parentEntryId && normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) && (
                         <button
                           type="button"
                           onClick={(e) => {

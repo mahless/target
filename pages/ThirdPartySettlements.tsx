@@ -3,7 +3,8 @@ import { ServiceEntry, Expense, Branch } from '../types';
 import SearchInput from '../components/SearchInput';
 import { Users, Clock, Printer, CheckCircle2, Filter, AlertCircle } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
-import { searchMultipleFields, useDebounce, normalizeArabic } from '../utils';
+import { searchMultipleFields, useDebounce, normalizeArabic, getTodayDate } from '../utils';
+import { SERVICE_TYPES, EXPENSE_CATEGORIES, ROLES } from '../constants';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import { generateReceipt } from '../services/pdfService';
 
@@ -57,7 +58,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                 const updatedEntry: ServiceEntry = {
                     ...entry,
                     isCostPaid: true,
-                    costPaidDate: new Date().toISOString().split('T')[0],
+                    costPaidDate: getTodayDate(),
                     costPaidBy: username
                 };
 
@@ -65,7 +66,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                 if (result) {
                     const thirdPartyExpense: Expense = {
                         id: `tp-${Date.now()}-${entry.id}`,
-                        category: 'طرف ثالث',
+                        category: EXPENSE_CATEGORIES.THIRD_PARTY,
                         amount: entry.thirdPartyCost || 0,
                         notes: `تسوية للمكتب الخارجي: ${entry.thirdPartyName} | العميل: ${entry.clientName} | ${entry.serviceType}`,
                         branchId: entry.branchId,
@@ -76,7 +77,6 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
 
                     await onAddExpense(thirdPartyExpense);
                     showQuickStatus('تمت التسوية وتسجيل المصروف بنجاح');
-                    onRefresh();
                 } else {
                     showQuickStatus('فشل السيرفر في التحديث', 'error');
                 }
@@ -112,7 +112,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                 (Number(e.thirdPartyCost) || 0) > 0 &&
                 !e.isCostPaid &&
                 e.status !== 'cancelled' &&
-                normalizeArabic(e.serviceType) !== normalizeArabic('سداد مديونية');
+                normalizeArabic(e.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT);
             const isSearchMatch = searchMultipleFields(debouncedSearchTerm, [
                 e.clientName,
                 e.nationalId,
@@ -219,7 +219,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                                             </div>
                                         </td>
                                         <td className="py-2.5 px-8 text-center">
-                                            {userRole !== 'مشاهد' && (
+                                            {userRole !== ROLES.VIEWER && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {

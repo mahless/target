@@ -8,6 +8,7 @@ interface ActionDropdownProps {
     entry: ServiceEntry;
     userRole: string;
     onDeliver: (entry: ServiceEntry) => void;
+    onCollectDebt?: (entry: ServiceEntry) => void;
     onSetWorkOrder: (entry: ServiceEntry) => void;
     onUpdateStatus: (entry: ServiceEntry, status: ServiceEntry['status'], label: string) => void;
     onCancel: (entry: ServiceEntry) => void;
@@ -22,6 +23,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
     entry,
     userRole,
     onDeliver,
+    onCollectDebt,
     onSetWorkOrder,
     onUpdateStatus,
     onCancel,
@@ -119,17 +121,33 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                     {(entry.status === STATUS.ACTIVE || entry.status === STATUS.PENDING) && !entry.parentEntryId && (
                         <>
                             {(!String(entry.notes || '').includes('بيع استمارة لطرف اخر')) && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleAction(() => onDeliver(entry));
-                                    }}
-                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-colors whitespace-nowrap"
-                                >
-                                    تسليم الخدمة
-                                </button>
+                                <>
+                                    {entry.remainingAmount > 0 ? (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (onCollectDebt) handleAction(() => onCollectDebt(entry));
+                                            }}
+                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-colors whitespace-nowrap"
+                                        >
+                                            تحصيل المتبقي
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleAction(() => onDeliver(entry));
+                                            }}
+                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-colors whitespace-nowrap"
+                                        >
+                                            تسليم الخدمة
+                                        </button>
+                                    )}
+                                </>
                             )}
                             <button
                                 type="button"
@@ -184,17 +202,33 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                     )}
 
                     {entry.status === STATUS.READY && (
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleAction(() => onDeliver(entry));
-                            }}
-                            className="w-full text-right px-4 py-2.5 text-xs font-black text-[#036564] hover:bg-[#036564]/5 transition-colors"
-                        >
-                            تسليم نهائي
-                        </button>
+                        <>
+                            {entry.remainingAmount > 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (onCollectDebt) handleAction(() => onCollectDebt(entry));
+                                    }}
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-colors"
+                                >
+                                    تحصيل المتبقي
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleAction(() => onDeliver(entry));
+                                    }}
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-[#036564] hover:bg-[#036564]/5 transition-colors"
+                                >
+                                    تسليم نهائي
+                                </button>
+                            )}
+                        </>
                     )}
 
                     {entry.status === STATUS.ACTIVE && entry.hasThirdParty && !entry.isCostPaid && (

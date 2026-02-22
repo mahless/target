@@ -10,6 +10,7 @@ import CustomSelect from './CustomSelect';
 import { useModal } from '../context/ModalContext';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic } from '../utils';
+import { ROLES } from '../constants';
 
 const AttendanceModalContent: React.FC<{
   attendanceStatus: 'checked-in' | 'checked-out';
@@ -95,7 +96,7 @@ const AttendanceModalContent: React.FC<{
         </button>
       </div>
 
-      {normalizeArabic(userRole) === normalizeArabic('مدير') && (
+      {normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) && (
         <button
           onClick={showHRReport}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs bg-blue-600 text-white shadow-lg shadow-blue-100 mt-1 hover:bg-blue-700 transition-all active:scale-95"
@@ -240,7 +241,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   const controlInputClass = "w-full p-2.5 mt-1 border border-white/10 rounded-xl bg-black/20 text-white font-bold text-xs focus:ring-4 focus:ring-[#00A6A6]/20 focus:border-[#00A6A6] outline-none transition-all";
   const branchOptions = useMemo(() => {
     const options = branches.map(b => ({ id: b.id, name: b.name }));
-    if (normalizeArabic(userRole) === normalizeArabic('مدير')) {
+    if (normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER)) {
       return [{ id: 'all', name: 'كل الفروع' }, ...options];
     }
     return options;
@@ -299,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                         return;
                       }
                       if (!val) {
-                        const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+                        const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
                         if (isManager) {
                           onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
                         } else {
@@ -312,7 +313,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                     }}
                     icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
                     placeholder="اختر فرع"
-                    disabled={userRole === 'موظف'}
+                    disabled={userRole === ROLES.EMPLOYEE}
                     showAllOption={false}
                     dark={true}
                     className="p-2.5 rounded-xl border text-xs"
@@ -347,21 +348,21 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <span>الصفحة الرئيسية</span>
               </NavLink>
 
-              {userRole !== 'مشاهد' && (
+              {userRole !== ROLES.VIEWER && (
                 <NavLink to="/new-service" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <PlusCircle className="w-5 h-5" />
                   <span>تسجيل خدمة جديدة</span>
                 </NavLink>
               )}
 
-              {userRole !== 'مشاهد' && (
+              {userRole !== ROLES.VIEWER && (
                 <NavLink to="/receivables" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Clock className="w-5 h-5" />
                   <span>المتبقيات</span>
                 </NavLink>
               )}
 
-              {userRole !== 'مشاهد' && (
+              {userRole !== ROLES.VIEWER && (
                 <NavLink to="/expenses" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Wallet className="w-5 h-5" />
                   <span>المصروفات</span>
@@ -373,7 +374,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <span>التقارير</span>
               </NavLink>
 
-              {userRole !== 'مشاهد' && (
+              {userRole !== ROLES.VIEWER && (
                 <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Users className="w-5 h-5" />
                   <span>تسويات مكتب خارجي</span>
@@ -381,7 +382,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
               )}
 
               {/* Stock / Inventory Link */}
-              {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
+              {(normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN || normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) && (
                 <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Package className="w-5 h-5" />
                   <span>مخزن الباركود</span>
@@ -393,7 +394,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <span>الأرشيف</span>
               </NavLink>
 
-              {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin') && (
+              {(normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN) && (
                 <NavLink to="/admin/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Settings className="w-5 h-5" />
                   <span>الاعدادات</span>
@@ -403,7 +404,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
               <div className="border-t border-white/5 my-2 mx-4"></div>
 
               {/* Attendance Button/Link */}
-              {userRole === 'مدير' ? (
+              {userRole === ROLES.MANAGER ? (
                 <NavLink
                   to="/admin/attendance"
                   className={({ isActive }) =>
@@ -417,7 +418,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
                   <Clock className="w-5 h-5" />
                   <span className="font-black text-sm">الحضور والانصراف</span>
                 </NavLink>
-              ) : userRole !== 'مشاهد' ? (
+              ) : userRole !== ROLES.VIEWER ? (
                 <button
                   onClick={handleAttendanceClick}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
