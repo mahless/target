@@ -43,7 +43,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer }: any) => {
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
             <span className="text-[10px] md:text-xs font-black text-white/40 uppercase tracking-[0.3em] mb-1">{title}</span>
-            <span className="text-2xl md:text-[28px] font-black text-white tracking-tighter">{value.toLocaleString()}<span className="text-sm md:text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
+            <span className="text-2xl md:text-[24px] font-black text-white tracking-tighter">{value.toLocaleString()}<span className="text-sm md:text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
           </div>
           <div className="p-2.5 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
             {React.cloneElement(icon, { className: 'w-6 h-6' })}
@@ -673,7 +673,7 @@ const Reports: React.FC<ReportsProps> = React.memo(({
                                 >
                                   {e.clientName}
                                 </span>
-                                <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest w-fit">{e.serviceType}</span>
+                                <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest w-fit">{e.serviceType}</span>
                               </div>
                             </td>
                             <td className="py-3 px-6 text-center">
@@ -688,7 +688,7 @@ const Reports: React.FC<ReportsProps> = React.memo(({
                             <td className="py-3 px-6 text-center">
                               <span className="bg-[#00A6A6]/5 text-[#00A6A6] px-3 py-1 rounded-xl text-[10px] font-black">{e.recordedBy || '-'}</span>
                             </td>
-                            <td className="py-3 px-8 text-center text-[#01404E]/40 text-[11px] font-black tracking-tighter">{e.entryDate}</td>
+                            <td className="py-3 px-8 text-center text-[#01404E]/40 text-[10px] font-black tracking-tighter">{e.entryDate}</td>
                           </tr>
                         ))
                       )}
@@ -740,7 +740,7 @@ const Reports: React.FC<ReportsProps> = React.memo(({
                             <td className="py-3 px-8">
                               <div className="flex flex-col gap-0.5 items-start">
                                 <span className="font-black text-red-900 text-base uppercase">{ex.category}</span>
-                                <span className="text-[11px] text-red-900/40 font-bold italic">{ex.notes || 'بدون تفاصيل'}</span>
+                                <span className="text-[10px] text-red-900/40 font-bold italic">{ex.notes || 'بدون تفاصيل'}</span>
                               </div>
                             </td>
                             <td className="py-3 px-6 text-center">
@@ -752,7 +752,7 @@ const Reports: React.FC<ReportsProps> = React.memo(({
                             <td className="py-3 px-6 text-center">
                               <span className="bg-[#01404E]/5 text-[#01404E] px-3 py-1 rounded-xl text-[10px] font-black">{ex.recordedBy || '-'}</span>
                             </td>
-                            <td className="py-3 px-8 text-center text-red-900/40 text-[11px] font-black tracking-tighter">{ex.date}</td>
+                            <td className="py-3 px-8 text-center text-red-900/40 text-[10px] font-black tracking-tighter">{ex.date}</td>
                           </tr>
                         ))
                       )}

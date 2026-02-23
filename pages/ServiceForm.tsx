@@ -291,8 +291,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                         <UserCheck className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-black text-white text-[11px]">{client.name}</p>
-                        <p className="text-[9px] text-white/40 font-bold tracking-widest uppercase">{client.id}</p>
+                        <p className="font-black text-white text-[10px]">{client.name}</p>
+                        <p className="text-[8px] text-white/40 font-bold tracking-widest uppercase">{client.id}</p>
                       </div>
                     </div>
                   </button>

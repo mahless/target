@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   :root {
     --primary-dark: #01404E;
     --secondary-dark: #01404E;
@@ -89,5 +94,15 @@
 
   .animate-pulse-soft {
     animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  /* Active Sidebar Link - Background merge */
+  .sidebar-link-active {
+    position: relative;
+    background: var(--bg-light) !important;
+    color: var(--primary-dark) !important;
+    border-radius: 0 20px 20px 0;
+    margin-left: 0;
+    z-index: 1;
   }
 }

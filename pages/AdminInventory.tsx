@@ -404,15 +404,15 @@ const AdminInventory: React.FC<AdminInventoryProps> = React.memo(({ stock, onRef
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="text-center group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#01404E]/40 mb-1">عادي</p>
-                                            <p className="text-[24px] md:text-[28px] font-black text-[#01404E]">{stats[b.id]?.['عادي'] || 0}</p>
+                                            <p className="text-[24px] md:text-[24px] font-black text-[#01404E]">{stats[b.id]?.['عادي'] || 0}</p>
                                         </div>
                                         <div className="text-center border-x border-[#01404E]/5 group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#036564]/60 mb-1">مستعجل</p>
-                                            <p className="text-[24px] md:text-[28px] font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
+                                            <p className="text-[24px] md:text-[24px] font-black text-[#036564]">{stats[b.id]?.['مستعجل'] || 0}</p>
                                         </div>
                                         <div className="text-center group-hover:scale-110 transition-transform">
                                             <p className="text-[8px] font-black text-[#00A6A6]/60 mb-1">فوري</p>
-                                            <p className="text-[24px] md:text-[28px] font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
+                                            <p className="text-[24px] md:text-[24px] font-black text-[#00A6A6]">{stats[b.id]?.['فوري'] || 0}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -489,7 +489,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = React.memo(({ stock, onRef
                                                 )}
                                             </td>
                                             <td className="py-2 px-6 text-center">
-                                                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${(item.category || (item as any).Category) === 'فوري' ? 'bg-red-50 text-red-600' :
+                                                <span className={`px-3 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest ${(item.category || (item as any).Category) === 'فوري' ? 'bg-red-50 text-red-600' :
                                                     (item.category || (item as any).Category) === 'مستعجل' ? 'bg-[#036564]/10 text-[#036564]' : 'bg-[#00A6A6]/10 text-[#00A6A6]'
                                                     }`}>
                                                     {item.category || (item as any).Category}
@@ -497,7 +497,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = React.memo(({ stock, onRef
                                             </td>
                                             <td className="py-2 px-6 text-center text-[#01404E] font-black text-xs md:text-sm">{branches.find(b => b.id === (item.branch || (item as any).Branch))?.name?.split('-')[0]}</td>
                                             <td className="py-2 px-6 text-center">
-                                                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${(item.status || (item as any).Status) === 'Used' ? 'bg-green-50 text-green-600' :
+                                                <span className={`px-3 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest ${(item.status || (item as any).Status) === 'Used' ? 'bg-green-50 text-green-600' :
                                                     (item.status || (item as any).Status) === 'Error' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-500'
                                                     }`}>
                                                     {(item.status || (item as any).Status) === 'Used' ? 'مستخدم' : (item.status || (item as any).Status) === 'Error' ? 'خطأ' : 'متاح'}

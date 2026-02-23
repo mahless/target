@@ -147,7 +147,7 @@ const TrackingPage = () => {
                                 <User size={20} />
                             </div>
                             <div>
-                                <p className="text-[9px] md:text-[10px] font-black text-[#01404E]/40 uppercase mb-0.5 tracking-wider">اسم العميل</p>
+                                <p className="text-[8px] md:text-[10px] font-black text-[#01404E]/40 uppercase mb-0.5 tracking-wider">اسم العميل</p>
                                 <p className="text-sm md:text-base font-black text-[#01404E]">{entry.clientName}</p>
                             </div>
                         </div>
@@ -158,7 +158,7 @@ const TrackingPage = () => {
                                     <FileText size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] md:text-[10px] font-black text-[#01404E]/40 uppercase mb-0.5 tracking-wider">نوع الخدمة</p>
+                                    <p className="text-[8px] md:text-[10px] font-black text-[#01404E]/40 uppercase mb-0.5 tracking-wider">نوع الخدمة</p>
                                     <p className="text-sm md:text-base font-black text-[#01404E]">{entry.serviceType}</p>
                                 </div>
                             </div>
@@ -167,7 +167,7 @@ const TrackingPage = () => {
                                     <Calendar size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] md:text-[10px] font-black text-[#01404E]/40 uppercase mb-0.5 tracking-wider">التاريخ</p>
+                                    <p className="text-[8px] md:text-[10px] font-black text-[#01404E]/40 uppercase mb-0.5 tracking-wider">التاريخ</p>
                                     <p className="text-sm md:text-base font-black text-[#01404E]">{entry.entryDate}</p>
                                 </div>
                             </div>
@@ -236,7 +236,7 @@ const TrackingPage = () => {
 
                     {/* Integrated Footer Links */}
                     <div className="pt-6 border-t border-gray-50 space-y-4">
-                        <div className="flex items-center justify-between text-[#01404E]/40 text-[9px] font-bold italic">
+                        <div className="flex items-center justify-between text-[#01404E]/40 text-[8px] font-bold italic">
                             <div className="flex items-center gap-1.5">
                                 <ShieldCheck size={12} />
                                 <span>بيانات مؤمنة رسمياً</span>
@@ -246,7 +246,7 @@ const TrackingPage = () => {
 
                         <div className="flex flex-col items-center gap-3">
                             <p className="text-[10px] font-black text-[#01404E]/50">تارجت للخدمات الحكومية © 2026</p>
-                            <div className="flex items-center justify-center gap-4 text-[9px] font-bold text-[#01404E]/60">
+                            <div className="flex items-center justify-center gap-4 text-[8px] font-bold text-[#01404E]/60">
                                 <span>الشروط والأحكام</span>
                                 <div className="w-1 h-1 rounded-full bg-[#01404E]/10"></div>
                                 <span>سياسة الخصوصية</span>

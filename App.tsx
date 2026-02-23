@@ -97,7 +97,16 @@ const AppContent: React.FC = () => {
               branches={branches}
             />
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-              <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} branch={branch} date={currentDate} username={user?.name || ''} pageTitle={pageTitle} />
+              <Header
+                toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                branch={branch}
+                date={currentDate}
+                username={user?.name || ''}
+                pageTitle={pageTitle}
+                onBranchChange={setBranch}
+                branches={branches}
+                userRole={userRole}
+              />
               <main className="flex-1 overflow-y-auto custom-scrollbar">
                 {isAccessLocked ? (
                   <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-gray-50">

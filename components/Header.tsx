@@ -1,6 +1,9 @@
 import React from 'react';
-import { Menu, User, Calendar, MapPin } from 'lucide-react';
+import { Menu, User, Calendar, MapPin, ChevronDown } from 'lucide-react';
 import { Branch } from '../types';
+import CustomSelect from './CustomSelect';
+import { normalizeArabic } from '../utils';
+import { ROLES, BRANCHES } from '../constants';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -8,9 +11,23 @@ interface HeaderProps {
   date: string | null;
   username: string;
   pageTitle: string;
+  onBranchChange: (branch: Branch) => void;
+  branches: Branch[];
+  userRole: string;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date, username, pageTitle }) => {
+const Header: React.FC<HeaderProps> = React.memo(({
+  toggleSidebar, branch, date, username, pageTitle,
+  onBranchChange, branches, userRole
+}) => {
+  const branchOptions = React.useMemo(() => {
+    const options = branches.map(b => ({ id: b.id, name: b.name }));
+    if (normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER)) {
+      return [{ id: 'all', name: 'كل الفروع' }, ...options];
+    }
+    return options;
+  }, [branches, userRole]);
+
   return (
     <header className="bg-[#01404E] h-14 shadow-[0_4px_20px_rgba(0,0,0,0.2)] flex items-center justify-between px-4 sticky top-0 z-20 text-white border-b border-white/5">
       <div className="flex items-center gap-3">
@@ -26,13 +43,37 @@ const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date,
         </h2>
       </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-4 text-[9px] sm:text-xs">
-        {branch && (
-          <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-md">
-            <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#00A6A6]" />
-            <span className="hidden sm:inline font-black">{branch.name}</span>
-          </div>
-        )}
+      <div className="flex items-center gap-1.5 sm:gap-4 text-[8px] sm:text-xs">
+        <div className="flex items-center">
+          <CustomSelect
+            label=""
+            options={branchOptions}
+            value={branch?.id || ''}
+            onChange={(val) => {
+              if (val === 'all') {
+                onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                return;
+              }
+              if (!val) {
+                const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
+                if (isManager) {
+                  onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                } else {
+                  onBranchChange(null as any);
+                }
+                return;
+              }
+              const selected = branches.find(b => b.id === val);
+              if (selected) onBranchChange(selected);
+            }}
+            icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
+            placeholder="الفرع"
+            disabled={userRole === ROLES.EMPLOYEE}
+            showAllOption={false}
+            dark={true}
+            className="!bg-white/5 !border !border-white/10 !py-1 sm:!py-1.5 !px-2 sm:!px-3 !rounded-lg sm:!rounded-xl backdrop-blur-md text-white font-black text-[8px] sm:text-xs min-w-[100px] sm:min-w-[140px] focus:ring-0"
+          />
+        </div>
 
         {date && (
           <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-md">

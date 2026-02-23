@@ -216,7 +216,7 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
 
                         <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-4">
                             <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
-                            <p className="text-[11px] text-blue-700 font-bold leading-relaxed">
+                            <p className="text-[10px] text-blue-700 font-bold leading-relaxed">
                                 تنبيه: سيتم ترحيل جميع العمليات التي تحمل حالة <span className="underline decoration-blue-300">"تم التسليم"</span> فقط. يتم الاحتفاظ بجميع التفاصيل المالية والموظفين المسجلين للعملية.
                             </p>
                         </div>
@@ -322,7 +322,7 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
                                             <td className="py-5 px-8">
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="font-black text-[#01404E] text-sm md:text-base">{item.clientName}</span>
-                                                    <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase w-fit">{item.serviceType}</span>
+                                                    <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[8px] font-black uppercase w-fit">{item.serviceType}</span>
                                                 </div>
                                             </td>
                                             <td className="py-5 px-6 text-center font-bold text-gray-500 text-xs tracking-tighter">

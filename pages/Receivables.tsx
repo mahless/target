@@ -213,7 +213,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
                           {entry.clientName}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest">{entry.serviceType}</span>
+                          <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{entry.serviceType}</span>
                           <span className="text-[10px] text-gray-400 font-bold">{entry.entryDate}</span>
                         </div>
                       </div>
@@ -225,8 +225,8 @@ const Receivables: React.FC<ReceivablesProps> = ({
                     </td>
                     <td className="py-2.5 px-6 text-center">
                       <div className="flex flex-col items-center gap-0.5 group-hover:scale-110 transition-transform">
-                        <span className="text-sm md:text-base font-black text-red-600 tracking-tighter">{entry.remainingAmount.toLocaleString()}<span className="text-[9px] md:text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
-                        <span className="text-[9px] text-[#01404E]/40 font-black uppercase tracking-widest">من أصل {entry.serviceCost}</span>
+                        <span className="text-sm md:text-base font-black text-red-600 tracking-tighter">{entry.remainingAmount.toLocaleString()}<span className="text-[8px] md:text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
+                        <span className="text-[8px] text-[#01404E]/40 font-black uppercase tracking-widest">من أصل {entry.serviceCost}</span>
                       </div>
                     </td>
                     <td className="py-2.5 px-8 text-center">

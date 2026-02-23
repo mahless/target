@@ -200,7 +200,7 @@ const AttendanceDashboard: React.FC = () => {
                                                                                 <tr key={idx} className="hover:bg-white transition-colors">
                                                                                     <td className="py-3 px-6 font-mono text-[#01404E]">{log.dateTime}</td>
                                                                                     <td className="py-3 px-6 text-center">
-                                                                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${log.type === STATUS.CHECK_IN
+                                                                                        <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${log.type === STATUS.CHECK_IN
                                                                                             ? 'bg-blue-50 text-blue-600 border border-blue-100'
                                                                                             : 'bg-orange-50 text-orange-600 border border-orange-100'
                                                                                             }`}>

@@ -233,19 +233,12 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 ${isActive
-      ? 'bg-gradient-to-r from-[#00A6A6] to-[#036564] text-white shadow-lg shadow-[#00A6A6]/20 scale-[1.02]'
-      : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6]'
+    `flex items-center gap-3 px-4 py-2.5 transition-all duration-300 font-bold ${isActive
+      ? 'sidebar-link-active text-[#01404E]'
+      : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6] rounded-2xl'
     }`;
 
   const controlInputClass = "w-full p-2.5 mt-1 border border-white/10 rounded-xl bg-black/20 text-white font-bold text-xs focus:ring-4 focus:ring-[#00A6A6]/20 focus:border-[#00A6A6] outline-none transition-all";
-  const branchOptions = useMemo(() => {
-    const options = branches.map(b => ({ id: b.id, name: b.name }));
-    if (normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER)) {
-      return [{ id: 'all', name: 'كل الفروع' }, ...options];
-    }
-    return options;
-  }, [branches, userRole]);
 
   return (
     <>
@@ -283,164 +276,112 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
           <div
             ref={scrollRef}
             onScroll={handleScroll}
+            style={{ direction: 'ltr' }}
             className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
           >
-            {/* Quick Controls Section */}
-            <div className="p-3 border-b border-white/5 bg-black/10">
-              <div className="space-y-2">
-                <div>
-                  <CustomSelect
-                    label="الفرع الحالي"
-                    labelClassName="text-white/60"
-                    options={branchOptions}
-                    value={currentBranch?.id || ''}
-                    onChange={(val) => {
-                      if (val === 'all') {
-                        onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
-                        return;
-                      }
-                      if (!val) {
-                        const isManager = normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER);
-                        if (isManager) {
-                          onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
-                        } else {
-                          onBranchChange(null as any);
-                        }
-                        return;
-                      }
-                      const selected = branches.find(b => b.id === val);
-                      if (selected) onBranchChange(selected);
-                    }}
-                    icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
-                    placeholder="اختر فرع"
-                    disabled={userRole === ROLES.EMPLOYEE}
-                    showAllOption={false}
-                    dark={true}
-                    className="p-2.5 rounded-xl border text-xs"
-                  />
-                </div>
+            <div style={{ direction: 'rtl' }} className="flex-1 flex flex-col">
 
-                <div>
-                  <label className="flex items-center justify-between gap-1 text-[10px] font-black text-white/40 px-1 uppercase tracking-wider">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      التاريخ
-                    </div>
-                    <span className="text-[9px] text-[#00A6A6] flex items-center gap-0.5">
-                      <Lock className="w-2.5 h-2.5" />
-                      مثبت
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={currentDate || ''}
-                    readOnly
-                    className={`${controlInputClass} opacity-50 cursor-not-allowed`}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation Links */}
-            <nav className="p-3 space-y-1">
-              <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                <Home className="w-5 h-5" />
-                <span>الصفحة الرئيسية</span>
-              </NavLink>
-
-              {userRole !== ROLES.VIEWER && (
-                <NavLink to="/new-service" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <PlusCircle className="w-5 h-5" />
-                  <span>تسجيل خدمة جديدة</span>
+              {/* Navigation Links */}
+              <nav className="pr-3 py-3 space-y-1">
+                <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                  <Home className="w-5 h-5" />
+                  <span>الصفحة الرئيسية</span>
                 </NavLink>
-              )}
 
-              {userRole !== ROLES.VIEWER && (
-                <NavLink to="/receivables" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Clock className="w-5 h-5" />
-                  <span>المتبقيات</span>
+                {userRole !== ROLES.VIEWER && (
+                  <NavLink to="/new-service" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                    <PlusCircle className="w-5 h-5" />
+                    <span>تسجيل خدمة جديدة</span>
+                  </NavLink>
+                )}
+
+                {userRole !== ROLES.VIEWER && (
+                  <NavLink to="/receivables" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                    <Clock className="w-5 h-5" />
+                    <span>المتبقيات</span>
+                  </NavLink>
+                )}
+
+                {userRole !== ROLES.VIEWER && (
+                  <NavLink to="/expenses" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                    <Wallet className="w-5 h-5" />
+                    <span>المصروفات</span>
+                  </NavLink>
+                )}
+
+                <NavLink to="/reports" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                  <BarChart3 className="w-5 h-5" />
+                  <span>التقارير</span>
                 </NavLink>
-              )}
 
-              {userRole !== ROLES.VIEWER && (
-                <NavLink to="/expenses" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Wallet className="w-5 h-5" />
-                  <span>المصروفات</span>
+                {userRole !== ROLES.VIEWER && (
+                  <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                    <Users className="w-5 h-5" />
+                    <span>تسويات مكتب خارجي</span>
+                  </NavLink>
+                )}
+
+                {/* Stock / Inventory Link */}
+                {(normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN || normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) && (
+                  <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                    <Package className="w-5 h-5" />
+                    <span>مخزن الباركود</span>
+                  </NavLink>
+                )}
+
+                <NavLink to="/archive" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                  <Archive className="w-5 h-5" />
+                  <span>الأرشيف</span>
                 </NavLink>
-              )}
 
-              <NavLink to="/reports" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                <BarChart3 className="w-5 h-5" />
-                <span>التقارير</span>
-              </NavLink>
+                {(normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN) && (
+                  <NavLink to="/admin/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+                    <Settings className="w-5 h-5" />
+                    <span>الاعدادات</span>
+                  </NavLink>
+                )}
 
-              {userRole !== ROLES.VIEWER && (
-                <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Users className="w-5 h-5" />
-                  <span>تسويات مكتب خارجي</span>
-                </NavLink>
-              )}
+                <div className="border-t border-white/5 my-2 mx-4"></div>
 
-              {/* Stock / Inventory Link */}
-              {(normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN || normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) && (
-                <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Package className="w-5 h-5" />
-                  <span>مخزن الباركود</span>
-                </NavLink>
-              )}
+                {/* Attendance Button/Link */}
+                {userRole === ROLES.MANAGER ? (
+                  <NavLink
+                    to="/admin/attendance"
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
+                        ? 'bg-[#00A6A6] text-white shadow-lg'
+                        : 'bg-black/20 text-gray-300 hover:bg-black/30'
+                      }`
+                    }
+                    onClick={() => { if (isOpen) setIsOpen(false); }}
+                  >
+                    <Clock className="w-5 h-5" />
+                    <span className="font-black text-sm">الحضور والانصراف</span>
+                  </NavLink>
+                ) : userRole !== ROLES.VIEWER ? (
+                  <button
+                    onClick={handleAttendanceClick}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
+                      ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                      : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
+                      }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+                    <span className="font-black text-sm">الحضور والانصراف</span>
+                  </button>
+                ) : null}
+              </nav>
 
-              <NavLink to="/archive" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                <Archive className="w-5 h-5" />
-                <span>الأرشيف</span>
-              </NavLink>
-
-              {(normalizeArabic(userRole) === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN) && (
-                <NavLink to="/admin/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Settings className="w-5 h-5" />
-                  <span>الاعدادات</span>
-                </NavLink>
-              )}
-
-              <div className="border-t border-white/5 my-2 mx-4"></div>
-
-              {/* Attendance Button/Link */}
-              {userRole === ROLES.MANAGER ? (
-                <NavLink
-                  to="/admin/attendance"
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
-                      ? 'bg-[#00A6A6] text-white shadow-lg'
-                      : 'bg-black/20 text-gray-300 hover:bg-black/30'
-                    }`
-                  }
-                  onClick={() => { if (isOpen) setIsOpen(false); }}
-                >
-                  <Clock className="w-5 h-5" />
-                  <span className="font-black text-sm">الحضور والانصراف</span>
-                </NavLink>
-              ) : userRole !== ROLES.VIEWER ? (
+              {/* Logout Button */}
+              <div className="p-4 border-t border-white/5">
                 <button
-                  onClick={handleAttendanceClick}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
-                    ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                    : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
-                    }`}
+                  onClick={onLogout}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
                 >
-                  <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                  <span className="font-black text-sm">الحضور والانصراف</span>
+                  <LogOut className="w-5 h-5" />
+                  <span>تسجيل الخروج</span>
                 </button>
-              ) : null}
-            </nav>
-
-            {/* Logout Button */}
-            <div className="p-4 border-t border-white/5">
-              <button
-                onClick={onLogout}
-                className="flex w-full items-center gap-3 px-4 py-2.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>تسجيل الخروج</span>
-              </button>
+              </div>
             </div>
           </div>
         </div>

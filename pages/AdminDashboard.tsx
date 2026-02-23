@@ -14,7 +14,7 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
         <td className="py-2 px-4 whitespace-nowrap">
             <div className="flex flex-col gap-0.5">
                 <span className="text-xs md:text-sm font-black text-[#01404E]">{user.name}</span>
-                <span className="text-[9px] text-gray-400 font-black font-mono tracking-widest flex items-center gap-1 uppercase">
+                <span className="text-[8px] text-gray-400 font-black font-mono tracking-widest flex items-center gap-1 uppercase">
                     <Shield className="w-2.5 h-2.5" />
                     معرف : {toEnglishDigits(String(user.id))}
                 </span>
@@ -29,7 +29,7 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
                     } `}>
                     {user.role}
                 </span>
-                <span className="text-[9px] font-black text-gray-400 flex items-center gap-1 opacity-60">
+                <span className="text-[8px] font-black text-gray-400 flex items-center gap-1 opacity-60">
                     <MapPin className="w-2.5 h-2.5" />
                     {user.assignedBranchId || 'غير محدد'}
                 </span>
@@ -70,7 +70,7 @@ const BranchCard = React.memo<{ branch: Branch; onDelete: (name: string) => void
                 </div>
                 <div>
                     <div className="text-base md:text-lg font-black text-[#01404E] break-all">{branch.name}</div>
-                    <div className="text-[11px] text-gray-400 font-bold flex flex-wrap items-center gap-2 mt-1">
+                    <div className="text-[10px] text-gray-400 font-bold flex flex-wrap items-center gap-2 mt-1">
                         <span className="text-[#01404E]/40">الرصيد :</span>
                         <span className="text-green-600 font-black">{toEnglishDigits(String(branch.Current_Balance || branch.currentBalance || 0))} ج.م</span>
                     </div>
@@ -173,7 +173,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
                 <div className="space-y-4 text-right">
                     <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
                         <p className="text-sm font-black text-red-700 mb-1">تنبيه:</p>
-                        <p className="text-[11px] text-red-600 font-bold leading-relaxed">هل أنت متأكد من حذف الموظف: <span className="underline font-black">{name}</span>؟ هذا الإجراء لا يمكن التراجع عنه.</p>
+                        <p className="text-[10px] text-red-600 font-bold leading-relaxed">هل أنت متأكد من حذف الموظف: <span className="underline font-black">{name}</span>؟ هذا الإجراء لا يمكن التراجع عنه.</p>
                     </div>
                 </div>
             ),
@@ -209,7 +209,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
                 <div className="space-y-4 text-right">
                     <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
                         <p className="text-sm font-black text-red-700 mb-1">تنبيه:</p>
-                        <p className="text-[11px] text-red-600 font-bold leading-relaxed">هل أنت متأكد من حذف فرع: <span className="underline font-black">{name}</span>؟ سيتم حذف كافة الإعدادات المرتبطة به.</p>
+                        <p className="text-[10px] text-red-600 font-bold leading-relaxed">هل أنت متأكد من حذف فرع: <span className="underline font-black">{name}</span>؟ سيتم حذف كافة الإعدادات المرتبطة به.</p>
                     </div>
                 </div>
             ),

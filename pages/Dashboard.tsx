@@ -54,15 +54,15 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
         <div>
           <p className="text-[10px] md:text-xs text-white/70 font-black uppercase tracking-[0.2em] mb-1">{title}</p>
           <div className="flex items-baseline gap-1">
-            <p className="text-2xl md:text-[28px] font-black">{value?.toLocaleString('en-US')}</p>
-            <span className="text-[9px] md:text-[10px] font-bold opacity-60">ج.م</span>
+            <p className="text-2xl md:text-[24px] font-black">{value?.toLocaleString('en-US')}</p>
+            <span className="text-[8px] md:text-[10px] font-bold opacity-60">ج.م</span>
           </div>
         </div>
         <div className="p-2 bg-white/10 backdrop-blur-md rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
           {React.cloneElement(icon, { className: "w-5 h-5 text-white" })}
         </div>
       </div>
-      <div className="relative z-10 mt-2.5 pt-1.5 border-t border-white/5 text-[9px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
+      <div className="relative z-10 mt-2.5 pt-1.5 border-t border-white/5 text-[8px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-[#00A6A6] animate-pulse"></span>
         {footer}
       </div>
@@ -218,7 +218,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-lg outline-none transition-all"
               dir="ltr"
             />
-            <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* عند إدخال الرقم سيتم تحويل حالة المعاملة تلقائياً إلى "قيد التنفيذ"</p>
+            <p className="text-[8px] text-gray-400 font-bold leading-relaxed mr-1 italic">* عند إدخال الرقم سيتم تحويل حالة المعاملة تلقائياً إلى "قيد التنفيذ"</p>
           </div>
         </div>
       ),
@@ -295,7 +295,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         <div className="space-y-6 text-right">
           <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
             <p className="text-xs font-black text-red-700 mb-1">تنبيه:</p>
-            <p className="text-[11px] text-red-600 font-bold leading-relaxed">أنت الآن تقوم بإلغاء جاري للخدمة: <span className="underline">{entry.serviceType}</span> للعميل <span className="underline">{entry.clientName}</span>.</p>
+            <p className="text-[10px] text-red-600 font-bold leading-relaxed">أنت الآن تقوم بإلغاء جاري للخدمة: <span className="underline">{entry.serviceType}</span> للعميل <span className="underline">{entry.clientName}</span>.</p>
           </div>
 
           <div className="space-y-2">
@@ -311,7 +311,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               }}
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-red-600 font-bold text-sm outline-none transition-all"
             />
-            <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* أترك الخانة (0) لاسترداد المبلغ بالكامل للعميل. في حالة كتابة مبلغ، سيتم خصمه كمصاريف وإرجاع الباقي.</p>
+            <p className="text-[8px] text-gray-400 font-bold leading-relaxed mr-1 italic">* أترك الخانة (0) لاسترداد المبلغ بالكامل للعميل. في حالة كتابة مبلغ، سيتم خصمه كمصاريف وإرجاع الباقي.</p>
           </div>
         </div>
       ),
@@ -485,7 +485,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
               }}
               className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
             />
-            <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>
+            <p className="text-[8px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>
           </div>
         </div>
       ),
@@ -535,30 +535,21 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   };
 
   const filteredEntries = useMemo(() => {
-    // حالة البحث: البحث في كل عمليات الفرع (تاريخ مفتوح)
+    // حالة البحث: البحث في كل السجلات بدون قيود الفرع أو التاريخ
     if (debouncedSearchTerm) {
-      const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
-
-      // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر نتائج بحث عامة
-      if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
-
       return allEntries.filter(e => {
-        const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-        const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
+        return searchMultipleFields(debouncedSearchTerm, [
           e.clientName,
           e.nationalId,
           e.phoneNumber,
           e.workOrderNumber || ''
         ]);
-
-        // في البحث بالرئيسية، يرى كل عمليات النطاق المختار
-        return matchesBranch && matchesSearch;
       });
     }
 
     // الحالة الافتراضية: عرض عمليات اليوم فقط
     return dailyEntries;
-  }, [dailyEntries, allEntries, debouncedSearchTerm, branchId, normalizedBranch, userRole]);
+  }, [dailyEntries, allEntries, debouncedSearchTerm]);
 
   return (
     <div className="px-3 pb-3 pt-1 md:px-5 md:pb-5 md:pt-2 space-y-2">
@@ -600,7 +591,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                 className={`flex-1 flex items-center justify-center gap-2 h-[50px] md:h-[58px] px-3 md:px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
               >
                 <Clock className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="text-[11px] md:text-xs whitespace-nowrap">{isSyncing ? 'جاري...' : 'تحديث البيانات'}</span>
+                <span className="text-[10px] md:text-xs whitespace-nowrap">{isSyncing ? 'جاري...' : 'تحديث البيانات'}</span>
               </button>
               {(userRole === ROLES.MANAGER || userRole === ROLES.ASSISTANT || userRole === ROLES.ADMIN) && (
                 <button
@@ -614,7 +605,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                   className="flex-1 flex items-center justify-center gap-2 h-[50px] md:h-[58px] px-3 md:px-6 rounded-2xl font-black bg-[#036564] text-white hover:bg-[#01404E] transition-all shadow-md active:scale-95 group"
                 >
                   <DollarSign className="w-4 h-4 shrink-0 group-hover:scale-125 transition-transform" />
-                  <span className="text-[11px] md:text-xs whitespace-nowrap">تحويل مالي</span>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">تحويل مالي</span>
                 </button>
               )}
             </div>
@@ -626,7 +617,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           <div className="overflow-x-auto relative min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20">
-                <tr className="bg-[#01404E] text-white/60 text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
+                <tr className="bg-[#01404E] text-white/60 text-[8px] md:text-[10px] font-black tracking-[0.2em] uppercase border-b border-white/5">
                   <th className="py-3 px-8 text-right first:rounded-tr-[2rem]">بيان الحركة</th>
                   <th className="py-3 px-8 text-center">الموظف</th>
                   <th className="py-3 px-8 text-center">المبلغ</th>

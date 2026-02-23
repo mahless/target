@@ -13,6 +13,19 @@ module.exports = {
             fontFamily: {
                 sans: ['Cairo', 'sans-serif'],
             },
+            fontSize: {
+                '3xs': '8px',
+                '2xs': '10px',
+                'xs': '12px',
+                'sm': '14px',
+                'base': '16px',
+                'lg': '18px',
+                'xl': '20px',
+                '2xl': '24px',
+                '3xl': '30px',
+                '4xl': '36px',
+                '5xl': '48px',
+            },
             colors: {
                 primary: '#1e40af', // blue-800
                 secondary: '#f59e0b', // amber-500

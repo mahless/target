@@ -106,7 +106,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                 <div className="space-y-3 text-right">
                     <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
                         <p className="text-xs font-black text-red-700 mb-1">تنبيه:</p>
-                        <p className="text-[11px] text-red-600 font-bold leading-relaxed">
+                        <p className="text-[10px] text-red-600 font-bold leading-relaxed">
                             أنت على وشك حذف مصروف بقيمة <span className="underline">{expense.amount} ج.م</span> من فئة <span className="underline">{expense.category}</span>
                         </p>
                     </div>
@@ -256,7 +256,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                             <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
                                 <TrendingDown className="w-7 h-7" />
                             </div>
-                            <span className="text-2xl md:text-[28px] font-black text-white tracking-tighter">{totalExpenses.toLocaleString()}<span className="text-sm md:text-lg mr-2 opacity-50">ج.م</span></span>
+                            <span className="text-2xl md:text-[24px] font-black text-white tracking-tighter">{totalExpenses.toLocaleString()}<span className="text-sm md:text-lg mr-2 opacity-50">ج.م</span></span>
                         </div>
                     </div>
 
@@ -310,7 +310,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                                                 <tr key={expense.id} className="hover:bg-[#036564]/5 transition-all group">
                                                     <td className="py-6 px-6">
                                                         <div className="flex flex-col gap-2 items-center">
-                                                            <span className="bg-red-50 text-red-600 px-3 py-1 rounded-xl text-[9px] font-black tracking-widest uppercase">{expense.category}</span>
+                                                            <span className="bg-red-50 text-red-600 px-3 py-1 rounded-xl text-[8px] font-black tracking-widest uppercase">{expense.category}</span>
                                                             {linkedEntry && (
                                                                 <button
                                                                     type="button"
