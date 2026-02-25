@@ -65,7 +65,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
     return (
         <div className="space-y-1 w-full text-right" ref={containerRef}>
-            {label && <label className={`block text-[10px] font-black uppercase tracking-widest mr-1 ${dark ? 'text-white/40' : 'text-[#01404E]/60'} ${labelClassName}`}>{label}</label>}
+            {label && <label className={`block text-[10px] font-black uppercase tracking-widest mr-1 ${dark ? 'text-white/40' : 'text-[#01404E]'} ${labelClassName}`}>{label}</label>}
             <div className="relative">
                 <button
                     type="button"

@@ -233,7 +233,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-2.5 transition-all duration-300 font-bold ${isActive
+    `sidebar-link flex items-center gap-3 px-4 py-2.5 transition-all duration-500 font-bold ${isActive
       ? 'sidebar-link-active text-[#01404E]'
       : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6] rounded-2xl'
     }`;
@@ -282,7 +282,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             <div style={{ direction: 'rtl' }} className="flex-1 flex flex-col">
 
               {/* Navigation Links */}
-              <nav className="pr-3 py-3 space-y-1">
+              <nav className="pl-0 pt-8 pb-3 space-y-1">
                 <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
                   <Home className="w-5 h-5" />
                   <span>الصفحة الرئيسية</span>
