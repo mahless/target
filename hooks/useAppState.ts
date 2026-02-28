@@ -179,7 +179,8 @@ export const useAppState = () => {
             parentEntryId: e.parentEntryId || e['parentEntryId'] || e['المعاملة الأصلية'],
             workOrderNumber: e.workOrderNumber || e['رقم أمر الشغل'] || '',
             statusUpdateDate: e.statusUpdateDate || e['تاريخ تحديث الحالة'] || '',
-            notes: e.notes || e['ملاحظات'] || ''
+            notes: e.notes || e['ملاحظات'] || '',
+            attachments: e.attachments || e['attachments'] || ''
           };
         });
         setEntries(prev => {

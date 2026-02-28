@@ -91,7 +91,7 @@ const SHEET_CONFIG = {
     'recordedBy', 'thirdPartyName', 'thirdPartyCost', 'serviceCost', 'isCostPaid', 'costPaidDate', 
     'remainingAmount', 'barcode', 'speed', 'notes', 'status', 'electronicAmount', 'electronicMethod', 
     'isElectronic', 'cancellationReason', 'adminFee', 'timestamp', 'hasThirdParty', 'costPaidBy', 
-    'entryDate', 'parentEntryId', 'paymentMethod', 'Barcode_Source', 'workOrderNumber', 'statusUpdateDate'
+    'entryDate', 'parentEntryId', 'paymentMethod', 'Barcode_Source', 'workOrderNumber', 'statusUpdateDate', 'attachments'
   ],
   Stock: ['Barcode', 'Category', 'Branch', 'Status', 'Created_At', 'Used_By', 'Usage_Date', 'Order_ID', 'Error_Reported_By', 'Error_Note'],
   Expenses: ['id', 'category', 'amount', 'date', 'branchId', 'notes', 'timestamp', 'recordedBy', 'relatedEntryId'],
@@ -343,6 +343,10 @@ function doPost(e) {
     if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
     const result = archiveDataByRange(requestData.startDate, requestData.endDate);
     return createJSONResponse(result);
+  }
+
+  if (action === 'uploadFiles') {
+    return handleUploadFiles(requestData.files);
   }
 
   return createJSONResponse({ status: "error", message: "Invalid POST Action" });
@@ -2158,5 +2162,44 @@ function searchAllArchives(query) {
   } catch (err) {
     Logger.log("Search Archive Error: " + err.toString());
     return [];
+  }
+}
+
+/**
+ * Handle multiple file uploads to Google Drive folder 'Target_image'
+ * 
+ * @param {Array<Object>} files - [{name, type, base64}]
+ * @returns {ContentService.TextOutput} JSON response with list of URLs
+ */
+function handleUploadFiles(files) {
+  try {
+    const FOLDER_NAME = 'Target_image';
+    let folder;
+    const folders = DriveApp.getFoldersByName(FOLDER_NAME);
+    
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(FOLDER_NAME);
+    }
+    
+    const urls = [];
+    files.forEach(file => {
+      const decodedData = Utilities.base64Decode(file.base64);
+      const blob = Utilities.newBlob(decodedData, file.type, file.name);
+      const driveFile = folder.createFile(blob);
+      
+      // Make sharing public for the link to work
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      
+      // Use the standard Google Drive view URL for embedding in <img> tags
+      const fileId = driveFile.getId();
+      const url = `https://drive.google.com/uc?export=view&id=${fileId}`;
+      urls.push(url);
+    });
+    
+    return createJSONResponse({ status: "success", urls: urls });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
   }
 }

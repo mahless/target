@@ -590,5 +590,32 @@ export const GoogleSheetsService = {
             console.error('Search Archives Error:', error);
             return [];
         }
+    },
+
+    /**
+     * Upload files to Google Drive.
+     * 
+     * @api POST ?action=uploadFiles
+     * @param files - [{name, type, base64}]
+     * @returns BackendResponse { status, urls }
+     */
+    async uploadFiles(files: { name: string, type: string, base64: string }[]): Promise<{ success: boolean; urls?: string[]; message?: string }> {
+        if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
+        try {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.UPLOAD_FILES}`, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ files })
+            }, NETWORK.TIMEOUT_LONG);
+            const json = await response.json() as BackendResponse;
+            return {
+                success: json.status === STATUS.SUCCESS,
+                urls: json.urls,
+                message: json.message
+            };
+        } catch (error) {
+            console.error('Upload Error:', error);
+            return { success: false, message: 'خطأ في رفع الملفات' };
+        }
     }
 };

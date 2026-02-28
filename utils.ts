@@ -199,3 +199,85 @@ export const decodeId = (encoded: string): string => {
 
   return encoded; // Fallback for old unencoded IDs
 };
+/**
+ * Compresses an image file to be under a specific size (in KB) while maintaining 
+ * the best possible quality using iterative quality adjustment.
+ * 
+ * @param file The original image File object
+ * @param maxKB The maximum desired file size in kilobytes
+ * @returns A Promise that resolves to the compressed File object
+ */
+export const compressImage = async (file: File, maxKB: number): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+
+        // Calculate maximum dimensions to help with compression
+        const MAX_WIDTH = 1920;
+        const MAX_HEIGHT = 1080;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Iterative compression
+        let quality = 0.9;
+        const targetSize = maxKB * 1024;
+        let compressedFile: File;
+
+        const attemptCompression = () => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Canvas toBlob failed'));
+                return;
+              }
+
+              compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+
+              if (compressedFile.size <= targetSize || quality <= 0.2) {
+                resolve(compressedFile);
+              } else {
+                quality -= 0.1;
+                attemptCompression();
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+
+        attemptCompression();
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};

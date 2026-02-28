@@ -62,6 +62,7 @@ export interface ServiceEntry {
 
   // Link to original order for debt settlements
   parentEntryId?: string;
+  attachments?: string; // Links to uploaded images
 }
 
 export type StockStatus = 'Available' | 'Used' | 'Error';

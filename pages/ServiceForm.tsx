@@ -8,6 +8,7 @@ import { toEnglishDigits, normalizeArabic } from '../utils';
 import { validateServiceSubmission } from '../validators';
 import { useModal } from '../context/ModalContext';
 import CustomSelect from '../components/CustomSelect';
+import AttachmentModal from '../components/AttachmentModal';
 
 type FormTab = 'none' | 'electronic' | 'thirdParty' | 'sellingForm';
 
@@ -66,6 +67,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [lastEntry, setLastEntry] = useState<ServiceEntry | null>(null);
+  // Attachments State
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<{ file: File; preview: string }[]>([]);
 
   const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
 
@@ -178,6 +182,31 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     try {
       const entryId = Date.now().toString();
 
+      let attachmentUrls = '';
+      if (selectedImages.length > 0) {
+        setIsProcessing(true);
+        showQuickStatus('جاري رفع الصور...', 'success');
+        const uploadData = await Promise.all(selectedImages.map(async img => {
+          const reader = new FileReader();
+          return new Promise<{ name: string, type: string, base64: string }>((resolve) => {
+            reader.onload = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve({ name: `${entryId}_${img.file.name}`, type: img.file.type, base64 });
+            };
+            reader.readAsDataURL(img.file);
+          });
+        }));
+
+        const uploadRes = await GoogleSheetsService.uploadFiles(uploadData);
+        if (uploadRes.success && uploadRes.urls) {
+          attachmentUrls = uploadRes.urls.join(',');
+        } else {
+          showQuickStatus('فشل رفع الصور', 'error');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       const newEntry: ServiceEntry = {
         id: entryId,
         clientName: clientName || (isOtherService ? 'كاش' : ''),
@@ -202,7 +231,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         entryDate: currentDate,
         timestamp: Date.now(),
         status: 'قيد المراجعة',
-        recordedBy: username
+        recordedBy: username,
+        attachments: attachmentUrls
       };
 
       const success = await onAddEntry(newEntry);
@@ -243,6 +273,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         setSpeed('');
         setNotes('');
         setIsExternalBarcode(false);
+        setSelectedImages([]);
       } else {
         showQuickStatus('خطأ في الاتصال', 'error');
         setError('فشل حفظ البيانات في السيرفر، يرجى المحاولة لاحقاً');
@@ -364,6 +395,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                             onChange={setBarcode}
                             placeholder={availableBarcodes.length > 0 ? "اختر الباركود..." : "لا يوجد باركود متاح"}
                             showAllOption={false}
+                            className={`py-2 px-3 rounded-xl border ${availableBarcodes.length > 0 ? 'border-green-500' : 'border-red-500'}`}
                           />
                         )}
                       </div>
@@ -385,11 +417,11 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 <div className="md:col-span-2">
                   <button
                     type="button"
-                    onClick={() => showQuickStatus('سيتم تفعيل المرفقات قريباً', 'success')}
-                    className="w-full flex items-center justify-center gap-2 bg-[#01404E]/10 hover:bg-[#01404E]/20 text-[#01404E] font-black py-2.5 rounded-xl border border-[#01404E]/10 transition-all active:scale-95 group"
+                    onClick={() => setIsAttachmentModalOpen(true)}
+                    className={`w-full flex items-center justify-center gap-2 font-black py-2.5 rounded-xl border transition-all active:scale-95 group ${selectedImages.length > 0 ? 'bg-[#00A6A6] text-white border-[#00A6A6]' : 'bg-[#01404E]/10 text-[#01404E] border-[#01404E]/10 hover:bg-[#01404E]/20'}`}
                   >
-                    <Paperclip className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                    <span className="text-xs">المرفقات</span>
+                    <Paperclip className={`w-4 h-4 group-hover:rotate-12 transition-transform ${selectedImages.length > 0 ? 'text-white' : ''}`} />
+                    <span className="text-xs">المرفقات {selectedImages.length > 0 && `(${selectedImages.length})`}</span>
                   </button>
                 </div>
               </div>
@@ -493,18 +525,31 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border-t pt-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border-t pt-2">
                 <div>
                   <label className="block text-xs font-black text-[#01404E] mb-1 mr-1">إجمالي سعر الخدمة</label>
                   <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-base`} placeholder="0" />
                 </div>
                 <div>
-                  <label className="block text-xs font-black text-[#01404E] mb-1 mr-1">إجمالي المحصل (كاش + إلكتروني)</label>
+                  <label className="block text-xs font-black text-[#01404E] mb-1 mr-1">المحصل (كاش + إلكتروني)</label>
                   <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-base text-green-700 border-2 border-green-50`} placeholder="0" />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-[#01404E] mb-1 mr-1">المتبقي الآجل</label>
                   <input readOnly type="number" value={remainingAmount} className={`w-full py-2 px-3 border-none rounded-xl font-black text-base outline-none shadow-inner ${remainingAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-300 text-gray-500'}`} />
+                </div>
+                <div className="col-span-2 md:col-span-1 flex items-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full relative overflow-hidden group bg-gradient-to-r from-[#01404E] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] text-white font-black py-2.5 rounded-xl shadow-lux transition-all duration-500 active:scale-[0.98] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                    <div className="relative z-10 flex items-center justify-center gap-2">
+                      {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                      <span className="text-sm tracking-tight">{isSubmitting ? 'جاري الحفظ...' : 'حفظ المعاملة'}</span>
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -533,22 +578,17 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   </button>
                 </div>
               )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full relative overflow-hidden group bg-gradient-to-r from-[#01404E] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] text-white font-black py-2.5 rounded-xl shadow-lux transition-all duration-500 active:scale-[0.98] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
-                <div className="relative z-10 flex items-center justify-center gap-4">
-                  {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  <span className="text-base tracking-tight">{isSubmitting ? 'جاري معالجة البيانات...' : 'حفظ وإتمام المعاملة'}</span>
-                </div>
-              </button>
             </div>
           </form>
         </div>
       </div>
+
+      <AttachmentModal
+        isOpen={isAttachmentModalOpen}
+        onClose={() => setIsAttachmentModalOpen(false)}
+        onSave={setSelectedImages}
+        initialImages={selectedImages}
+      />
     </div>
   );
 };

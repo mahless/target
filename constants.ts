@@ -22,7 +22,8 @@ export const API_ACTIONS = {
   MANAGE_BRANCHES: 'manageBranches',
   UPDATE_SETTINGS: 'updateSettings',
   SEARCH_ARCHIVES: 'searchArchives',
-  ARCHIVE_DATA: 'archiveData'
+  ARCHIVE_DATA: 'archiveData',
+  UPLOAD_FILES: 'uploadFiles'
 } as const;
 
 /**

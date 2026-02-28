@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
     Archive, Search, Calendar, ShieldCheck, Database,
     ArrowRight, CheckCircle2, AlertCircle, Trash2,
-    Info, Printer, ExternalLink
+    Info, Printer, ExternalLink, Paperclip
 } from 'lucide-react';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { useModal } from '../context/ModalContext';
@@ -12,6 +12,7 @@ import { useDebounce, normalizeArabic, searchMultipleFields } from '../utils';
 import SearchInput from '../components/SearchInput';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
+import ImageViewerModal from '../components/ImageViewerModal';
 
 interface ArchivePageProps {
     user: User | null;
@@ -20,6 +21,10 @@ interface ArchivePageProps {
 
 const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
     const { showModal, setIsProcessing, showQuickStatus } = useModal();
+
+    // Image Viewer State
+    const [isViewerOpen, setIsViewerOpen] = useState(false);
+    const [viewerImages, setViewerImages] = useState<string[]>([]);
 
     // Archive Mutator State
     const [archiveStartDate, setArchiveStartDate] = useState('');
@@ -320,8 +325,26 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
                                     searchResults.map((item, idx) => (
                                         <tr key={idx} className="hover:bg-blue-50/30 transition-all group border-r-4 border-transparent hover:border-[#00A6A6]">
                                             <td className="py-5 px-8">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className="font-black text-[#01404E] text-sm md:text-base">{item.clientName}</span>
+                                                <div className="flex flex-col gap-0.5 relative">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-black text-[#01404E] text-sm md:text-base">{item.clientName}</span>
+                                                        {item.attachments && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const urls = item.attachments!.split(',').filter(Boolean);
+                                                                    if (urls.length > 0) {
+                                                                        setViewerImages(urls);
+                                                                        setIsViewerOpen(true);
+                                                                    }
+                                                                }}
+                                                                className="p-1.5 bg-[#00A6A6]/10 text-[#00A6A6] hover:bg-[#00A6A6] hover:text-white rounded-lg transition-all"
+                                                                title="عرض المرفقات"
+                                                            >
+                                                                <Paperclip className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                     <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[8px] font-black uppercase w-fit">{item.serviceType}</span>
                                                 </div>
                                             </td>
@@ -358,6 +381,12 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
                     </div>
                 </div>
             </div>
+
+            <ImageViewerModal
+                isOpen={isViewerOpen}
+                onClose={() => setIsViewerOpen(false)}
+                images={viewerImages}
+            />
         </div>
     );
 };

@@ -2,9 +2,11 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { ServiceEntry, Expense, Branch } from '../types';
 import TransferForm from '../components/TransferForm';
 import SearchInput from '../components/SearchInput';
-import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, ArrowUpCircle, MoreVertical } from 'lucide-react';
+import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, ArrowUpCircle, MoreVertical, Paperclip } from 'lucide-react';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import ActionDropdown from '../components/ActionDropdown';
+import ImageViewerModal from '../components/ImageViewerModal';
+import AttachmentModal from '../components/AttachmentModal';
 import { generateReceipt } from '../services/pdfService';
 import { normalizeArabic, normalizeDate, toEnglishDigits, searchMultipleFields, useDebounce, getTodayDate } from '../utils';
 import { useModal } from '../context/ModalContext';
@@ -36,6 +38,145 @@ interface DashboardProps {
   onBranchTransfer: (data: { fromBranch: string, toBranch: string, amount: number }) => Promise<{ success: boolean; message?: string }>;
   userRole: string;
 }
+
+const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsProcessing }: any) => {
+  const [clientName, setClientName] = useState(entry.clientName || '');
+  const [nationalId, setNationalId] = useState(entry.nationalId || '');
+  const [phoneNumber, setPhoneNumber] = useState(entry.phoneNumber || '');
+  const [isAttachmentModalOpen, setAttachmentModalOpen] = useState(false);
+  const [newImages, setNewImages] = useState<{ file: File; preview: string }[]>([]);
+
+  const handleSave = async () => {
+    if (!clientName) {
+      showQuickStatus('يرجى إدخال اسم العميل', 'error');
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      let uploadedUrls: string[] = [];
+      if (newImages.length > 0) {
+        const filesToUpload = await Promise.all(newImages.map(async (img) => {
+          return new Promise<{ name: string, type: string, base64: string }>((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(img.file);
+            reader.onload = () => {
+              const base64String = (reader.result as string).split(',')[1];
+              resolve({
+                name: `${entry.id}_${img.file.name}`,
+                type: img.file.type,
+                base64: base64String
+              });
+            };
+          });
+        }));
+        const uploadResult = await GoogleSheetsService.uploadFiles(filesToUpload);
+        if (uploadResult.success && uploadResult.urls) {
+          uploadedUrls = uploadResult.urls;
+        } else {
+          showQuickStatus('فشل رفع بعض المرفقات', 'error');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      const existingAttachments = entry.attachments ? entry.attachments.split(',').filter(Boolean) : [];
+      const allAttachments = [...existingAttachments, ...uploadedUrls].join(',');
+
+      await onSave({
+        ...entry,
+        clientName,
+        nationalId,
+        phoneNumber,
+        attachments: allAttachments
+      });
+    } catch (e) {
+      setIsProcessing(false);
+      showQuickStatus('حدث خطأ أثناء الحفظ', 'error');
+    }
+  };
+
+  return (
+    <div className="space-y-4 text-right">
+      <div className="space-y-2">
+        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الاسم</label>
+        <input
+          type="text"
+          value={clientName}
+          onChange={(e) => setClientName(e.target.value)}
+          className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الرقم القومي</label>
+        <input
+          type="text"
+          value={nationalId}
+          onChange={(e) => setNationalId(toEnglishDigits(e.target.value))}
+          className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">رقم الهاتف</label>
+        <input
+          type="text"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(toEnglishDigits(e.target.value))}
+          className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
+        />
+      </div>
+
+      <div className="space-y-2 mt-4">
+        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المرفقات الإضافية</label>
+        <div className="flex gap-2 items-center flex-wrap">
+          {newImages.map((img, idx) => (
+            <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200">
+              <img src={img.preview} className="w-full h-full object-cover" />
+              <div className="absolute top-0 right-0 bg-black/50 text-white rounded-bl p-1 text-xs">
+                {idx + 1}
+              </div>
+            </div>
+          ))}
+          {newImages.length < 4 && (
+            <button
+              type="button"
+              onClick={() => setAttachmentModalOpen(true)}
+              className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-[#008f8f] hover:text-[#008f8f] transition-colors"
+            >
+              <span className="text-2xl font-bold">+</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-4 mt-6">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-6 py-2 bg-gray-50 border-2 border-gray-100 rounded-2xl text-[#01404E]/60 hover:bg-gray-100 hover:text-[#01404E] font-black transition-all"
+        >
+          تراجع
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="flex-[1.5] px-6 py-2 bg-gradient-to-r from-[#01404E] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] text-white rounded-2xl font-black shadow-lux transition-all"
+        >
+          حفظ التعديلات
+        </button>
+      </div>
+
+      <AttachmentModal
+        isOpen={isAttachmentModalOpen}
+        onClose={() => setAttachmentModalOpen(false)}
+        onSave={(images) => {
+          setNewImages(images);
+          setAttachmentModalOpen(false);
+        }}
+        initialImages={newImages}
+      />
+    </div>
+  );
+};
 
 const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: any) => {
   const gradientClasses: any = {
@@ -89,6 +230,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, []);
   const [isRefreshCooldown, setIsRefreshCooldown] = useState(false);
   const [visibleEntriesCount, setVisibleEntriesCount] = useState(50);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
 
   // Update storage when search changes
   React.useEffect(() => {
@@ -388,77 +531,27 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [currentBranchBalance, onUpdateEntry, showModal, showQuickStatus, onAddExpense, onRefresh, currentDate, username]);
 
   const handleEditData = useCallback((entry: ServiceEntry) => {
-    let clientName = entry.clientName;
-    let nationalId = entry.nationalId;
-    let phoneNumber = entry.phoneNumber;
-
     showModal({
       title: 'تعديل بيانات العميل',
-      content: (
-        <div className="space-y-4 text-right">
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الاسم</label>
-            <input
-              type="text"
-              defaultValue={clientName}
-              onChange={(e) => clientName = e.target.value.trim()}
-              className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الرقم القومي</label>
-            <input
-              type="text"
-              defaultValue={nationalId}
-              onChange={(e) => {
-                e.target.value = toEnglishDigits(e.target.value);
-                nationalId = e.target.value.trim();
-              }}
-              className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">رقم الهاتف</label>
-            <input
-              type="text"
-              defaultValue={phoneNumber}
-              onChange={(e) => {
-                e.target.value = toEnglishDigits(e.target.value);
-                phoneNumber = e.target.value.trim();
-              }}
-              className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
-            />
-          </div>
-        </div>
-      ),
-      confirmText: 'حفظ التعديلات',
-      onConfirm: async () => {
-        if (!clientName) {
-          showQuickStatus('يرجى إدخال اسم العميل', 'error');
-          return;
-        }
-        setIsProcessing(true);
-        try {
-          const updatedEntry: ServiceEntry = {
-            ...entry,
-            clientName,
-            nationalId,
-            phoneNumber
-          };
+      hideFooter: true,
+      content: <EditEntryFormModal
+        entry={entry}
+        showQuickStatus={showQuickStatus}
+        setIsProcessing={setIsProcessing}
+        onCancel={() => hideModal()}
+        onSave={async (updatedEntry: ServiceEntry) => {
           const success = await onUpdateEntry(updatedEntry);
           if (success) {
             showQuickStatus('تم تحديث البيانات بنجاح');
-            // onRefresh(); removed to prevent excessive API calls
+            hideModal();
           } else {
             showQuickStatus('فشل السيرفر في التحديث', 'error');
           }
-        } finally {
           setIsProcessing(false);
-        }
-      },
-      cancelText: 'تراجع',
+        }}
+      />
     });
-  }, [showModal, showQuickStatus, setIsProcessing, onUpdateEntry, onRefresh]);
+  }, [showModal, showQuickStatus, setIsProcessing, onUpdateEntry, hideModal]);
 
   const handleCollectDebt = useCallback(async (entry: ServiceEntry) => {
     const remaining = entry.remainingAmount;
@@ -638,9 +731,25 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                             e.stopPropagation();
                             showCustomerDetails(entry);
                           }}
-                          className="cursor-pointer text-[#01404E] group-hover:text-[#00A6A6] transition-colors font-black text-sm md:text-base"
+                          className="cursor-pointer text-[#01404E] group-hover:text-[#00A6A6] transition-colors font-black text-sm md:text-base flex items-center gap-2"
                         >
                           {entry.clientName}
+                          {entry.attachments && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const urls = entry.attachments!.split(',').filter(Boolean);
+                                if (urls.length > 0) {
+                                  setViewerImages(urls);
+                                  setIsViewerOpen(true);
+                                }
+                              }}
+                              className="p-1.5 bg-[#00A6A6]/10 text-[#00A6A6] hover:bg-[#00A6A6] hover:text-white rounded-lg transition-all"
+                              title="عرض المرفقات"
+                            >
+                              <Paperclip className="w-4 h-4" />
+                            </button>
+                          )}
                         </span>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></span>
@@ -696,6 +805,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           </div>
         </div>
       </div>
+
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        images={viewerImages}
+      />
     </div>
   );
 });
