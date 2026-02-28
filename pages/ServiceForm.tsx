@@ -73,7 +73,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
   const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
 
-  const commonInputClass = "w-full py-2 px-3 border border-[#01404E]/10 rounded-xl bg-white/40 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:text-black focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs md:text-sm [&:not(:placeholder-shown)]:bg-white [&:not(:placeholder-shown)]:text-black";
+  const commonInputClass = "w-full py-2 px-3 border border-black rounded-xl bg-white/40 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:text-black focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs md:text-sm [&:not(:placeholder-shown)]:bg-white [&:not(:placeholder-shown)]:text-black";
 
   // Search Logic
   const matchingClients = useMemo(() => {
@@ -287,7 +287,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   return (
     <div className="max-w-4xl mx-auto p-2 md:p-3">
       <div className={`transition-opacity animate-premium-in relative z-30 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
-        <div className="py-2 md:py-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-[#01404E]/10 mb-4">
+        <div className="py-2 md:py-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-black mb-4">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-[#00A6A6] rounded-full"></div>
             <h2 className="text-xl font-black tracking-tight whitespace-nowrap">تسجيل معاملة جديدة</h2>
@@ -303,7 +303,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 setShowSearchResults(true);
               }}
               placeholder="بحث سريع عن عميل سابق..."
-              className="w-full pr-10 pl-4 py-2.5 border border-[#01404E]/10 rounded-xl bg-[#01404E]/5 text-[#01404E] text-xs font-bold placeholder:text-[#01404E]/40 focus:bg-white focus:text-[#01404E] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-sm"
+              className="w-full pr-10 pl-4 py-2.5 border border-black rounded-xl bg-[#01404E]/5 text-[#01404E] text-xs font-bold placeholder:text-[#01404E]/40 focus:bg-white focus:text-[#01404E] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-sm"
             />
             {showSearchResults && matchingClients.length > 0 && (
               <div className="absolute top-full right-0 left-0 mt-2 bg-[#01404E] rounded-xl shadow-lux border border-white/10 z-[60] overflow-hidden backdrop-blur-xl">
@@ -324,7 +324,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             )}
           </div>
 
-          <span className="text-[#01404E]/40 text-xs font-black bg-[#01404E]/5 px-4 py-2 rounded-2xl border border-[#01404E]/10 whitespace-nowrap">{currentDate}</span>
+
+
         </div>
 
         <div className="p-0 space-y-2">
