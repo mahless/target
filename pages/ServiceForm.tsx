@@ -475,7 +475,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                     onClick={() => setActiveTab(activeTab === 'thirdParty' ? 'none' : 'thirdParty')}
                     className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'thirdParty' ? 'bg-white text-[#01404E] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
-                    إدراج مكتب
+                    إدراج مكتب خارجي
                   </button>
                   <button
                     type="button"
