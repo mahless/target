@@ -155,7 +155,8 @@ const Receivables: React.FC<ReceivablesProps> = ({
     <div className={`p-3 md:p-6 space-y-4 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
       {/* Header Area */}
-      <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-3 px-1 relative z-30">
+      <div className="flex flex-col gap-3 px-1 relative z-30">
+        {/* Row 1: Title, Total, Refresh, Date Filters */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <div className="flex items-center gap-3 h-[42px]">
             <div className="w-1 h-8 bg-[#00A6A6] rounded-full shadow-lg shadow-[#00A6A6]/20"></div>
@@ -229,19 +230,20 @@ const Receivables: React.FC<ReceivablesProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-2 w-full xl:w-auto bg-white/50 p-1 rounded-2xl border border-white/40 shadow-premium">
-          <div className="w-full md:min-w-[240px] xl:w-[280px]">
+        {/* Row 2: Search, Branch Filter, Service Filter - Always on second line */}
+        <div className="flex flex-col md:flex-row items-center gap-2 w-full bg-white/50 p-1 rounded-2xl border border-white/40 shadow-premium">
+          <div className="w-full md:flex-1 min-w-0">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="ابحث بالاسم، هاتف..."
+              placeholder="ابحث بالاسم، هاتف، رقم الوصل..."
               className="w-full"
               compact={true}
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full xl:w-auto">
-            <div className="flex-1 md:w-[130px]">
+          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+            <div className="flex-1 md:w-[150px]">
               <CustomSelect
                 options={branchOptions}
                 value={selectedBranch}
@@ -253,7 +255,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
               />
             </div>
 
-            <div className="flex-1 md:w-[130px]">
+            <div className="flex-1 md:w-[150px]">
               <CustomSelect
                 options={serviceOptions}
                 value={filterService}
