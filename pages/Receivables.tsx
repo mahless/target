@@ -236,7 +236,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="ابحث بالاسم، هاتف، رقم الوصل..."
+              placeholder="ابحث بالاسم، هاتف، رقم قومي..."
               className="w-full"
               compact={true}
             />
