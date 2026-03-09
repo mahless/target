@@ -172,6 +172,7 @@ const AppContent: React.FC = () => {
                           isSubmitting={isSubmitting}
                           userRole={userRole}
                           deliverOrder={deliverOrder}
+                          branches={branches}
                         />
                       )
                     } />

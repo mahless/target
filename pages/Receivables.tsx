@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { ServiceEntry } from '../types';
+import React, { useState, useMemo, useRef } from 'react';
+import { ServiceEntry, Branch } from '../types';
 import SearchInput from '../components/SearchInput';
-import { Wallet, Clock, Printer, ArrowLeftRight, Filter } from 'lucide-react';
+import { Wallet, Clock, Printer, ArrowLeftRight, Filter, Calendar, MapPin, TrendingDown, RefreshCw } from 'lucide-react';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import { useModal } from '../context/ModalContext';
 import { searchMultipleFields, useDebounce, toEnglishDigits, normalizeArabic } from '../utils';
@@ -12,6 +12,7 @@ import CustomSelect from '../components/CustomSelect';
 interface ReceivablesProps {
   entries: ServiceEntry[];
   serviceTypes: string[];
+  branches: Branch[];
   onUpdateEntry: (updatedEntry: ServiceEntry) => void;
   onAddEntry: (entry: ServiceEntry) => Promise<boolean>;
   branchId: string;
@@ -25,12 +26,17 @@ interface ReceivablesProps {
 }
 
 const Receivables: React.FC<ReceivablesProps> = ({
-  entries, serviceTypes, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false, userRole, deliverOrder
+  entries, serviceTypes, branches, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false, userRole, deliverOrder
 }) => {
-  /* Update destructuring */
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [filterService, setFilterService] = useState<string>('الكل');
+  const [selectedBranch, setSelectedBranch] = useState<string>('الكل');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+
   const { showModal, showQuickStatus, setIsProcessing } = useModal();
 
   const showCustomerDetails = (entry: ServiceEntry) => {
@@ -87,8 +93,6 @@ const Receivables: React.FC<ReceivablesProps> = ({
           return;
         }
 
-        // Use the global deliverOrder to correctly process partial/full settlements
-        // via backend API rather than a naive local addition.
         const success = await deliverOrder(
           entry.id,
           amount,
@@ -98,7 +102,6 @@ const Receivables: React.FC<ReceivablesProps> = ({
         );
 
         if (success) {
-          // Note: remainingAmount update is handled automatically by deliverOrder in useAppState
           showQuickStatus('تم التحصيل بنجاح');
         } else {
           showQuickStatus('فشل في عملية التحصيل', 'error');
@@ -107,70 +110,161 @@ const Receivables: React.FC<ReceivablesProps> = ({
     });
   };
 
-  const [selectedBranch, setSelectedBranch] = useState<string>(branchId);
-  const serviceOptions = useMemo(() => serviceTypes.map(s => ({ id: s, name: s })), [serviceTypes]);
+  const branchOptions = useMemo(() => [
+    { id: 'الكل', name: 'الكل' },
+    ...branches.map(b => ({ id: b.id, name: b.name }))
+  ], [branches]);
+
+  const serviceOptions = useMemo(() => {
+    return [
+      { id: 'الكل', name: 'الكل' },
+      ...serviceTypes.map(s => ({ id: s, name: s }))
+    ];
+  }, [serviceTypes]);
 
   const [visibleCount, setVisibleCount] = useState(50);
 
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
-      const matchesService = filterService === 'الكل' || e.serviceType === filterService;
       const isUnpaid = (e.remainingAmount || 0) > 0;
+      if (!isUnpaid) return false;
+
+      const matchesService = filterService === 'الكل' || e.serviceType === filterService;
+      const matchesBranch = selectedBranch === 'الكل' || normalizeArabic(e.branchId) === normalizeArabic(selectedBranch);
+
+      let matchesDate = true;
+      if (startDate) matchesDate = matchesDate && e.entryDate >= startDate;
+      if (endDate) matchesDate = matchesDate && e.entryDate <= endDate;
+
       const isSearchMatch = searchMultipleFields(debouncedSearchTerm, [
         e.clientName,
         e.nationalId,
         e.phoneNumber,
         e.workOrderNumber || ''
       ]);
-      return matchesService && isUnpaid && isSearchMatch;
+
+      return matchesService && matchesBranch && matchesDate && isSearchMatch;
     });
-  }, [entries, filterService, debouncedSearchTerm]);
+  }, [entries, filterService, selectedBranch, startDate, endDate, debouncedSearchTerm]);
+
+  const totalDebts = useMemo(() => {
+    return filteredEntries.reduce((sum, e) => sum + (e.remainingAmount || 0), 0);
+  }, [filteredEntries]);
 
   return (
-    <div className={`p-3 md:p-6 space-y-1.5 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`p-3 md:p-6 space-y-4 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-1 relative z-30">
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="w-1.5 h-10 bg-[#00A6A6] rounded-full shadow-lg shadow-[#00A6A6]/20"></div>
-          <div>
-            <h3 className="text-xl font-black text-[#01404E] tracking-tight whitespace-nowrap">البحث في المديونيات</h3>
-            <p className="text-[10px] text-[#036564] font-black uppercase tracking-[0.3em] mt-1">{currentDate}</p>
+      {/* Header Area */}
+      <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-3 px-1 relative z-30">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 h-[42px]">
+            <div className="w-1 h-8 bg-[#00A6A6] rounded-full shadow-lg shadow-[#00A6A6]/20"></div>
+            <div className="flex flex-col justify-center">
+              <h3 className="text-sm md:text-base font-black text-[#01404E] tracking-tight whitespace-nowrap leading-tight">البحث في المديونيات</h3>
+              <p className="text-[8px] text-[#036564] font-black uppercase tracking-[0.2em]">{currentDate}</p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/40 shadow-premium-sm flex items-center gap-2 group hover:scale-[1.02] transition-all h-[42px]">
+            <div className="p-1 bg-red-50 rounded-lg text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+              <TrendingDown className="w-3.5 h-3.5" />
+            </div>
+            <div className="text-right flex items-baseline gap-2">
+              <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest leading-none">الإجمالي:</p>
+              <p className="text-base font-black text-red-600 tracking-tighter tabular-nums leading-none">
+                {totalDebts.toLocaleString()}
+                <span className="text-[9px] mr-1 opacity-60">ج.م</span>
+              </p>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onRefresh();
+              }}
+              disabled={isSyncing || isSubmitting}
+              className={`mr-1 p-1.5 rounded-lg transition-all active:scale-90 ${isSyncing ? 'bg-blue-50 text-blue-500' : 'bg-gray-50 text-gray-500 hover:bg-[#01404E] hover:text-white'}`}
+              title="تحديث البيانات"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative group w-[130px] md:w-[150px]">
+              <button
+                type="button"
+                onClick={() => (startDateRef.current as any)?.showPicker?.() || startDateRef.current?.click()}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-gray-100 rounded-full transition-all focus:outline-none"
+              >
+                <Calendar className="w-5 h-5 text-[#00A6A6] group-focus-within:scale-110 transition-transform" />
+              </button>
+              <input
+                ref={startDateRef}
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full h-[42px] bg-white rounded-xl border-2 border-transparent focus:border-[#00A6A6] outline-none px-7 pr-10 text-[10px] font-black text-[#01404E] transition-all shadow-premium-sm relative"
+              />
+              {!startDate && <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[9px] font-black text-gray-400 pointer-events-none whitespace-nowrap">من تاريخ</span>}
+            </div>
+
+            <div className="relative group w-[130px] md:w-[150px]">
+              <button
+                type="button"
+                onClick={() => (endDateRef.current as any)?.showPicker?.() || endDateRef.current?.click()}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-gray-100 rounded-full transition-all focus:outline-none"
+              >
+                <Calendar className="w-5 h-5 text-[#00A6A6] group-focus-within:scale-110 transition-transform" />
+              </button>
+              <input
+                ref={endDateRef}
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full h-[42px] bg-white rounded-xl border-2 border-transparent focus:border-[#00A6A6] outline-none px-7 pr-10 text-[10px] font-black text-[#01404E] transition-all shadow-premium-sm relative"
+              />
+              {!endDate && <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[9px] font-black text-gray-400 pointer-events-none whitespace-nowrap">إلى تاريخ</span>}
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto bg-white/50 p-1.5 rounded-2xl border border-white/40 shadow-premium">
-          <div className="w-full lg:w-[350px]">
+        <div className="flex flex-col md:flex-row items-center gap-2 w-full xl:w-auto bg-white/50 p-1 rounded-2xl border border-white/40 shadow-premium">
+          <div className="w-full md:min-w-[240px] xl:w-[280px]">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="ابحث بالاسم، رقم قومي، هاتف، أو أمر شغل..."
+              placeholder="ابحث بالاسم، هاتف..."
               className="w-full"
+              compact={true}
             />
           </div>
 
-          <div className="w-full md:w-[200px]">
-            <CustomSelect
-              options={serviceOptions}
-              value={filterService}
-              onChange={setFilterService}
-              placeholder="كل الخدمات"
-              showAllOption={true}
-            />
-          </div>
+          <div className="flex items-center gap-2 w-full xl:w-auto">
+            <div className="flex-1 md:w-[130px]">
+              <CustomSelect
+                options={branchOptions}
+                value={selectedBranch}
+                onChange={setSelectedBranch}
+                placeholder="الكل"
+                showAllOption={false}
+                icon={<MapPin className="w-3.5 h-3.5" />}
+                className="py-1.5 px-2 rounded-xl border text-[10px]"
+              />
+            </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onRefresh();
-            }}
-            disabled={isSyncing || isSubmitting}
-            className={`w-full md:w-auto px-6 h-[58px] rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-md active:scale-95 shrink-0 ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400' : 'bg-[#01404E] text-white hover:bg-[#036564]'}`}
-          >
-            <Clock className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
-          </button>
+            <div className="flex-1 md:w-[130px]">
+              <CustomSelect
+                options={serviceOptions}
+                value={filterService}
+                onChange={setFilterService}
+                placeholder="الكل"
+                showAllOption={false}
+                icon={<Filter className="w-3.5 h-3.5" />}
+                className="py-1.5 px-2 rounded-xl border text-[10px]"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -179,10 +273,10 @@ const Receivables: React.FC<ReceivablesProps> = ({
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-20">
               <tr className="bg-[#01404E] text-white/50 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase border-b border-white/5">
-                <th className="py-2.5 px-8 text-right first:rounded-tr-[2rem]">بيان مديونية العميل</th>
-                <th className="py-2.5 px-6 text-center">الموظف</th>
-                <th className="py-2.5 px-6 text-center">المبلغ المتبقي</th>
-                <th className="py-2.5 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
+                <th className="py-4 px-8 text-right first:rounded-tr-[2rem]">بيان مديونية العميل</th>
+                <th className="py-4 px-6 text-center">الموظف / الفرع</th>
+                <th className="py-4 px-6 text-center">المبلغ المتبقي</th>
+                <th className="py-4 px-8 text-center last:rounded-tl-[2rem]">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#01404E]/5 font-bold relative text-xs md:text-sm">
@@ -190,46 +284,49 @@ const Receivables: React.FC<ReceivablesProps> = ({
                 <tr>
                   <td colSpan={4} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-200">
-                        <Wallet className="w-8 h-8" />
+                      <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-200">
+                        <Wallet className="w-10 h-10" />
                       </div>
-                      <span className="text-gray-300 font-black italic">لا توجد مديونيات تطابق بحثك</span>
+                      <span className="text-gray-300 font-black italic">لا توجد مديونيات تطابق خيارات الفلترة</span>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredEntries.slice(0, visibleCount).map((entry) => (
                   <tr key={entry.id} className="hover:bg-[#036564]/5 transition-all group">
-                    <td className="py-2.5 px-8">
-                      <div className="flex flex-col gap-0.5">
+                    <td className="py-4 px-8">
+                      <div className="flex flex-col gap-1">
                         <span
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            showCustomerDetails(entry);
-                          }}
+                          onClick={() => showCustomerDetails(entry)}
                           className="font-black text-[#01404E] text-sm md:text-base cursor-pointer hover:text-[#00A6A6] transition-colors"
                         >
                           {entry.clientName}
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="bg-[#00A6A6]/10 text-[#00A6A6] px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{entry.serviceType}</span>
-                          <span className="text-[10px] text-gray-400 font-bold">{entry.entryDate}</span>
+                          <span className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {entry.entryDate}
+                          </span>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-6 text-center">
-                      <div className="flex flex-col items-center gap-0.5 group-hover:scale-110 transition-transform">
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex flex-col items-center gap-1">
                         <span className="bg-gray-100 text-[#01404E] px-2 py-1 rounded-lg text-[10px] font-black">{entry.recordedBy || 'غير مسجل'}</span>
+                        <span className="flex items-center gap-1 text-[8px] text-[#036564] font-black uppercase">
+                          <MapPin className="w-2.5 h-2.5" />
+                          {entry.branchId}
+                        </span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-6 text-center">
+                    <td className="py-4 px-6 text-center">
                       <div className="flex flex-col items-center gap-0.5 group-hover:scale-110 transition-transform">
-                        <span className="text-sm md:text-base font-black text-red-600 tracking-tighter">{entry.remainingAmount.toLocaleString()}<span className="text-[8px] md:text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
-                        <span className="text-[8px] text-[#01404E]/40 font-black uppercase tracking-widest">من أصل {entry.serviceCost}</span>
+                        <span className="text-base md:text-lg font-black text-red-600 tracking-tighter tabular-nums">{entry.remainingAmount.toLocaleString()}<span className="text-[10px] mr-1 opacity-50 uppercase">ج.م</span></span>
+                        <span className="text-[8px] text-[#01404E]/40 font-black uppercase tracking-widest italic">من أصل {entry.serviceCost}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-8 text-center">
+                    <td className="py-4 px-8 text-center">
                       {userRole !== ROLES.VIEWER && !entry.parentEntryId && normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) && (
                         <button
                           type="button"
@@ -255,17 +352,14 @@ const Receivables: React.FC<ReceivablesProps> = ({
             </tbody>
           </table>
           {visibleCount < filteredEntries.length && (
-            <div className="p-6 text-center border-t border-[#01404E]/5">
+            <div className="p-8 text-center border-t border-[#01404E]/5">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setVisibleCount(prev => prev + 50);
-                }}
-                className="px-6 py-3 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                onClick={() => setVisibleCount(prev => prev + 50)}
+                className="px-8 py-3.5 bg-[#00A6A6] text-white font-black rounded-2xl hover:bg-[#036564] transition-all shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center gap-3"
               >
-                تحميل المزيد ({filteredEntries.length - visibleCount} متبقي)
+                تحميل المزيد
+                <span className="bg-white/20 px-2 py-0.5 rounded-lg text-xs">{filteredEntries.length - visibleCount} متبقي</span>
               </button>
             </div>
           )}

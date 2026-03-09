@@ -104,7 +104,8 @@ export const STOCK_CATEGORY = {
  * Service Types & Expense Categories
  */
 export const SERVICE_TYPES = {
-  DEBT_SETTLEMENT: 'سداد مديونية'
+  DEBT_SETTLEMENT: 'سداد مديونية',
+  SELL_FORM: 'بيع استماره'
 } as const;
 
 export const EXPENSE_CATEGORIES = {
