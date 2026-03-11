@@ -343,15 +343,39 @@ export const GoogleSheetsService = {
      * @param clientName - Client name
      * @param collectorName - Employee name
      * @param branchId - Branch ID
+     * @param collectionId - Unique collection ID for tracking (optional)
+     * @param isElectronic - Whether the payment is electronic (optional)
+     * @param electronicMethod - The method used for electronic payment (optional)
+     * @param notes - Additional notes (optional)
      * @returns boolean (success/failure)
      */
-    async deliverOrder(orderId: string, remainingCollected: number, clientName: string, collectorName: string, branchId: string, collectionId?: string): Promise<boolean> {
+    async deliverOrder(
+        orderId: string,
+        remainingCollected: number,
+        clientName: string,
+        collectorName: string,
+        branchId: string,
+        collectionId?: string,
+        isElectronic?: boolean,
+        electronicMethod?: string,
+        notes?: string
+    ): Promise<boolean> {
         if (!GOOGLE_SCRIPT_URL) return false;
         try {
             const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.DELIVER_ORDER}`, {
                 method: 'POST',
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ orderId, remainingCollected, clientName, collectorName, branchId, collectionId })
+                body: JSON.stringify({
+                    orderId,
+                    remainingCollected,
+                    clientName,
+                    collectorName,
+                    branchId,
+                    collectionId,
+                    isElectronic,
+                    electronicMethod,
+                    notes
+                })
             });
             const json = await response.json() as BackendResponse;
             return json.status === STATUS.SUCCESS;

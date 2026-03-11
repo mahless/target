@@ -109,7 +109,8 @@ export const SERVICE_TYPES = {
 } as const;
 
 export const EXPENSE_CATEGORIES = {
-  THIRD_PARTY: 'طرف ثالث'
+  THIRD_PARTY: 'طرف ثالث',
+  ELECTRONIC_COLLECTION: 'تحصيل متبقي إلكتروني'
 } as const;
 
 /**

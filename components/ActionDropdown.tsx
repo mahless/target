@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Printer, Settings } from 'lucide-react';
+import { MoreVertical, Printer, Settings, Search } from 'lucide-react';
 import { ServiceEntry } from '../types';
-import { STATUS, ROLES } from '../constants';
+import { STATUS, ROLES, SERVICE_TYPES } from '../constants';
 import { normalizeArabic } from '../utils';
 
 interface ActionDropdownProps {
     entry: ServiceEntry;
     userRole: string;
-    onDeliver: (entry: ServiceEntry) => void;
+    onDeliver: (entry: ServiceEntry, isFinal?: boolean) => void;
     onCollectDebt?: (entry: ServiceEntry) => void;
     onSetWorkOrder: (entry: ServiceEntry) => void;
     onUpdateStatus: (entry: ServiceEntry, status: ServiceEntry['status'], label: string) => void;
@@ -86,9 +86,10 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                             e.stopPropagation();
                             handleAction(() => onShowDetails(entry));
                         }}
-                        className="w-full text-right px-4 py-2.5 text-xs font-black text-[#01404E] hover:bg-[#036564]/5 transition-colors border-b border-gray-50"
+                        className="w-full text-right px-4 py-2.5 text-xs font-black text-[#01404E] hover:bg-[#036564]/5 transition-colors border-b border-gray-50 flex items-center justify-between"
                     >
-                        عرض التفاصيل
+                        <span>عرض التفاصيل</span>
+                        <Search size={14} className="text-[#01404E]/40" />
                     </button>
 
                     <button
@@ -117,132 +118,117 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                         <Printer size={14} className="text-blue-500" />
                     </button>
 
-
-                    {(entry.status === STATUS.ACTIVE || entry.status === STATUS.PENDING) && !entry.parentEntryId && (
+                    {/* الحاﻻت المالية والتسليم - تظهر لمعظم الحاﻻت النشطة */}
+                    {!isDelivered && !isCancelled && (
                         <>
-                            {(!String(entry.notes || '').includes('بيع استمارة لطرف اخر')) && (
+                            {/* تحصيل المتبقي - يظهر دائما في حال وجود مديونية */}
+                            {entry.remainingAmount > 0 && onCollectDebt && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleAction(() => onCollectDebt(entry));
+                                    }}
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-colors border-b border-gray-50 flex items-center justify-between"
+                                >
+                                    <span>تحصيل المتبقي</span>
+                                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                </button>
+                            )}
+
+                            {/* التسليم - يعتمد على الحالة والمديونية */}
+                            {entry.remainingAmount <= 0 && (
                                 <>
-                                    {entry.remainingAmount > 0 ? (
+                                    {(entry.status === STATUS.ACTIVE || entry.status === STATUS.PENDING) && !entry.parentEntryId && (
                                         <button
                                             type="button"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                if (onCollectDebt) handleAction(() => onCollectDebt(entry));
+                                                handleAction(() => onDeliver(entry, false));
                                             }}
-                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-colors whitespace-nowrap"
-                                        >
-                                            تحصيل المتبقي
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleAction(() => onDeliver(entry));
-                                            }}
-                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-colors whitespace-nowrap"
+                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-colors border-b border-gray-50"
                                         >
                                             تسليم الخدمة
                                         </button>
                                     )}
+                                    {entry.status === STATUS.READY && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleAction(() => onDeliver(entry, true));
+                                            }}
+                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-[#036564] hover:bg-[#036564]/5 transition-colors border-b border-gray-50"
+                                        >
+                                            تسليم نهائي
+                                        </button>
+                                    )}
                                 </>
                             )}
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleAction(() => onSetWorkOrder(entry));
-                                }}
-                                className="w-full text-right px-4 py-2.5 text-xs font-black text-blue-600 hover:bg-blue-50 transition-colors"
-                            >
-                                رقم أمر الشغل
-                            </button>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleAction(() => onCancel(entry));
-                                }}
-                                className="w-full text-right px-4 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                                إلغاء المعاملة
-                            </button>
-                        </>
-                    )}
 
-                    {entry.status === STATUS.IN_PROGRESS && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleAction(() => onUpdateStatus(entry, STATUS.READY as ServiceEntry['status'], 'جاهزة للتسليم'));
-                                }}
-                                className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors"
-                            >
-                                جاهزة للتسليم
-                            </button>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleAction(() => onCancel(entry));
-                                }}
-                                className="w-full text-right px-4 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                                إلغاء المعاملة
-                            </button>
-                        </>
-                    )}
-
-                    {entry.status === STATUS.READY && (
-                        <>
-                            {entry.remainingAmount > 0 ? (
+                            {/* رقم أمر الشغل - متاح دائما للكل - يخفي في حال سداد مديونية */}
+                            {normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) && (
                                 <button
                                     type="button"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        if (onCollectDebt) handleAction(() => onCollectDebt(entry));
+                                        handleAction(() => onSetWorkOrder(entry));
                                     }}
-                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-colors"
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-blue-600 hover:bg-blue-50 transition-colors border-b border-gray-50"
                                 >
-                                    تحصيل المتبقي
+                                    رقم أمر الشغل
                                 </button>
-                            ) : (
+                            )}
+
+                            {/* تغيير الحالة */}
+                            {entry.status === STATUS.IN_PROGRESS && (
                                 <button
                                     type="button"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        handleAction(() => onDeliver(entry));
+                                        handleAction(() => onUpdateStatus(entry, STATUS.READY as ServiceEntry['status'], 'جاهزة للتسليم'));
                                     }}
-                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-[#036564] hover:bg-[#036564]/5 transition-colors"
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors border-b border-gray-50"
                                 >
-                                    تسليم نهائي
+                                    جاهزة للتسليم
+                                </button>
+                            )}
+
+                            {/* تسوية طرف ثالث */}
+                            {entry.status === STATUS.ACTIVE && entry.hasThirdParty && !entry.isCostPaid && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleAction(() => onSettleThirdParty(entry));
+                                    }}
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-[#01404E] hover:bg-[#01404E]/5 transition-colors border-b border-gray-50"
+                                >
+                                    تسوية مكتب خارجي
+                                </button>
+                            )}
+
+                            {/* إلغاء المعاملة - يخفي في حال سداد مديونية */}
+                            {normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleAction(() => onCancel(entry));
+                                    }}
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                    إلغاء المعاملة
                                 </button>
                             )}
                         </>
-                    )}
-
-                    {entry.status === STATUS.ACTIVE && entry.hasThirdParty && !entry.isCostPaid && (
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleAction(() => onSettleThirdParty(entry));
-                            }}
-                            className="w-full text-right px-4 py-2.5 text-xs font-black text-[#01404E] hover:bg-[#01404E]/5 transition-colors"
-                        >
-                            تسوية مكتب خارجي
-                        </button>
                     )}
                 </div>
             )}

@@ -46,6 +46,7 @@ export interface ServiceEntry {
 
   notes?: string;
   workOrderNumber?: string; // رقم أمر الشغل
+  workOrderEnteredBy?: string; // من قام بإدخال رقم أمر الشغل
   statusUpdateDate?: string; // تاريخ تحديث الحالة
 
   // System Metadata
@@ -53,6 +54,7 @@ export interface ServiceEntry {
   entryDate: string; // YYYY-MM-DD
   timestamp: number;
   recordedBy: string; // Username of the employee
+  deliveredBy?: string; // من قام بتسليم الخدمة
 
   // Cancellation
   status: 'active' | 'cancelled' | 'تم التسليم' | 'قيد المراجعة' | 'قيد التنفيذ' | 'جاهزة للتسليم';

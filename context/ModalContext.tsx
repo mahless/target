@@ -14,6 +14,7 @@ interface ModalOptions {
     confirmIcon?: ReactNode;
     cancelIcon?: ReactNode;
     size?: 'md' | 'lg' | 'xl';
+    compact?: boolean;
 }
 
 interface ModalContextType {
@@ -86,7 +87,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             )}
             {modal && (
                 <div className="fixed inset-0 bg-[#01404E]/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 animate-scaleIn">
-                    <div className={`bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-lux w-full p-5 border border-white relative flex flex-col max-h-[95vh] transition-all duration-300 ${modal.size === 'xl' ? 'max-w-4xl' : modal.size === 'lg' ? 'max-w-2xl' : 'max-w-md'
+                    <div className={`bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-lux w-full ${modal.compact ? 'p-3' : 'p-5'} border border-white relative flex flex-col max-h-[95vh] transition-all duration-300 ${modal.size === 'xl' ? 'max-w-4xl' : modal.size === 'lg' ? 'max-w-2xl' : 'max-w-md'
                         }`}>
                         <button
                             type="button"
@@ -99,7 +100,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                             </svg>
                         </button>
 
-                        <div className="flex items-center gap-5 mb-4 text-right">
+                        <div className={`flex items-center gap-5 ${modal.compact ? 'mb-2' : 'mb-4'} text-right`}>
                             <div className={`p-3 rounded-[1rem] shadow-inner ${modal.type === 'danger' ? 'bg-red-50 text-red-600' : modal.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-[#00A6A6]/10 text-[#00A6A6]'}`}>
                                 {modal.type === 'danger' ? <AlertTriangle className="w-6 h-6" /> : modal.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <Info className="w-6 h-6" />}
                             </div>
@@ -111,12 +112,12 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                             </div>
                         </div>
 
-                        <div className="text-[#01404E]/80 mb-4 font-bold leading-relaxed text-right overflow-y-auto custom-scrollbar px-1">
+                        <div className={`text-[#01404E]/80 ${modal.compact ? 'mb-2' : 'mb-4'} font-bold leading-relaxed text-right overflow-y-auto custom-scrollbar px-1`}>
                             {modal.content}
                         </div>
 
                         {!modal.hideFooter && (
-                            <div className="flex gap-4 mt-auto">
+                            <div className={`flex gap-4 ${modal.compact ? 'mt-1' : 'mt-auto'}`}>
                                 <button
                                     type="button"
                                     onClick={(e) => {
@@ -124,7 +125,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                                         e.stopPropagation();
                                         hideModal();
                                     }}
-                                    className="flex-1 px-6 py-2 bg-gray-50 border-2 border-gray-100 rounded-2xl text-[#01404E]/60 hover:bg-gray-100 hover:text-[#01404E] font-black transition-all flex items-center justify-center gap-2 active:scale-95 text-xs"
+                                    className={`flex-1 ${modal.compact ? 'px-4 py-1.5' : 'px-6 py-2'} bg-gray-50 border-2 border-gray-100 rounded-2xl text-[#01404E]/60 hover:bg-gray-100 hover:text-[#01404E] font-black transition-all flex items-center justify-center gap-2 active:scale-95 text-xs`}
                                 >
                                     {modal.cancelIcon}
                                     {modal.cancelText || 'تراجع'}
@@ -140,7 +141,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                                                 hideModal();
                                             }
                                         }}
-                                        className={`flex-[1.5] relative overflow-hidden group px-6 py-2 text-white rounded-2xl font-black shadow-lux transition-all active:scale-95 flex items-center justify-center gap-2 text-xs ${modal.type === 'danger'
+                                        className={`flex-[1.5] relative overflow-hidden group ${modal.compact ? 'px-4 py-1.5' : 'px-6 py-2'} text-white rounded-2xl font-black shadow-lux transition-all active:scale-95 flex items-center justify-center gap-2 text-xs ${modal.type === 'danger'
                                             ? 'bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 shadow-red-600/20'
                                             : 'bg-gradient-to-r from-[#01404E] to-[#01404E] hover:from-[#00A6A6] hover:to-[#036564] shadow-[#01404E]/20'
                                             }`}

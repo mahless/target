@@ -1,10 +1,11 @@
 import React from 'react';
 import { ServiceEntry } from '../types';
-import { toEnglishDigits } from '../utils';
 import { STATUS } from '../constants';
+import { normalizeArabic, toEnglishDigits } from '../utils';
 
 interface ServiceEntryDetailsProps {
     entry: ServiceEntry;
+    userRole?: string;
 }
 
 const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry }) => {
@@ -69,21 +70,30 @@ const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry }) => {
                     </p>
                 </div>
 
-                {/* Row 5 */}
                 <div className="col-span-1 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
                     <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">رقم أمر الشغل</span>
-                    <p className="font-black text-blue-800 text-[10px]">{entry.workOrderNumber || 'لم يُحدد'}</p>
+                    <div className="space-y-0.5">
+                        <p className="font-black text-blue-800 text-[10px] leading-none">{entry.workOrderNumber || 'لم يُحدد'}</p>
+                        {entry.workOrderEnteredBy && (
+                            <p className="text-[7px] text-black font-black leading-none">بواسطة: {entry.workOrderEnteredBy}</p>
+                        )}
+                    </div>
                 </div>
                 <div className="col-span-1 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
                     <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">حالة التتبع</span>
-                    <p className={`font-black text-[10px] ${entry.status === STATUS.PENDING ? 'text-yellow-600' :
-                        entry.status === STATUS.IN_PROGRESS ? 'text-blue-600' :
-                            entry.status === STATUS.READY ? 'text-green-600' :
-                                entry.status === STATUS.DELIVERED ? 'text-green-700' :
-                                    'text-blue-600'
-                        }`}>
-                        {entry.status === STATUS.ACTIVE ? 'قيد المراجعة' : entry.status}
-                    </p>
+                    <div className="space-y-0.5">
+                        <p className={`font-black text-[10px] leading-none ${entry.status === STATUS.PENDING ? 'text-yellow-600' :
+                            entry.status === STATUS.IN_PROGRESS ? 'text-blue-600' :
+                                entry.status === STATUS.READY ? 'text-green-600' :
+                                    entry.status === STATUS.DELIVERED ? 'text-green-700' :
+                                        'text-blue-600'
+                            }`}>
+                            {entry.status === STATUS.ACTIVE ? 'قيد المراجعة' : entry.status}
+                        </p>
+                        {entry.deliveredBy && (
+                            <p className="text-[7px] text-black font-black leading-none">سلمه: {entry.deliveredBy}</p>
+                        )}
+                    </div>
                 </div>
                 <div className="col-span-1 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
                     <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">ملاحظات</span>

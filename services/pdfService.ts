@@ -108,7 +108,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         }
 
         .branch-name {
-          font-size: 10pt;
+          font-size: 8pt;
           font-weight: 700;
           margin: 0;
           color: #333;
@@ -117,8 +117,8 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         .meta-info {
           display: flex;
           flex-direction: column;
-          gap: 2px;
-          font-size: 9pt;
+          gap: 1px;
+          font-size: 7.5pt;
           margin-top: 5px;
           text-align: right;
         }
@@ -131,21 +131,21 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
           width: 100%;
           border-collapse: collapse;
           margin: 1px 0;
-          border: 1px solid #000;
+          border: 0.2pt solid #888;
         }
 
         .content-table th {
           background-color: #f0f0f0;
-          border: 1px solid #000;
-          padding: 3px;
-          font-size: 11pt;
+          border: 0.2pt solid #888;
+          padding: 2px;
+          font-size: 10pt;
           font-weight: 900;
         }
 
         .content-table td {
-          border: 1px solid #000;
-          padding: 2px;
-          font-size: 10pt;
+          border: 0.2pt solid #888;
+          padding: 1px 4px;
+          font-size: 9pt;
           font-weight: 700;
           vertical-align: top;
         }
@@ -159,14 +159,15 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         }
 
         .value {
-          font-size: 10pt;
+          font-size: 9pt;
           font-weight: 700;
           display: block;
+          line-height: 1.1;
         }
 
         .footer {
-          padding-top: 2px;
-          margin-top: 2px;
+          padding-top: 1px;
+          margin-top: 1px;
         }
 
         .totals-section {
@@ -174,7 +175,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
           gap: 15px;
           justify-content: space-around;
           background: #f9f9f9;
-          padding: 1px 8px;
+          padding: 0px 8px;
           border-radius: 5px;
           border: 1px solid #ddd;
           margin-bottom: 2px;
@@ -182,24 +183,38 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
 
         .total-item {
           text-align: center;
+          line-height: 1.1;
         }
 
         .total-label {
-          font-size: 8pt;
+          font-size: 7.5pt;
           color: #555;
           font-weight: 700;
           display: block;
         }
 
         .total-value {
-          font-size: 11pt;
+          font-size: 10pt;
           font-weight: 900;
           display: block;
           margin-top: 0;
         }
 
+        .instructions-section {
+          margin: 3px 0;
+          padding: 2px 8px;
+          background: #fff;
+          border: 0.2pt solid #888;
+          border-radius: 4px;
+          font-size: 6pt;
+          font-weight: 800;
+          color: #000;
+          text-align: right;
+          line-height: 1.2;
+        }
+
         .contact-info {
-          margin-top: 8px;
+          margin-top: 4px;
           text-align: center;
           font-size: 8pt;
           font-weight: 700;
@@ -245,8 +260,8 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
             </div>
 
             <div class="qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 5px; margin-left: 10px;">
-              <span style="font-size: 8pt; font-weight: 900; color: #333;">تابع طلبك هنا</span>
-              <div style="width: 80px; height: 80px; border: 1px solid #eee; padding: 2px;">
+              <span style="font-size: 7pt; font-weight: 900; color: #333;">تابع طلبك هنا</span>
+              <div style="width: 75px; height: 75px; border: 0.2pt solid #eee; padding: 2px;">
                 ${qrDataUrl
       ? `<img src="${qrDataUrl}" style="width: 100%; height: 100%; object-fit: contain;" alt="QR" />`
       : `<img src="./assets/qr-code.jpg" style="width: 100%; height: 100%; object-fit: contain;" alt="QR" id="qrImg" />`
@@ -278,6 +293,12 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
             <div class="total-item"><span class="total-label">الإجمالي</span><span class="total-value">${escapeHtml(entry.serviceCost)} EGP</span></div>
             <div class="total-item"><span class="total-label">المدفوع</span><span class="total-value" style="color: green;">${escapeHtml(entry.amountPaid)} EGP</span></div>
             <div class="total-item"><span class="total-label">المتبقي</span><span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${escapeHtml(entry.remainingAmount)} EGP</span></div>
+          </div>
+
+          <div class="instructions-section">
+            <span style="display: block; font-weight: 900; border-bottom: 1px solid #000; margin-bottom: 2px; width: fit-content;">تعليمات:</span>
+            <div>1- عند التصوير يتم دفع 15 جنيه رسوم نموذج تصوير ـ فتره الانتظار من ساعه الي ساعتين ـ وجود جميع اصول المستندات</div>
+            <div>2- عند طلب الغاء الخدمه يتم خصم التكاليف وشطب أختام المكتب وقد يؤدي الي تلف الاستماره - لا يحق المطالبه بتكلفه الخدمه بعد 3 اشهر من التنفيذ</div>
           </div>
           
           <div class="contact-info">

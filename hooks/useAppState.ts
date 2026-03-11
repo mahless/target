@@ -178,9 +178,11 @@ export const useAppState = () => {
             deliveredDate: e.deliveredDate || e['تاريخ التسليم'],
             parentEntryId: e.parentEntryId || e['parentEntryId'] || e['المعاملة الأصلية'],
             workOrderNumber: e.workOrderNumber || e['رقم أمر الشغل'] || '',
+            workOrderEnteredBy: e.workOrderEnteredBy || e['workOrderEnteredBy'] || e['سجل أمر الشغل بواسطة'] || '',
             statusUpdateDate: e.statusUpdateDate || e['تاريخ تحديث الحالة'] || '',
             notes: e.notes || e['ملاحظات'] || '',
-            attachments: e.attachments || e['attachments'] || ''
+            attachments: e.attachments || e['attachments'] || '',
+            deliveredBy: e.deliveredBy || e['deliveredBy'] || e['تم التسليم بواسطة'] || ''
           };
         });
         setEntries(prev => {
@@ -410,9 +412,11 @@ export const useAppState = () => {
         'المتبقي': entry.remainingAmount,
         isCostPaid: entry.isCostPaid || false,
         workOrderNumber: entry.workOrderNumber || '',
+        workOrderEnteredBy: entry.workOrderNumber ? (user?.name || '') : '',
         statusUpdateDate: entry.statusUpdateDate || entry.entryDate
       };
-      setEntries(prev => [entry, ...prev]);
+      const finalEntry = { ...entry, workOrderEnteredBy: entry.workOrderNumber ? (user?.name || '') : '' };
+      setEntries(prev => [finalEntry, ...prev]);
       const result = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || ROLES.EMPLOYEE);
       if (!result.success) {
         setEntries(prev => prev.filter(e => e.id !== entry.id));
@@ -447,6 +451,8 @@ export const useAppState = () => {
         'costPaidBy': updatedEntry.costPaidBy,
         'ملاحظات': updatedEntry.notes || '',
         'workOrderNumber': updatedEntry.workOrderNumber || '',
+        'workOrderEnteredBy': updatedEntry.workOrderEnteredBy || '',
+        'deliveredBy': updatedEntry.deliveredBy || '',
         'statusUpdateDate': updatedEntry.statusUpdateDate || ''
       };
       const success = await GoogleSheetsService.updateEntry('Entries', sheetEntry, user?.role || ROLES.EMPLOYEE);
@@ -504,21 +510,44 @@ export const useAppState = () => {
     }
   }, [isSubmitting, startSubmitting, stopSubmitting]);
 
-  const deliverOrder = useCallback(async (orderId: string, collectedAmount: number, clientName: string, collectorName: string, targetBranchId: string): Promise<boolean> => {
+  const deliverOrder = useCallback(async (
+    orderId: string,
+    collectedAmount: number,
+    clientName: string,
+    collectorName: string,
+    targetBranchId: string,
+    isElectronic: boolean = false,
+    electronicMethod: string = '',
+    notes: string = ''
+  ): Promise<boolean> => {
     if (isSubmitting) return false;
     const collectionId = Date.now().toString() + "-collect";
     startSubmitting();
     try {
-      const success = await GoogleSheetsService.deliverOrder(orderId, collectedAmount, clientName, collectorName, targetBranchId, collectionId);
+      const success = await GoogleSheetsService.deliverOrder(
+        orderId,
+        collectedAmount,
+        clientName,
+        collectorName,
+        targetBranchId,
+        collectionId,
+        isElectronic,
+        electronicMethod,
+        notes
+      );
       if (success) {
         // 1. تحديث المعاملة الأصلية
         setEntries(prev => {
-          const updated = prev.map(e => e.id === orderId ? { ...e, remainingAmount: e.remainingAmount - collectedAmount, amountPaid: e.amountPaid + collectedAmount } : e);
+          const updated = prev.map(e => e.id === orderId ? { 
+            ...e, 
+            remainingAmount: e.remainingAmount - collectedAmount, 
+            amountPaid: e.amountPaid + collectedAmount
+          } : e);
 
           // 2. إذا تم تحصيل مبلغ، أضف بنداً جديداً لسداد المديونية (Optimistic UI)
           if (collectedAmount > 0) {
             const settlementEntry: ServiceEntry = {
-              id: collectionId, // استخدام نفس المعرف الذي سيرسله السيرفر
+              id: collectionId,
               clientName: clientName,
               nationalId: '-',
               phoneNumber: '-',
@@ -527,8 +556,10 @@ export const useAppState = () => {
               amountPaid: collectedAmount,
               remainingAmount: 0,
               hasThirdParty: false,
-              isElectronic: false,
-              notes: `سداد مديونية لطلب ${orderId}`,
+              isElectronic: isElectronic,
+              electronicMethod: isElectronic ? electronicMethod as any : undefined,
+              electronicAmount: isElectronic ? collectedAmount : undefined,
+              notes: `سداد مديونية لطلب ${orderId}${isElectronic ? ` (${electronicMethod})` : ''}`,
               branchId: targetBranchId,
               entryDate: getTodayDate(),
               timestamp: Date.now(),
@@ -542,7 +573,22 @@ export const useAppState = () => {
         });
 
         if (collectedAmount > 0) {
-          setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(targetBranchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + collectedAmount } : b));
+          if (!isElectronic) {
+            setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(targetBranchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + collectedAmount } : b));
+          } else {
+            // إضافة مصروف (Optimistic UI) للتحصيل الإلكتروني
+            const electronicExpense: Expense = {
+              id: collectionId + "-exp",
+              category: 'تحصيل متبقي إلكتروني' as any,
+              amount: collectedAmount,
+              date: getTodayDate(),
+              branchId: targetBranchId,
+              timestamp: Date.now(),
+              recordedBy: collectorName,
+              notes: `تحصيل إلكتروني (${electronicMethod}) - طلب #${orderId}${notes ? ` - ${notes}` : ''}`
+            };
+            setExpenses(prev => [electronicExpense, ...prev]);
+          }
         }
       }
       return success;

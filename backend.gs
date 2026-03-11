@@ -91,7 +91,7 @@ const SHEET_CONFIG = {
     'recordedBy', 'thirdPartyName', 'thirdPartyCost', 'serviceCost', 'isCostPaid', 'costPaidDate', 
     'remainingAmount', 'barcode', 'speed', 'notes', 'status', 'electronicAmount', 'electronicMethod', 
     'isElectronic', 'cancellationReason', 'adminFee', 'timestamp', 'hasThirdParty', 'costPaidBy', 
-    'entryDate', 'parentEntryId', 'paymentMethod', 'Barcode_Source', 'workOrderNumber', 'statusUpdateDate', 'attachments'
+    'entryDate', 'parentEntryId', 'paymentMethod', 'Barcode_Source', 'workOrderNumber', 'workOrderEnteredBy', 'statusUpdateDate', 'attachments', 'deliveredBy'
   ],
   Stock: ['Barcode', 'Category', 'Branch', 'Status', 'Created_At', 'Used_By', 'Usage_Date', 'Order_ID', 'Error_Reported_By', 'Error_Note'],
   Expenses: ['id', 'category', 'amount', 'date', 'branchId', 'notes', 'timestamp', 'recordedBy', 'relatedEntryId'],
@@ -476,6 +476,7 @@ function handleDeliverOrder(data) {
     const statusColIdx = getColIndex(SHEET_NAMES.ENTRIES, "status");
     const remainingAmountColIdx = getColIndex(SHEET_NAMES.ENTRIES, "remainingAmount");
     const deliveredDateColIdx = getColIndex(SHEET_NAMES.ENTRIES, "deliveredDate");
+    const deliveredByColIdx = getColIndex(SHEET_NAMES.ENTRIES, "deliveredBy");
 
     if (idColIdx === undefined) return createJSONResponse({ status: "error", message: "ID Column not found" });
 
@@ -501,13 +502,19 @@ function handleDeliverOrder(data) {
     const remainingCollected = parseFloat(data.remainingCollected || 0);
     const newRemaining = Math.max(0, parseFloat((currentRemaining - remainingCollected).toFixed(2)));
 
-    // 1. تحديث المبلغ المتبقي (دون تغيير الحالة)
+    // 1. تحديث المبلغ المتبقي (دون تغيير الحالة) وتحديث من قام بالتسليم
     if (remainingAmountColIdx !== undefined) {
       sheetEntries.getRange(rowIndex + 1, remainingAmountColIdx + 1).setValue(newRemaining);
     }
+    
+    // deliveredBy removed from here as per user request to only record it via "Final Delivery" action
 
     // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
     if (remainingCollected > 0) {
+      const isElectronic = data.isElectronic === true || data.isElectronic === 'true';
+      const electronicMethod = data.electronicMethod || '';
+      const notes = data.notes || '';
+
       const headerKeys = SHEET_CONFIG[SHEET_NAMES.ENTRIES];
       const newRow = headerKeys.map(key => {
         const k = key.toLowerCase();
@@ -527,13 +534,39 @@ function handleDeliverOrder(data) {
         if (k === 'branchid') return data.branchId;
         if (k === 'status') return ENTRY_STATUS.ACTIVE;
         if (k === 'parententryid') return data.orderId;
+        if (k === 'iselectronic') return isElectronic;
+        if (k === 'electronicmethod') return electronicMethod;
+        if (k === 'electronicamount') return isElectronic ? remainingCollected : 0;
+        if (k === 'notes') return notes;
         return "";
       });
-      // 3. تحديث رصيد الفرع المحصل
-      // تحديث الرصيد قبل إضافة الصف للتأكد من نجاحه
-      const updateSuccess = updateBranchBalance(data.branchId, remainingCollected);
-      if (!updateSuccess) {
-         return createJSONResponse({ status: "error", message: "حدث خطأ أثناء تحديث رصيد الفرع" });
+
+      // 3. تحديث رصيد الفرع المحصل (فقط إذا كان نقداً)
+      if (!isElectronic) {
+        const updateSuccess = updateBranchBalance(data.branchId, remainingCollected);
+        if (!updateSuccess) {
+           return createJSONResponse({ status: "error", message: "حدث خطأ أثناء تحديث رصيد الفرع" });
+        }
+      } else {
+        // 4. تسجيل مصروف في حالة التحصيل الإلكتروني لضمان دقة صافي الكاش
+        const sheetExpenses = ss.getSheetByName(SHEET_NAMES.EXPENSES);
+        if (sheetExpenses) {
+          const expenseHeaders = SHEET_CONFIG[SHEET_NAMES.EXPENSES];
+          const electronicExpenseRow = expenseHeaders.map(key => {
+            const k = key.toLowerCase();
+            if (k === 'id') return (data.collectionId || Date.now().toString()) + "-exp";
+            if (k === 'category') return "تحصيل متبقي إلكتروني";
+            if (k === 'amount') return remainingCollected;
+            if (k === 'date') return cairoTime;
+            if (k === 'branchid') return data.branchId;
+            if (k === 'notes') return `تحصيل إلكتروني (${electronicMethod}) - طلب #${data.orderId}${notes ? ` - ${notes}` : ''}`;
+            if (k === 'timestamp') return Date.now();
+            if (k === 'recordedby') return data.collectorName;
+            if (k === 'relatedentryid') return data.orderId;
+            return "";
+          });
+          sheetExpenses.appendRow(electronicExpenseRow);
+        }
       }
 
       sheetEntries.appendRow(newRow);
@@ -1119,6 +1152,9 @@ function handleAddRow(sheetName, data) {
     const sheet = ss.getSheetByName(sheetName);
     const map = getHeaderMapping(sheet, sheetName);
     
+    // التأكد من وجود كافة الأعمدة المطلوبة من SHEET_CONFIG
+    ensureHeadersExist(sheet, SHEET_CONFIG[sheetName]);
+    
     // جلب الهيدرز الفعلية من الشيت لضمان الترتيب الصحيح
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     
@@ -1560,7 +1596,7 @@ function createJSONResponse(data) {
  */
 function getHeaderMapping(sheet, sheetName) {
   const cache = CacheService.getScriptCache();
-  const cacheKey = "headers_v6_force_" + sheetName; // ترقية للنسخة v6 لإجبار التحديث
+  const cacheKey = "headers_v7_force_" + sheetName; // ترقية للنسخة v7 لإجبار التحديث بعد إضافة workOrderEnteredBy و deliveredBy
   const cached = cache.get(cacheKey);
   
   if (cached) return JSON.parse(cached);
@@ -1591,6 +1627,28 @@ function getHeaderMapping(sheet, sheetName) {
 
   cache.put(cacheKey, JSON.stringify(map), 21600); // 6 hours cache
   return map;
+}
+
+/**
+ * دالة للتأكد من وجود الأعمدة المطلوبة في الشيت وإضافتها إذا لم تكن موجودة
+ */
+function ensureHeadersExist(sheet, requiredHeaders) {
+  if (!sheet || !requiredHeaders) return;
+  
+  const lastCol = sheet.getLastColumn();
+  const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  const existingHeaders = headers.map(h => String(h).trim());
+  const missingHeaders = requiredHeaders.filter(h => !existingHeaders.includes(h));
+  
+  if (missingHeaders.length > 0) {
+    missingHeaders.forEach(h => {
+      const newCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, newCol).setValue(h);
+    });
+    // مسح الكاش لإجبار إعادة التحديث
+    const cache = CacheService.getScriptCache();
+    cache.remove("headers_v7_force_" + sheet.getName());
+  }
 }
 
 /**

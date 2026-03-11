@@ -8,6 +8,7 @@ import { searchMultipleFields, useDebounce, toEnglishDigits, normalizeArabic } f
 import { SERVICE_TYPES, ROLES } from '../constants';
 import { generateReceipt } from '../services/pdfService';
 import CustomSelect from '../components/CustomSelect';
+import { CollectionModalContent } from '../components/CollectionModal';
 
 interface ReceivablesProps {
   entries: ServiceEntry[];
@@ -22,7 +23,7 @@ interface ReceivablesProps {
   onRefresh: () => void;
   isSubmitting?: boolean;
   userRole: string;
-  deliverOrder: (orderId: string, collectedAmount: number, clientName: string, collectorName: string, targetBranchId: string) => Promise<boolean>;
+  deliverOrder: (orderId: string, amount: number, clientName: string, collectorName: string, branchId: string, isElectronic?: boolean, electronicMethod?: string, notes?: string) => Promise<boolean>;
 }
 
 const Receivables: React.FC<ReceivablesProps> = ({
@@ -59,52 +60,55 @@ const Receivables: React.FC<ReceivablesProps> = ({
     });
   };
 
+
   const handleCollect = (entry: ServiceEntry) => {
-    let amount = entry.remainingAmount;
+    let collectionData = {
+      amount: entry.remainingAmount,
+      isElectronic: false,
+      electronicMethod: 'انستا باي',
+      notes: ''
+    };
+
     showModal({
       title: `تحصيل من: ${entry.clientName}`,
       content: (
-        <div className="space-y-4 text-right">
-          <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
-            <span className="text-xs font-black text-blue-600">المتبقي الحالي:</span>
-            <span className="text-xl font-black text-blue-800">{entry.remainingAmount}</span>
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-1">المبلغ المحصل الآن</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              autoFocus
-              className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-xl text-center outline-none transition-all"
-              defaultValue={entry.remainingAmount}
-              onChange={(e) => {
-                e.target.value = toEnglishDigits(e.target.value);
-                amount = Number(e.target.value);
-              }}
-            />
-          </div>
-        </div>
+        <CollectionModalContent
+          initialAmount={entry.remainingAmount}
+          onDataChange={(data) => {
+            collectionData = data;
+          }}
+        />
       ),
       confirmText: 'تأكيد التحصيل',
       onConfirm: async () => {
+        const { amount, isElectronic, electronicMethod, notes } = collectionData;
+
         if (amount <= 0 || amount > entry.remainingAmount) {
           showQuickStatus('مبلغ غير صالح', 'error');
           return;
         }
 
-        const success = await deliverOrder(
-          entry.id,
-          amount,
-          entry.clientName,
-          username,
-          entry.branchId
-        );
+        setIsProcessing(true);
+        try {
+          const branch = branches.find(b => b.id === entry.branchId);
+          const success = await deliverOrder(
+            entry.id,
+            amount,
+            entry.clientName,
+            username,
+            branch?.id || '',
+            isElectronic,
+            electronicMethod,
+            notes
+          );
 
-        if (success) {
-          showQuickStatus('تم التحصيل بنجاح');
-        } else {
-          showQuickStatus('فشل في عملية التحصيل', 'error');
+          if (success) {
+            showQuickStatus('تم التحصيل بنجاح');
+          } else {
+            showQuickStatus('فشل في عملية التحصيل', 'error');
+          }
+        } finally {
+          setIsProcessing(false);
         }
       }
     });

@@ -9,6 +9,7 @@ import ImageViewerModal from '../components/ImageViewerModal';
 import AttachmentModal from '../components/AttachmentModal';
 import { generateReceipt } from '../services/pdfService';
 import { normalizeArabic, normalizeDate, toEnglishDigits, searchMultipleFields, useDebounce, getTodayDate } from '../utils';
+import { CollectionModalContent } from '../components/CollectionModal';
 import { useModal } from '../context/ModalContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { GoogleSheetsService } from '../services/googleSheetsService';
@@ -34,7 +35,7 @@ interface DashboardProps {
   username: string;
   onAddExpense: (expense: Expense) => Promise<boolean>;
   branches: Branch[];
-  onDeliverOrder: (orderId: string, collectedAmount: number, clientName: string, collectorName: string, branchId: string) => Promise<boolean>;
+  onDeliverOrder: (orderId: string, collectedAmount: number, clientName: string, collectorName: string, branchId: string, isElectronic?: boolean, electronicMethod?: string, notes?: string) => Promise<boolean>;
   onBranchTransfer: (data: { fromBranch: string, toBranch: string, amount: number }) => Promise<{ success: boolean; message?: string }>;
   userRole: string;
 }
@@ -311,7 +312,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     showModal({
       title: 'تفاصيل المعاملة',
       size: 'lg',
-      content: <ServiceEntryDetails entry={entry} />,
+      content: <ServiceEntryDetails entry={entry} userRole={userRole} />,
       confirmText: 'طباعة إيصال',
       confirmIcon: <Printer className="w-4 h-4" />,
       confirmClose: false,
@@ -376,6 +377,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           const updatedEntry: ServiceEntry = {
             ...entry,
             workOrderNumber: workOrderValue,
+            workOrderEnteredBy: username,
             status: STATUS.IN_PROGRESS as ServiceEntry['status'],
             statusUpdateDate: getTodayDate()
           };
@@ -395,7 +397,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [showModal, showQuickStatus, setIsProcessing, onUpdateEntry, onRefresh, userRole]);
 
   // --- NEW: Status Update handler ---
-  const handleUpdateServiceStatus = useCallback((entry: ServiceEntry, newStatus: ServiceEntry['status'], label: string) => {
+  const handleUpdateServiceStatus = useCallback((entry: ServiceEntry, newStatus: ServiceEntry['status'], label: string, isFinal: boolean = false) => {
     showModal({
       title: `تحديث الحالة`,
       content: (
@@ -411,7 +413,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           const updatedEntry: ServiceEntry = {
             ...entry,
             status: newStatus,
-            statusUpdateDate: getTodayDate()
+            statusUpdateDate: getTodayDate(),
+            deliveredBy: (newStatus === STATUS.DELIVERED && isFinal) ? username : entry.deliveredBy
           };
           const success = await onUpdateEntry(updatedEntry);
           if (success) {
@@ -554,37 +557,29 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [showModal, showQuickStatus, setIsProcessing, onUpdateEntry, hideModal]);
 
   const handleCollectDebt = useCallback(async (entry: ServiceEntry) => {
-    const remaining = entry.remainingAmount;
-    let amountToCollect = remaining;
+    let collectionData = {
+      amount: entry.remainingAmount,
+      isElectronic: false,
+      electronicMethod: 'انستا باي',
+      notes: ''
+    };
 
     showModal({
       title: 'تحصيل المتبقي وسداد المديونية',
+      compact: true,
       content: (
-        <div className="space-y-4 text-right">
-          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-            <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest mb-1">المبلغ المتبقي</p>
-            <p className="text-2xl font-black text-amber-600">{remaining} ج.م</p>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المبلغ المستلم الآن</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              defaultValue={remaining}
-              onChange={(e) => {
-                e.target.value = toEnglishDigits(e.target.value);
-                amountToCollect = Number(e.target.value);
-              }}
-              className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
-            />
-            <p className="text-[8px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية "سداد مديونية" جديدة.</p>
-          </div>
-        </div>
+        <CollectionModalContent
+          initialAmount={entry.remainingAmount}
+          onDataChange={(data) => {
+            collectionData = data;
+          }}
+        />
       ),
       confirmText: 'تأكيد التحصيل',
       onConfirm: async () => {
-        if (amountToCollect <= 0 || amountToCollect > remaining) {
+        const { amount, isElectronic, electronicMethod, notes } = collectionData;
+
+        if (amount <= 0 || amount > entry.remainingAmount) {
           showQuickStatus('مبلغ غير صالح', 'error');
           return;
         }
@@ -592,10 +587,13 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         try {
           const success = await onDeliverOrder(
             entry.id,
-            amountToCollect,
+            amount,
             entry.clientName,
             username,
-            branchId
+            branchId,
+            isElectronic,
+            electronicMethod,
+            notes
           );
           if (success) {
             showQuickStatus('تم التحصيل بنجاح');
@@ -766,20 +764,22 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
                       <td className="py-3 px-8 text-center text-red-600 font-black text-sm md:text-base">{toEnglishDigits(String(entry.remainingAmount))}</td>
                       {userRole !== ROLES.VIEWER && (
                         <td className="py-3 px-8 text-center">
-                          <ActionDropdown
-                            entry={entry}
-                            userRole={userRole}
-                            onDeliver={(entry) => handleUpdateServiceStatus(entry, STATUS.DELIVERED as ServiceEntry['status'], 'تم التسليم')}
-                            onCollectDebt={handleCollectDebt}
-                            onSetWorkOrder={handleSetWorkOrderNumber}
-                            onUpdateStatus={handleUpdateServiceStatus}
-                            onCancel={handleCancelService}
-                            onSettleThirdParty={handleSettleThirdParty}
-                            onShowDetails={showCustomerDetails}
-                            onPrint={handlePrint}
-                            onEditData={handleEditData}
-                            isSubmitting={isSubmitting}
-                          />
+                          {normalizeArabic(entry.serviceType) !== normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT) && (
+                            <ActionDropdown
+                              entry={entry}
+                              userRole={userRole}
+                              onDeliver={(entry, isFinal) => handleUpdateServiceStatus(entry, STATUS.DELIVERED as ServiceEntry['status'], 'تم التسليم', isFinal)}
+                              onCollectDebt={handleCollectDebt}
+                              onSetWorkOrder={handleSetWorkOrderNumber}
+                              onUpdateStatus={handleUpdateServiceStatus}
+                              onCancel={handleCancelService}
+                              onSettleThirdParty={handleSettleThirdParty}
+                              onShowDetails={showCustomerDetails}
+                              onPrint={handlePrint}
+                              onEditData={handleEditData}
+                              isSubmitting={isSubmitting}
+                            />
+                          )}
                         </td>
                       )}
                     </tr>
