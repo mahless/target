@@ -219,9 +219,9 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
           font-size: 8pt;
           font-weight: 700;
           color: #333;
-          line-height: 1.6;
+          line-height: 1.2;
           border-top: 1px solid #eee;
-          padding-top: 10px;
+          padding-top: 5px;
         }
 
         .footer-line {
@@ -320,7 +320,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
                 </div>
               </div>
             </div>
-            <div class="footer-line" style="margin-top: 5px;">يمكنكم طلب ومتابعة الخدمة من خلال موقعنا</div>
+            <div class="footer-line" style="margin-top: 2px;">يمكنكم طلب ومتابعة الخدمة من خلال موقعنا</div>
             <div class="footer-line website-link">www.target4gov.com</div>
           </div>
         </div>
