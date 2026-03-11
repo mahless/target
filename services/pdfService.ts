@@ -117,10 +117,11 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         .meta-info {
           display: flex;
           flex-direction: column;
-          gap: 1px;
+          gap: 0px;
           font-size: 7.5pt;
-          margin-top: 5px;
+          margin-top: 2px;
           text-align: right;
+          line-height: 1.1;
         }
 
         .meta-item {
@@ -245,7 +246,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         <img src="./assets/watermark.jpg" class="watermark" alt="Watermark" id="watermarkImg" />
         
         <div class="header">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #ddd; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px; border-bottom: 1px solid #ddd; margin-bottom: 4px;">
             <h1 class="company-name">تارجت للخدمات الحكومية</h1>
             <div style="width: 120px;">
               <img src="./assets/sidebar-logo.jpg" style="width: 100%; height: auto; object-fit: contain;" alt="Logo" id="logoImg" />
@@ -259,7 +260,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
               <div class="meta-item">الموظف: ${escapeHtml(entry.recordedBy)}</div>
             </div>
 
-            <div class="qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 5px; margin-left: 10px;">
+            <div class="qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 0px; margin-left: 10px;">
               <span style="font-size: 7pt; font-weight: 900; color: #333;">تابع طلبك هنا</span>
               <div style="width: 75px; height: 75px; border: 0.2pt solid #eee; padding: 2px;">
                 ${qrDataUrl
