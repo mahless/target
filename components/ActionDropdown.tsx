@@ -140,7 +140,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                             {/* التسليم - يعتمد على الحالة والمديونية */}
                             {entry.remainingAmount <= 0 && (
                                 <>
-                                    {entry.status === STATUS.READY && (
+                                    {(entry.status === STATUS.READY || normalizeArabic(entry.serviceType) !== normalizeArabic('بطاقة رقم قومي')) && (
                                         <button
                                             type="button"
                                             onClick={(e) => {
