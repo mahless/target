@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ID_CARD_SPEEDS, PASSPORT_SPEEDS, ELECTRONIC_METHODS } from '../constants';
+import { ID_CARD_SPEEDS, PASSPORT_SPEEDS, ELECTRONIC_METHODS, STATUS } from '../constants';
 import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory, StockItem } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { generateReceipt } from '../services/pdfService';
@@ -230,7 +230,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         branchId,
         entryDate: currentDate,
         timestamp: Date.now(),
-        status: 'قيد المراجعة',
+        status: STATUS.PENDING,
         recordedBy: username,
         attachments: attachmentUrls
       };

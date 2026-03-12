@@ -161,7 +161,7 @@ export const useAppState = () => {
             serviceCost: Number(e.serviceCost || e['التكلفة'] || e['إجمالي التكلفة'] || 0),
             remainingAmount: Number(e.remainingAmount || e['المتبقي'] || 0),
             branchId: normalizeArabic(String(e.branchId || e['الفرع'] || '')),
-            status: (e.status || e['الحالة'] || e['الحاله'] || 'active') as 'active' | 'cancelled' | 'تم التسليم',
+            status: (e.status || e['الحالة'] || e['الحاله'] || 'active') as ServiceEntry['status'],
             timestamp: Number(e.timestamp || e['التوقيت'] || Date.now()),
             recordedBy: String(e.recordedBy || e['الموظف'] || e['سجل بواسطة'] || '').trim(),
             barcode: e.barcode || e['الباركود'],

@@ -140,19 +140,6 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                             {/* التسليم - يعتمد على الحالة والمديونية */}
                             {entry.remainingAmount <= 0 && (
                                 <>
-                                    {(entry.status === STATUS.ACTIVE || entry.status === STATUS.PENDING) && !entry.parentEntryId && (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleAction(() => onDeliver(entry, false));
-                                            }}
-                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-colors border-b border-gray-50"
-                                        >
-                                            تسليم الخدمة
-                                        </button>
-                                    )}
                                     {entry.status === STATUS.READY && (
                                         <button
                                             type="button"
@@ -161,9 +148,10 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                                                 e.stopPropagation();
                                                 handleAction(() => onDeliver(entry, true));
                                             }}
-                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-[#036564] hover:bg-[#036564]/5 transition-colors border-b border-gray-50"
+                                            className="w-full text-right px-4 py-2.5 text-xs font-black text-[#036564] hover:bg-[#036564]/5 transition-colors border-b border-gray-50 flex items-center justify-between"
                                         >
-                                            تسليم نهائي
+                                            <span>تسليم نهائي</span>
+                                            <div className="w-2 h-2 rounded-full bg-green-500" />
                                         </button>
                                     )}
                                 </>
@@ -193,9 +181,10 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
                                         e.stopPropagation();
                                         handleAction(() => onUpdateStatus(entry, STATUS.READY as ServiceEntry['status'], 'جاهزة للتسليم'));
                                     }}
-                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors border-b border-gray-50"
+                                    className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors border-b border-gray-50 flex items-center justify-between"
                                 >
-                                    جاهزة للتسليم
+                                    <span>جاهزة للتسليم</span>
+                                    <div className="w-2 h-2 rounded-full bg-green-400" />
                                 </button>
                             )}
 

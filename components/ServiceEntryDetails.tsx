@@ -87,10 +87,16 @@ const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry, userRo
                     <div className="space-y-0.5">
                         <p className={`font-black text-[10px] leading-none ${entry.status === STATUS.DELIVERED ? 'text-green-700' :
                             entry.status === STATUS.CANCELLED ? 'text-red-700' :
-                                'text-amber-700'
+                                entry.status === STATUS.READY ? 'text-[#036564]' :
+                                    entry.status === STATUS.PENDING ? 'text-amber-700' :
+                                        'text-blue-700'
                             }`}>
-                            {entry.status === STATUS.DELIVERED ? 'مكتمل' :
-                                entry.status === STATUS.CANCELLED ? 'ملغى' : 'جاري'}
+                            {entry.status === STATUS.DELIVERED ? 'تم التسليم' :
+                                entry.status === STATUS.CANCELLED ? 'ملغاة' :
+                                    entry.status === STATUS.READY ? 'جاهزة للتسليم' :
+                                        entry.status === STATUS.PENDING ? 'قيد المراجعة' :
+                                            entry.status === STATUS.IN_PROGRESS ? 'قيد التنفيذ' :
+                                                entry.status || 'نشط'}
                         </p>
                         {isManager && entry.deliveredBy && (
                             <p className="text-[7px] text-black font-black leading-none italic">سلمه: {entry.deliveredBy}</p>
