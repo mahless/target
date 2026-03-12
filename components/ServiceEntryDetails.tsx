@@ -10,7 +10,7 @@ interface ServiceEntryDetailsProps {
 }
 
 const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry, userRole }) => {
-    const isManager = normalizeArabic(userRole || '') === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN;
+    const canSeeTrackingInfo = normalizeArabic(userRole || '') !== normalizeArabic(ROLES.VIEWER);
     return (
         <div className="space-y-2 text-right">
             <div className="grid grid-cols-2 lg:grid-cols-6 gap-1.5">
@@ -76,7 +76,7 @@ const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry, userRo
                     <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">أمر الشغل</span>
                     <div className="space-y-0.5">
                         <p className="font-black text-[#01404E] text-[10px] leading-none">{entry.workOrderNumber || 'لم يُحدد'}</p>
-                        {isManager && entry.workOrderEnteredBy && (
+                        {canSeeTrackingInfo && entry.workOrderEnteredBy && (
                             <p className="text-[7px] text-black font-black leading-none italic">بواسطة: {entry.workOrderEnteredBy}</p>
                         )}
                     </div>
@@ -98,7 +98,7 @@ const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry, userRo
                                             entry.status === STATUS.IN_PROGRESS ? 'قيد التنفيذ' :
                                                 entry.status || 'نشط'}
                         </p>
-                        {isManager && entry.deliveredBy && (
+                        {canSeeTrackingInfo && entry.deliveredBy && (
                             <p className="text-[7px] text-black font-black leading-none italic">سلمه: {entry.deliveredBy}</p>
                         )}
                     </div>
