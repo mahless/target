@@ -107,23 +107,25 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
           className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
         />
       </div>
-      <div className="space-y-2">
-        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الرقم القومي</label>
-        <input
-          type="text"
-          value={nationalId}
-          onChange={(e) => setNationalId(toEnglishDigits(e.target.value))}
-          className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">رقم الهاتف</label>
-        <input
-          type="text"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(toEnglishDigits(e.target.value))}
-          className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الرقم القومي</label>
+          <input
+            type="text"
+            value={nationalId}
+            onChange={(e) => setNationalId(toEnglishDigits(e.target.value))}
+            className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">رقم الهاتف</label>
+          <input
+            type="text"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(toEnglishDigits(e.target.value))}
+            className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
+          />
+        </div>
       </div>
 
       <div className="space-y-2 mt-4">
