@@ -141,7 +141,7 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
         showModal({
             title: 'تفاصيل المعاملة (أرشيف)',
             size: 'lg',
-            content: <ServiceEntryDetails entry={entry} />,
+            content: <ServiceEntryDetails entry={entry} userRole={userRole} />,
             cancelText: 'إغلاق'
         });
     };

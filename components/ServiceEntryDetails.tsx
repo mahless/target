@@ -1,14 +1,16 @@
 import React from 'react';
 import { ServiceEntry } from '../types';
-import { STATUS } from '../constants';
+import { STATUS, ROLES } from '../constants';
 import { normalizeArabic, toEnglishDigits } from '../utils';
+import { Hash, Activity } from 'lucide-react';
 
 interface ServiceEntryDetailsProps {
     entry: ServiceEntry;
     userRole?: string;
 }
 
-const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry }) => {
+const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry, userRole }) => {
+    const isManager = normalizeArabic(userRole || '') === normalizeArabic(ROLES.MANAGER) || userRole === ROLES.ADMIN;
     return (
         <div className="space-y-2 text-right">
             <div className="grid grid-cols-3 gap-1.5">
@@ -70,31 +72,63 @@ const ServiceEntryDetails: React.FC<ServiceEntryDetailsProps> = ({ entry }) => {
                     </p>
                 </div>
 
-                <div className="col-span-1 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
-                    <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">رقم أمر الشغل</span>
-                    <div className="space-y-0.5">
-                        <p className="font-black text-blue-800 text-[10px] leading-none">{entry.workOrderNumber || 'لم يُحدد'}</p>
-                        {entry.workOrderEnteredBy && (
-                            <p className="text-[7px] text-black font-black leading-none">بواسطة: {entry.workOrderEnteredBy}</p>
-                        )}
+                {/* New structure for Work Order and Status */}
+                <div className="col-span-3"> {/* This div wraps the new 2-column layout */}
+                    <div className="space-y-6 text-right animate-premium-in">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Row 1: Main Info */}
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <Hash className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">تفاصيل الطلب</span>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 font-bold mb-0.5">رقم أمر الشغل</p>
+                                        <p className="font-black text-[#01404E]">{entry.workOrderNumber || 'غير متوفر'}</p>
+                                    </div>
+                                    {isManager && entry.workOrderEnteredBy && (
+                                        <div>
+                                            <p className="text-[10px] text-gray-400 font-bold mb-0.5">أمر الشغل بواسطة</p>
+                                            <p className="font-black text-black">{entry.workOrderEnteredBy}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <Activity className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">الحالة الحالية</span>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 font-bold mb-0.5">حالة الخدمة</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-3 py-1 rounded-lg text-xs font-black ${entry.status === STATUS.DELIVERED ? 'bg-green-100 text-green-700' :
+                                                entry.status === STATUS.CANCELLED ? 'bg-red-100 text-red-700' :
+                                                    'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                {entry.status === STATUS.DELIVERED ? 'تم التسليم' :
+                                                    entry.status === STATUS.CANCELLED ? 'ملغاة' : 'قيد التنفيذ'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {isManager && entry.deliveredBy && (
+                                        <div>
+                                            <p className="text-[10px] text-gray-400 font-bold mb-0.5">سلمه بواسطة</p>
+                                            <p className="font-black text-black">{entry.deliveredBy}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="col-span-1 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
-                    <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">حالة التتبع</span>
-                    <div className="space-y-0.5">
-                        <p className={`font-black text-[10px] leading-none ${entry.status === STATUS.PENDING ? 'text-yellow-600' :
-                            entry.status === STATUS.IN_PROGRESS ? 'text-blue-600' :
-                                entry.status === STATUS.READY ? 'text-green-600' :
-                                    entry.status === STATUS.DELIVERED ? 'text-green-700' :
-                                        'text-blue-600'
-                            }`}>
-                            {entry.status === STATUS.ACTIVE ? 'قيد المراجعة' : entry.status}
-                        </p>
-                        {entry.deliveredBy && (
-                            <p className="text-[7px] text-black font-black leading-none">سلمه: {entry.deliveredBy}</p>
-                        )}
-                    </div>
-                </div>
+                {/* End of new structure */}
+
                 <div className="col-span-1 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
                     <span className="text-[8px] text-gray-400 font-black block mb-0.5 uppercase tracking-tighter">ملاحظات</span>
                     <p className="font-bold text-gray-600 text-[10px] truncate">{entry.notes || '-'}</p>

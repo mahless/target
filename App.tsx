@@ -189,6 +189,7 @@ const AppContent: React.FC = () => {
                           username={user?.name || ''}
                           isSubmitting={isSubmitting}
                           branches={branches}
+                          userRole={userRole}
                         />
                       )
                     } />

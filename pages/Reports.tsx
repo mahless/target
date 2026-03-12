@@ -110,7 +110,7 @@ const Reports: React.FC<ReportsProps> = React.memo(({
     showModal({
       title: 'تفاصيل المعاملة (عرض)',
       size: 'lg',
-      content: <ServiceEntryDetails entry={entry} />,
+      content: <ServiceEntryDetails entry={entry} userRole={userRole} />,
       confirmText: 'طباعة إيصال',
       confirmIcon: <Printer className="w-4 h-4" />,
       confirmClose: false,

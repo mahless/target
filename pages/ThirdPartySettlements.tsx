@@ -88,7 +88,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
         showModal({
             title: 'تفاصيل المعاملة',
             size: 'lg',
-            content: <ServiceEntryDetails entry={entry} />,
+            content: <ServiceEntryDetails entry={entry} userRole={userRole} />,
             confirmText: 'طباعة إيصال',
             confirmIcon: <Printer className="w-4 h-4" />,
             confirmClose: false,

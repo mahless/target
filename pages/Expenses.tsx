@@ -21,10 +21,11 @@ interface ExpensesProps {
     isSubmitting?: boolean;
     branches: import('../types').Branch[];
     onDeleteExpense: (id: string, amount: number, branchId: string) => Promise<{ success: boolean; message?: string }>;
+    userRole: string;
 }
 
 
-const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategories, onAddExpense, branchId, currentDate, username, isSubmitting = false, branches, onDeleteExpense }) => {
+const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategories, onAddExpense, branchId, currentDate, username, isSubmitting = false, branches, onDeleteExpense, userRole }) => {
     const { showModal, showQuickStatus, setIsProcessing } = useModal();
     // Removed local isSubmitting state
     // @ts-ignore
@@ -68,7 +69,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
             size: 'lg',
             content: (
                 <div className="space-y-4">
-                    <ServiceEntryDetails entry={entry} />
+                    <ServiceEntryDetails entry={entry} userRole={userRole} />
                     <div className="flex gap-2">
                         <button
                             type="button"
