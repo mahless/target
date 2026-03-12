@@ -230,7 +230,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         branchId,
         entryDate: currentDate,
         timestamp: Date.now(),
-        status: STATUS.PENDING,
+        status: normalizeArabic(serviceType) === normalizeArabic('باقي خدمه') ? STATUS.DELIVERED : STATUS.PENDING,
         recordedBy: username,
         attachments: attachmentUrls
       };

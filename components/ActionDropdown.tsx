@@ -60,7 +60,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
     const isDelivered = entry.status === STATUS.DELIVERED;
 
     if (isCancelled) return <span className="text-[10px] text-red-400 font-bold px-3 py-1 bg-red-50 rounded-xl border border-red-100">ملغاة</span>;
-    if (isDelivered) return <span className="text-[10px] text-[#00A6A6] font-bold px-3 py-1 bg-[#00A6A6]/5 rounded-xl border border-[#00A6A6]/20 whitespace-nowrap">تم التسليم</span>;
+    if (isDelivered || normalizeArabic(entry.serviceType) === normalizeArabic('باقي خدمه')) return <span className="text-[10px] text-[#00A6A6] font-bold px-3 py-1 bg-[#00A6A6]/5 rounded-xl border border-[#00A6A6]/20 whitespace-nowrap">تم التسليم</span>;
 
     return (
         <div className="relative inline-block text-right" ref={menuRef}>

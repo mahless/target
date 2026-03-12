@@ -79,31 +79,43 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
 
     const capturePhoto = () => {
         if (videoRef.current) {
-            const canvas = document.createElement('canvas');
-            canvas.width = videoRef.current.videoWidth;
-            canvas.height = videoRef.current.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(videoRef.current, 0, 0);
+            const video = videoRef.current;
+            // Ensure we have dimensions
+            const width = video.videoWidth || 640;
+            const height = video.videoHeight || 480;
 
-            canvas.toBlob(async (blob) => {
-                if (blob) {
-                    const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                    setIsCompressing(true);
-                    try {
-                        const compressed = await compressImage(file, 150);
-                        const newImg = {
-                            file: compressed,
-                            preview: URL.createObjectURL(compressed),
-                        };
-                        setImages(prev => [...prev, newImg].slice(0, 4));
-                        stopCamera();
-                    } catch (err) {
-                        console.error('Capture compression failed:', err);
-                    } finally {
-                        setIsCompressing(false);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            try {
+                ctx?.drawImage(video, 0, 0, width, height);
+                
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                        setIsCompressing(true);
+                        try {
+                            const compressed = await compressImage(file, 150);
+                            const newImg = {
+                                file: compressed,
+                                preview: URL.createObjectURL(compressed),
+                            };
+                            setImages(prev => [...prev, newImg].slice(0, 4));
+                            stopCamera();
+                        } catch (err) {
+                            console.error('Capture compression failed:', err);
+                            alert('فشل ضغط الصورة الملتقطة');
+                        } finally {
+                            setIsCompressing(false);
+                        }
                     }
-                }
-            }, 'image/jpeg', 0.9);
+                }, 'image/jpeg', 0.85);
+            } catch (err) {
+                console.error('Canvas draw failed:', err);
+                alert('فشل التقاط الصورة');
+            }
         }
     };
 
@@ -135,7 +147,13 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
                 <div className="p-6 overflow-y-auto flex-1 space-y-6">
                     {showCamera ? (
                         <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-inner group">
-                            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                            <video 
+                                ref={videoRef} 
+                                autoPlay 
+                                playsInline 
+                                muted 
+                                className="w-full h-full object-cover" 
+                            />
                             <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-4">
                                 <button
                                     onClick={capturePhoto}

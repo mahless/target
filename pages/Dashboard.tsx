@@ -46,6 +46,19 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
   const [phoneNumber, setPhoneNumber] = useState(entry.phoneNumber || '');
   const [isAttachmentModalOpen, setAttachmentModalOpen] = useState(false);
   const [newImages, setNewImages] = useState<{ file: File; preview: string }[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<string[]>(entry.attachments ? entry.attachments.split(',').filter(Boolean) : []);
+  const [deleteConfirmUrl, setDeleteConfirmUrl] = useState<string | null>(null);
+
+  const handleDeleteExisting = (url: string) => {
+    setDeleteConfirmUrl(url);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmUrl) {
+      setExistingAttachments(prev => prev.filter(u => u !== deleteConfirmUrl));
+      setDeleteConfirmUrl(null);
+    }
+  };
 
   const handleSave = async () => {
     if (!clientName) {
@@ -80,7 +93,6 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
         }
       }
 
-      const existingAttachments = entry.attachments ? entry.attachments.split(',').filter(Boolean) : [];
       const allAttachments = [...existingAttachments, ...uploadedUrls].join(',');
 
       await onSave({
@@ -97,7 +109,7 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
   };
 
   return (
-    <div className="space-y-4 text-right">
+    <div className="space-y-4 text-right max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
       <div className="space-y-2">
         <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الاسم</label>
         <input
@@ -107,7 +119,7 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
           className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-blue-500 font-bold outline-none transition-all"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">الرقم القومي</label>
           <input
@@ -129,23 +141,38 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
       </div>
 
       <div className="space-y-2 mt-4">
-        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المرفقات الإضافية</label>
-        <div className="flex gap-2 items-center flex-wrap">
-          {newImages.map((img, idx) => (
-            <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200">
-              <img src={img.preview} className="w-full h-full object-cover" />
-              <div className="absolute top-0 right-0 bg-black/50 text-white rounded-bl p-1 text-xs">
-                {idx + 1}
-              </div>
+        <label className="block text-[10px] font-black text-gray-900 uppercase tracking-widest mr-1">المرفقات الحالية والجديدة</label>
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+          {/* Existing Attachments */}
+          {existingAttachments.map((url, idx) => (
+            <div key={`existing-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+              <img src={url} className="w-full h-full object-cover" alt="existing" />
+              <button
+                type="button"
+                onClick={() => handleDeleteExisting(url)}
+                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <XCircle size={12} />
+              </button>
             </div>
           ))}
-          {newImages.length < 4 && (
+
+          {/* New Images Previews */}
+          {newImages.map((img, idx) => (
+            <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-blue-200 bg-blue-50">
+              <img src={img.preview} className="w-full h-full object-cover" alt="new" />
+              <div className="absolute top-0 right-0 bg-blue-500 text-white px-1 text-[8px] font-bold rounded-bl">جديد</div>
+            </div>
+          ))}
+
+          {/* Add Button */}
+          {(existingAttachments.length + newImages.length) < 8 && (
             <button
               type="button"
               onClick={() => setAttachmentModalOpen(true)}
-              className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-[#008f8f] hover:text-[#008f8f] transition-colors"
+              className="aspect-square rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-[#008f8f] hover:text-[#008f8f] transition-colors"
             >
-              <span className="text-2xl font-bold">+</span>
+              <span className="text-xl font-bold">+</span>
             </button>
           )}
         </div>
@@ -177,6 +204,38 @@ const EditEntryFormModal = ({ entry, onSave, onCancel, showQuickStatus, setIsPro
         }}
         initialImages={newImages}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmUrl && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-gray-100 flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            </div>
+            <div>
+              <h4 className="text-lg font-black text-gray-900">حذف المرفق؟</h4>
+              <p className="text-xs text-gray-500 font-bold mt-1">هل أنت متأكد من حذف هذا المرفق؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            </div>
+            <div className="w-full aspect-square max-h-32 rounded-xl overflow-hidden border border-gray-100 bg-gray-50">
+                <img src={deleteConfirmUrl} className="w-full h-full object-cover" alt="to delete" />
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setDeleteConfirmUrl(null)}
+                className="flex-1 py-3 bg-gray-50 text-gray-600 rounded-xl font-black text-xs hover:bg-gray-100 transition-colors"
+              >
+                تراجع
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl font-black text-xs hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+              >
+                حذف نهائي
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
