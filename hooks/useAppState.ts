@@ -3,7 +3,7 @@ import { ServiceEntry, Expense, Branch, StockItem, StockStatus, User } from '../
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic, normalizeDate, getTodayDate } from '../utils';
 import { useModal } from '../context/ModalContext';
-import { SERVICE_TYPES, EXPENSE_CATEGORIES, ROLES, STORAGE_KEYS } from '../constants';
+import { SERVICE_TYPES, EXPENSE_CATEGORIES, STATUS, ROLES, STORAGE_KEYS } from '../constants';
 
 /**
  * Global application state management hook.
@@ -466,8 +466,66 @@ export const useAppState = () => {
               : b
           ));
         }
-        if (updatedEntry.status === 'cancelled' && updatedEntry.barcode) {
-          await GoogleSheetsService.updateStockStatus(updatedEntry.barcode, 'Available', '', user?.role || ROLES.EMPLOYEE);
+        if (updatedEntry.status === STATUS.CANCELLED) {
+          if (updatedEntry.barcode) {
+            await GoogleSheetsService.updateStockStatus(updatedEntry.barcode, 'Available', '', user?.role || ROLES.EMPLOYEE);
+          }
+
+          // Handling electronic payment cancellation
+          if (updatedEntry.isElectronic) {
+            // Find related expenses: 
+            // 1. Created during ServiceForm submission (ID starts with 'elec-' and contains entryId)
+            // 2. Created during Debt Settlement (ID contains '-collect-exp' and notes contain entryId)
+            const relatedExpenses = expenses.filter(exp => 
+              exp.id.includes(updatedEntry.id) || 
+              (exp.notes && exp.notes.includes(updatedEntry.id))
+            );
+
+            for (const exp of relatedExpenses) {
+              if (updatedEntry.amountPaid === 0) {
+                // Full Refund: Delete the virtual expense which will also refund the Current_Balance
+                const res = await GoogleSheetsService.deleteExpense(exp.id);
+                if (res.success) {
+                  setExpenses(prev => prev.filter(e => e.id !== exp.id));
+                  // Balance already subtraction 'diff' (which was -oldPaid). 
+                  // deleteExpense normally adds back exp.amount to cash, but since it's electronic, 
+                  // we just need to ensure the net impact on Current_Balance is 0.
+                  // diff was -oldPaid. exp.amount should be oldPaid.
+                  // So adding back exp.amount resets the balance to what it was before entry was cancelled.
+                  setBranches(prev => prev.map(b =>
+                    normalizeArabic(b.Branch_Name) === normalizeArabic(updatedEntry.branchId)
+                      ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + exp.amount }
+                      : b
+                  ));
+                }
+              } else {
+                // Partial Refund (Fee kept): Update the virtual expense amount
+                const oldExpAmount = exp.amount;
+                const newExpAmount = updatedEntry.amountPaid;
+                const expDiff = oldExpAmount - newExpAmount; // Amount to be returned to cash to offset the entry refund
+
+                const updatedExp: Expense = { ...exp, amount: newExpAmount, notes: `[معدلة للإلغاء] ${exp.notes}` };
+                const res = await GoogleSheetsService.updateEntry('Expenses', {
+                  ...updatedExp,
+                  'المبلغ': updatedExp.amount,
+                  'البند': updatedExp.category,
+                  'التاريخ': updatedExp.date,
+                  'الفرع': updatedExp.branchId
+                } as any, user?.role || ROLES.EMPLOYEE);
+
+                if (res) {
+                  setExpenses(prev => prev.map(e => e.id === exp.id ? updatedExp : e));
+                  // Offset the entry diff: Entry diff was (newAmount - oldAmount) = -expDiff
+                  // So adding back expDiff makes the net change on Current_Balance zero.
+                  setBranches(prev => prev.map(b =>
+                    normalizeArabic(b.Branch_Name) === normalizeArabic(updatedEntry.branchId)
+                      ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + expDiff }
+                      : b
+                  ));
+                }
+              }
+            }
+          }
         }
       } else {
         setEntries(prev => prev.map(e => e.id === updatedEntry.id ? entries.find(x => x.id === updatedEntry.id)! : e));
@@ -476,7 +534,7 @@ export const useAppState = () => {
     } finally {
       stopSubmitting();
     }
-  }, [isSubmitting, startSubmitting, stopSubmitting, user?.role, entries]);
+  }, [isSubmitting, startSubmitting, stopSubmitting, user?.role, entries, expenses]);
 
   const addExpense = useCallback(async (expense: Expense): Promise<boolean> => {
     if (isSubmitting) return false;
