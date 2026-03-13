@@ -57,44 +57,39 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
     };
 
     const startCamera = async () => {
-        // Check for secure context (HTTPS or Localhost)
         const isSecure = window.isSecureContext && !!navigator.mediaDevices;
         
         if (!isSecure) {
-            console.warn('Insecure context detected. Using system camera fallback.');
-            // Fallback to native system camera via hidden input
             cameraInputRef.current?.click();
             return;
         }
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            cameraInputRef.current?.click();
-            return;
-        }
+        try {
+            const constraints = [
+                { video: { facingMode: 'environment' } },
+                { video: { facingMode: 'user' } },
+                { video: true }
+            ];
 
-        const constraints = [
-            { video: { facingMode: 'environment' } },
-            { video: { facingMode: 'user' } },
-            { video: true }
-        ];
-
-        let lastError: any = null;
-        for (const constraint of constraints) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraint);
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                    setShowCamera(true);
-                    return;
+            let stream: MediaStream | null = null;
+            for (const constraint of constraints) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraint);
+                    if (stream) break;
+                } catch (e) {
+                    continue;
                 }
-            } catch (err) {
-                console.warn(`Camera constraint failed:`, constraint, err);
-                lastError = err;
             }
-        }
 
-        console.error('All camera constraints failed:', lastError);
-        alert('فشل تشغيل الكاميرا. يرجى التأكد من منح الإذن للمتصفح.');
+            if (stream && videoRef.current) {
+                videoRef.current.srcObject = stream;
+                setShowCamera(true);
+            } else {
+                cameraInputRef.current?.click();
+            }
+        } catch (err) {
+            cameraInputRef.current?.click();
+        }
     };
 
     const stopCamera = () => {
