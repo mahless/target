@@ -56,16 +56,36 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
     };
 
     const startCamera = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                setShowCamera(true);
-            }
-        } catch (err) {
-            console.error('Camera access denied:', err);
-            alert('فشل الوصول للكاميرا');
+        // Check for secure context
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('MediaDevices API not available. Secure context (HTTPS) or localhost is required.');
+            alert('الكاميرا تتطلب اتصالاً آمناً (HTTPS) أو استخدام المتصفح على نفس جهاز السيرفر (Localhost).');
+            return;
         }
+
+        const constraints = [
+            { video: { facingMode: 'environment' } },
+            { video: { facingMode: 'user' } },
+            { video: true }
+        ];
+
+        let lastError: any = null;
+        for (const constraint of constraints) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraint);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    setShowCamera(true);
+                    return;
+                }
+            } catch (err) {
+                console.warn(`Camera constraint failed:`, constraint, err);
+                lastError = err;
+            }
+        }
+
+        console.error('All camera constraints failed:', lastError);
+        alert('فشل تشغيل الكاميرا. يرجى التأكد من منح الإذن للمتصفح.');
     };
 
     const stopCamera = () => {
@@ -223,6 +243,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
                         onChange={handleFileSelect}
                         accept="image/*"
                         multiple
+                        capture="environment"
                         className="hidden"
                     />
                 </div>
