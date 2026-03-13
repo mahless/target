@@ -15,6 +15,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
     const [showCamera, setShowCamera] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
 
     if (!isOpen) return null;
 
@@ -60,13 +61,14 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
         const isSecure = window.isSecureContext && !!navigator.mediaDevices;
         
         if (!isSecure) {
-            console.warn('Insecure context detected. Camera access is blocked by the browser.');
-            alert('⚠️ تنبيه هام: المتصفح يمنع الكاميرا لأن الموقع لا يعمل ببروتوكول آمن (HTTPS).\n\nالحل: اضغط على "رفع صورة من الجهاز" وسيفتح لك الهاتف خيار الكاميرا تلقائياً بشكل آمن وسلس.');
+            console.warn('Insecure context detected. Using system camera fallback.');
+            // Fallback to native system camera via hidden input
+            cameraInputRef.current?.click();
             return;
         }
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('هذا المتصفح لا يدعم الوصول للكاميرا.');
+            cameraInputRef.current?.click();
             return;
         }
 
@@ -244,12 +246,20 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
                         </div>
                     )}
 
+                    {/* Hidden Inputs */}
                     <input
                         type="file"
                         ref={fileInputRef}
                         onChange={handleFileSelect}
                         accept="image/*"
                         multiple
+                        className="hidden"
+                    />
+                    <input
+                        type="file"
+                        ref={cameraInputRef}
+                        onChange={handleFileSelect}
+                        accept="image/*"
                         capture="environment"
                         className="hidden"
                     />
