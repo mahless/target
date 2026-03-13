@@ -56,10 +56,17 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({ isOpen, onClose, onSa
     };
 
     const startCamera = async () => {
-        // Check for secure context
+        // Check for secure context (HTTPS or Localhost)
+        const isSecure = window.isSecureContext && !!navigator.mediaDevices;
+        
+        if (!isSecure) {
+            console.warn('Insecure context detected. Camera access is blocked by the browser.');
+            alert('⚠️ تنبيه هام: المتصفح يمنع الكاميرا لأن الموقع لا يعمل ببروتوكول آمن (HTTPS).\n\nالحل: اضغط على "رفع صورة من الجهاز" وسيفتح لك الهاتف خيار الكاميرا تلقائياً بشكل آمن وسلس.');
+            return;
+        }
+
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.error('MediaDevices API not available. Secure context (HTTPS) or localhost is required.');
-            alert('الكاميرا تتطلب اتصالاً آمناً (HTTPS) أو استخدام المتصفح على نفس جهاز السيرفر (Localhost).');
+            alert('هذا المتصفح لا يدعم الوصول للكاميرا.');
             return;
         }
 
