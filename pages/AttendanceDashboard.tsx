@@ -103,14 +103,14 @@ const AttendanceDashboard: React.FC = () => {
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center h-64 gap-4 bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white/20">
+                <div className="flex flex-col items-center justify-center h-64 gap-4 bg-white/40 backdrop-blur-sm rounded-[2.5rem] border border-white/20">
                     <div className="w-12 h-12 border-4 border-[#00A6A6] border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-[#01404E] font-black">جاري تحميل تقرير الحضور...</p>
                 </div>
             ) : (
                 <div className="space-y-6">
                     {/* Main Table Card */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
                         <div className="min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar overflow-x-auto text-right">
                             <table className="w-full border-collapse">
                                 <thead className="sticky top-0 z-20 bg-[#01404E]">
@@ -186,7 +186,7 @@ const AttendanceDashboard: React.FC = () => {
                                                                     <div className="w-8 h-8 border-3 border-[#00A6A6] border-t-transparent rounded-full animate-spin"></div>
                                                                 </div>
                                                             ) : (
-                                                                <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-[#01404E]/5 overflow-hidden shadow-lux max-h-[400px] overflow-y-auto custom-scrollbar">
+                                                                <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-[#01404E]/5 overflow-hidden shadow-lux max-h-[400px] overflow-y-auto custom-scrollbar">
                                                                     <table className="w-full text-right text-sm border-collapse">
                                                                         <thead className="sticky top-0 z-20 bg-white">
                                                                             <tr className="bg-[#01404E]/5 text-[#01404E]/60 font-black text-xs uppercase tracking-widest">

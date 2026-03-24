@@ -61,8 +61,8 @@ const UserRow = React.memo<{ user: User; onEdit: (user: User) => void; onDelete:
 ));
 
 const BranchCard = React.memo<{ branch: Branch; onDelete: (name: string) => void }>(({ branch, onDelete }) => (
-    <div className="relative overflow-hidden group bg-white/50 backdrop-blur-md p-4 rounded-3xl border border-[#01404E]/5 hover:border-green-100 hover:bg-green-50/50 transition-all duration-300">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-125 transition-transform" />
+    <div className="relative overflow-hidden group bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[#01404E]/5 hover:border-green-100 hover:bg-green-50/50 transition-all duration-300">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-sm opacity-60 -mr-16 -mt-16 group-hover:scale-125 transition-transform" />
         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-600 shadow-sm">
@@ -276,8 +276,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
                     {/* Form Side */}
                     <div className="lg:col-span-1 space-y-4">
-                        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-4 overflow-hidden relative group">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
+                        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium p-4 overflow-hidden relative group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-md opacity-60 -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
 
                             <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                                 <div className="p-2 bg-blue-500/10 rounded-xl">
@@ -404,7 +404,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
 
                     {/* List Side */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
                             <div className="p-4 md:p-3 border-b border-[#01404E]/5 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
@@ -438,8 +438,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
             ) : activeTab === 'branches' ? (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 space-y-6">
-                        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-8 overflow-hidden relative group">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
+                        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium p-8 overflow-hidden relative group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-md opacity-60 -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
 
                             <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                                 <div className="p-2 bg-green-500/10 rounded-xl">
@@ -494,7 +494,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
                     </div>
 
                     <div className="lg:col-span-2">
-                        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
                             <div className="p-4 md:p-6 border-b border-[#01404E]/5 flex items-center">
                                 <div className="flex items-center gap-4">
                                     <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
@@ -517,8 +517,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
                 /* Lists Tab */
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Services Management */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-md opacity-60 -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
                         <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                             <div className="p-2 bg-blue-500/10 rounded-xl">
                                 <Shield className="w-6 h-6 text-blue-600" />
@@ -567,8 +567,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = React.memo(({
                     </div>
 
                     {/* Expenses Management */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium p-5 overflow-hidden relative group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-md opacity-60 -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
                         <h2 className="text-base font-black text-[#01404E] mb-8 flex items-center gap-3 relative">
                             <div className="p-2 bg-orange-500/10 rounded-xl">
                                 <Key className="w-6 h-6 text-orange-600" />

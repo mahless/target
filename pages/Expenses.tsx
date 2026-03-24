@@ -181,7 +181,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Expense Form */}
-                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-3 relative z-30">
+                <div className="lg:col-span-1 bg-white/80 backdrop-blur-sm p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-3 relative z-30">
                     <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
                         <h3 className="font-black text-[#01404E] text-base">إضافة مصروف جديد</h3>
@@ -248,20 +248,20 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                 {/* Expenses List */}
                 <div className="lg:col-span-2 space-y-4">
                     <div className="relative overflow-hidden bg-gradient-to-br from-red-600 to-red-900 p-6 rounded-[2.5rem] shadow-premium flex justify-between items-center group">
-                        <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
+                        <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-md opacity-60 group-hover:scale-125 transition-transform duration-1000"></div>
                         <div className="relative z-10 flex flex-col">
                             <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">إجمالي مصروفات اليوم</span>
                             <span className="text-sm text-white/60 font-black">فرع {branchId} <span className="mx-2 opacity-30">|</span> {currentDate}</span>
                         </div>
                         <div className="relative z-10 flex items-center gap-6">
-                            <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
+                            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
                                 <TrendingDown className="w-7 h-7" />
                             </div>
                             <span className="text-2xl md:text-[24px] font-black text-white tracking-tighter">{totalExpenses.toLocaleString()}<span className="text-sm md:text-lg mr-2 opacity-50">ج.م</span></span>
                         </div>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
                         <div className="p-4 md:p-5 border-b border-[#01404E]/5 flex flex-col md:flex-row justify-between items-center gap-4 bg-gradient-to-l from-[#01404E]/5 to-transparent">
                             <h3 className="font-black text-base text-[#01404E] flex items-center gap-3 whitespace-nowrap">
                                 <Clock className="w-6 h-6 text-[#00A6A6]" />  {debouncedSearchTerm ? 'نتائج البحث في المصروفات' : 'سجل مصروفات اليوم'}

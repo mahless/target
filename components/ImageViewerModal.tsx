@@ -52,12 +52,12 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, onClose, im
 
     return (
         <div
-            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fadeIn"
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fadeIn"
             onClick={onClose}
         >
             {/* Header */}
             <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-10">
-                <div className="text-white font-bold tracking-widest text-sm bg-white/10 px-4 py-2 rounded-full backdrop-blur-md">
+                <div className="text-white font-bold tracking-widest text-sm bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
                     صورة {currentIndex + 1} من {images.length}
                 </div>
                 <div className="flex gap-4">
@@ -100,7 +100,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, onClose, im
 
                 {/* The Image */}
                 {imageError ? (
-                    <div className="flex flex-col items-center justify-center gap-6 p-8 bg-black/40 rounded-3xl backdrop-blur-md border border-white/5">
+                    <div className="flex flex-col items-center justify-center gap-6 p-8 bg-black/40 rounded-3xl backdrop-blur-sm border border-white/5">
                         <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-400">
                             <X className="w-10 h-10" />
                         </div>
@@ -133,7 +133,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, onClose, im
             {/* Thumbnails */}
             {images.length > 1 && (
                 <div
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 p-3 bg-white/10 rounded-3xl backdrop-blur-md"
+                    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 p-3 bg-white/10 rounded-3xl backdrop-blur-sm"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {images.map((img, idx) => (

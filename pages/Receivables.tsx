@@ -170,7 +170,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/40 shadow-premium-sm flex items-center gap-2 group hover:scale-[1.02] transition-all h-[42px]">
+          <div className="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/40 shadow-premium-sm flex items-center gap-2 group hover:scale-[1.02] transition-all h-[42px]">
             <div className="p-1 bg-red-50 rounded-lg text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
               <TrendingDown className="w-3.5 h-3.5" />
             </div>
@@ -274,7 +274,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
         </div>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
         <div className="min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar text-right">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-20">

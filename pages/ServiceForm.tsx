@@ -306,7 +306,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               className="w-full pr-10 pl-4 py-2.5 border border-black rounded-xl bg-[#01404E]/5 text-[#01404E] text-xs font-bold placeholder:text-[#01404E]/40 focus:bg-white focus:text-[#01404E] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-sm"
             />
             {showSearchResults && matchingClients.length > 0 && (
-              <div className="absolute top-full right-0 left-0 mt-2 bg-[#01404E] rounded-xl shadow-lux border border-white/10 z-[60] overflow-hidden backdrop-blur-xl">
+              <div className="absolute top-full right-0 left-0 mt-2 bg-[#01404E] rounded-xl shadow-lux border border-white/10 z-[60] overflow-hidden backdrop-blur-sm">
                 {matchingClients.map(client => (
                   <button key={client.id} type="button" onClick={() => handleSelectClient(client)} className="w-full flex items-center justify-between p-3 hover:bg-white/5 border-b border-white/5 last:border-none text-right group">
                     <div className="flex items-center gap-3">
@@ -562,7 +562,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               )}
 
               {successMsg && (
-                <div className="bg-white/40 backdrop-blur-md text-green-700 p-5 rounded-[2rem] flex flex-col sm:flex-row justify-between items-center gap-4 font-black border border-green-100/30 transition-all animate-fadeIn">
+                <div className="bg-white/40 backdrop-blur-sm text-green-700 p-5 rounded-[2rem] flex flex-col sm:flex-row justify-between items-center gap-4 font-black border border-green-100/30 transition-all animate-fadeIn">
                   <span>{successMsg}</span>
                   <button type="button" onClick={async () => {
                     if (lastEntry) {

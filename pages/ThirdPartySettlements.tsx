@@ -163,7 +163,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
                 </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
                 <div className="min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar text-right">
                     <table className="w-full border-collapse">
                         <thead className="sticky top-0 z-20">
@@ -262,7 +262,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
             </div>
 
             {filteredEntries.length > 0 && (
-                <div className="bg-amber-500/10 backdrop-blur-md border border-amber-500/20 p-6 rounded-[2rem] flex items-start gap-4 shadow-xl">
+                <div className="bg-amber-500/10 backdrop-blur-sm border border-amber-500/20 p-6 rounded-[2rem] flex items-start gap-4 shadow-xl">
                     <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg">
                         <AlertCircle className="w-6 h-6" />
                     </div>

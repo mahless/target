@@ -1,24 +1,24 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import ServiceForm from './pages/ServiceForm';
-import Expenses from './pages/Expenses';
-import Reports from './pages/Reports';
-import Receivables from './pages/Receivables';
-import AdminInventory from './pages/AdminInventory';
-import AttendanceDashboard from './pages/AttendanceDashboard';
-import ThirdPartySettlements from './pages/ThirdPartySettlements';
-import ArchivePage from './pages/ArchivePage';
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ServiceForm = lazy(() => import('./pages/ServiceForm'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Receivables = lazy(() => import('./pages/Receivables'));
+const AdminInventory = lazy(() => import('./pages/AdminInventory'));
+const AttendanceDashboard = lazy(() => import('./pages/AttendanceDashboard'));
+const ThirdPartySettlements = lazy(() => import('./pages/ThirdPartySettlements'));
+const ArchivePage = lazy(() => import('./pages/ArchivePage'));
 import ErrorBoundary from './components/ErrorBoundary';
 import { normalizeArabic } from './utils';
 import { ROLES } from './constants';
 import { useAppState } from './hooks/useAppState';
 import { ModalProvider, useModal } from './context/ModalContext';
-import AdminDashboard from './pages/AdminDashboard';
-import TrackingPage from './pages/TrackingPage';
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const TrackingPage = lazy(() => import('./pages/TrackingPage'));
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; user: any }> = ({ children, user }) => {
   if (!user) return <Navigate to="/login" replace />;
@@ -274,11 +274,22 @@ const AppContent: React.FC = () => {
   );
 };
 
+const PageFallback = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-[#F2E3D5]">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-16 h-16 border-4 border-[#00A6A6]/20 border-t-[#00A6A6] rounded-full animate-spin"></div>
+      <p className="text-[#01404E] font-black text-sm animate-pulse">جاري تحميل واجهة النظام...</p>
+    </div>
+  </div>
+);
+
 const App: React.FC = () => (
   <ErrorBoundary>
     <ModalProvider>
       <HashRouter>
-        <AppContent />
+        <Suspense fallback={<PageFallback />}>
+          <AppContent />
+        </Suspense>
       </HashRouter>
     </ModalProvider>
   </ErrorBoundary>

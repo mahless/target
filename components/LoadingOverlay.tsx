@@ -11,7 +11,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible }) => {
     return (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-500 animate-fadeIn pointer-events-auto">
             {/* Background Blur Overlay */}
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
 
             {/* Content Container */}
             <div className="relative flex flex-col items-center gap-6 p-10 rounded-3xl bg-white/10 border border-white/20 shadow-2xl animate-scaleIn">

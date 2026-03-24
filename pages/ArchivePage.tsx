@@ -151,7 +151,7 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
             {/* Header */}
             <div className="bg-[#01404E] p-3 rounded-[2.5rem] shadow-premium border-b border-white/5 text-white flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-2xl border border-white/10 ring-4 ring-[#00A6A6]/5">
+                    <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center text-[#00A6A6] shadow-2xl border border-white/10 ring-4 ring-[#00A6A6]/5">
                         <Archive className="w-7 h-7" />
                     </div>
                     <div>
@@ -160,7 +160,7 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white/5 px-3 py-2 rounded-2xl border border-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-3 bg-white/5 px-3 py-2 rounded-2xl border border-white/10 backdrop-blur-sm">
                     <div className="flex flex-col items-end">
                         <span className="text-[10px] text-white/40 font-black uppercase tracking-wider">الصلاحية الحالية</span>
                         <span className="text-sm font-black text-[#00A6A6]">{isAdmin ? 'مسؤول النظام (Admin)' : 'موظف (Employee)'}</span>

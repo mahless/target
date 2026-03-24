@@ -124,13 +124,13 @@ const TrackingPage = () => {
                         <Clock size={16} />
                         <span className="text-xs font-black">حالة الطلب:</span>
                     </div>
-                    <span className="bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-black ring-1 ring-white/30">
+                    <span className="bg-white/20 backdrop-blur-sm text-white px-4 py-1 rounded-full text-sm font-black ring-1 ring-white/30">
                         {getStatusLabel(entry.status)}
                     </span>
                 </div>
 
                 {/* Content Body */}
-                <div className="bg-white/80 backdrop-blur-2xl p-6 md:p-2 rounded-b-[2.5rem] shadow-premium border-x border-b border-white/50 space-y-1">
+                <div className="bg-white/80 backdrop-blur-sm opacity-60 p-6 md:p-2 rounded-b-[2.5rem] shadow-premium border-x border-b border-white/50 space-y-1">
 
                     {/* Integrated Header */}
                     <div className="text-center pb-1 border-b border-gray-100/50">

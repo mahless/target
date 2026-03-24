@@ -251,7 +251,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
   return (
     <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3 rounded-[2rem] shadow-lux transition-all duration-500 hover:translate-y-[-8px] hover:shadow-2xl group animate-premium-in`}>
       {/* Decorative background circle */}
-      <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+      <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-sm opacity-60 group-hover:scale-150 transition-transform duration-700"></div>
 
       <div className="relative z-10 flex justify-between items-start">
         <div>
@@ -261,7 +261,7 @@ const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: an
             <span className="text-[8px] md:text-[10px] font-bold opacity-60">ج.م</span>
           </div>
         </div>
-        <div className="p-2 bg-white/10 backdrop-blur-md rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
+        <div className="p-2 bg-white/10 backdrop-blur-sm rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
           {React.cloneElement(icon, { className: "w-5 h-5 text-white" })}
         </div>
       </div>
@@ -765,7 +765,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
         </div>
 
         {/* Table Body Container - Reverting to white background as per user preference */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium overflow-hidden border border-white/20 animate-premium-in">
+        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] shadow-premium overflow-hidden border border-white/20 animate-premium-in">
           <div className="overflow-x-auto relative min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20">

@@ -71,12 +71,12 @@ const Header: React.FC<HeaderProps> = React.memo(({
             disabled={userRole === ROLES.EMPLOYEE}
             showAllOption={false}
             dark={true}
-            className="!bg-white/5 !border !border-white/10 !py-1 sm:!py-1.5 !px-2 sm:!px-3 !rounded-lg sm:!rounded-xl backdrop-blur-md text-white font-black text-[8px] sm:text-xs min-w-[100px] sm:min-w-[140px] focus:ring-0"
+            className="!bg-white/5 !border !border-white/10 !py-1 sm:!py-1.5 !px-2 sm:!px-3 !rounded-lg sm:!rounded-xl backdrop-blur-sm text-white font-black text-[8px] sm:text-xs min-w-[100px] sm:min-w-[140px] focus:ring-0"
           />
         </div>
 
         {date && (
-          <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-md">
+          <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-sm">
             <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#00A6A6]" />
             <span className="font-mono pt-0.5 font-black">{date}</span>
           </div>

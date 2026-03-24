@@ -349,7 +349,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = React.memo(({ stock, onRef
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Expense Form */}
-                <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-5 relative z-30 animate-slideIn">
+                <div className="lg:col-span-1 bg-white/80 backdrop-blur-sm p-5 rounded-[2.5rem] border border-white/20 shadow-premium space-y-5 relative z-30 animate-slideIn">
                     <h3 className="font-black text-base text-blue-900 flex items-center gap-2">
                         <PlusCircle className="w-5 h-5" /> إضافة باركود جديد
                     </h3>
@@ -420,7 +420,7 @@ const AdminInventory: React.FC<AdminInventoryProps> = React.memo(({ stock, onRef
                         </div>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-lux overflow-hidden">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] border border-white/20 shadow-lux overflow-hidden">
                         <div className="p-2 md:p-3 border-b border-[#01404E]/5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gradient-to-l from-[#01404E]/5 to-transparent">
                             <h4 className="font-black text-base text-[#01404E] flex items-center gap-3 shrink-0">
                                 <History className="w-6 h-6 text-[#00A6A6]" />  سجل الأستمارات
