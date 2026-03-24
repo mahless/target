@@ -372,7 +372,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const showCustomerDetails = useCallback((entry: ServiceEntry) => {
     showModal({
       title: 'تفاصيل المعاملة',
-      size: 'lg',
+      size: 'xl',
       content: <ServiceEntryDetails entry={entry} userRole={userRole} />,
       confirmText: 'طباعة إيصال',
       confirmIcon: <Printer className="w-4 h-4" />,

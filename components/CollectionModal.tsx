@@ -18,7 +18,12 @@ export const CollectionModalContent: React.FC<CollectionModalContentProps> = ({
 
     // Sync state to parent
     React.useEffect(() => {
-        onDataChange({ amount, isElectronic, electronicMethod, notes });
+        onDataChange({ 
+            amount, 
+            isElectronic, 
+            electronicMethod: isElectronic ? electronicMethod : '', 
+            notes 
+        });
     }, [amount, isElectronic, electronicMethod, notes, onDataChange]);
 
     return (

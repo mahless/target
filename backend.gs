@@ -512,7 +512,7 @@ function handleDeliverOrder(data) {
     // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
     if (remainingCollected > 0) {
       const isElectronic = data.isElectronic === true || data.isElectronic === 'true';
-      const electronicMethod = data.electronicMethod || '';
+      const electronicMethod = isElectronic ? (data.electronicMethod || '') : '';
       const notes = data.notes || '';
 
       const headerKeys = SHEET_CONFIG[SHEET_NAMES.ENTRIES];

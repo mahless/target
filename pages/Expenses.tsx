@@ -66,7 +66,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
     const showCustomerDetails = (entry: ServiceEntry) => {
         showModal({
             title: 'تفاصيل المعاملة (مرتبط بمصروف)',
-            size: 'lg',
+            size: 'xl',
             content: (
                 <div className="space-y-4">
                     <ServiceEntryDetails entry={entry} userRole={userRole} />
