@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = React.memo(({
             }}
             icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
             placeholder="الفرع"
-            disabled={userRole === ROLES.EMPLOYEE}
+            disabled={userRole === ROLES.EMPLOYEE || userRole === ROLES.VIEWER}
             showAllOption={false}
             dark={true}
             className="!bg-white/5 !border !border-white/10 !py-1 sm:!py-1.5 !px-2 sm:!px-3 !rounded-lg sm:!rounded-xl backdrop-blur-sm text-white font-black text-[8px] sm:text-xs min-w-[100px] sm:min-w-[140px] focus:ring-0"

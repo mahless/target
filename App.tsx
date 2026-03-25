@@ -173,6 +173,7 @@ const AppContent: React.FC = () => {
                           userRole={userRole}
                           deliverOrder={deliverOrder}
                           branches={branches}
+                          user={user}
                         />
                       )
                     } />
@@ -208,6 +209,7 @@ const AppContent: React.FC = () => {
                         onRefresh={syncAll}
                         username={user?.name || ''}
                         userRole={userRole}
+                        user={user}
                       />
                     } />
                     <Route path="/third-party-settlements" element={

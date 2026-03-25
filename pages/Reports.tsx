@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ServiceEntry, Expense, Branch } from '../types';
+import { ServiceEntry, Expense, Branch, User } from '../types';
 import { Search, DollarSign, Clock, Filter, Printer, TrendingUp, Wallet, ListChecks, Receipt, X, Activity, BarChart2, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
@@ -24,6 +24,7 @@ interface ReportsProps {
   onRefresh: () => void;
   username: string;
   userRole: string;
+  user?: User | null;
 }
 
 
@@ -58,11 +59,19 @@ const StatCard = React.memo(({ title, value, icon, color, footer }: any) => {
 });
 
 const Reports: React.FC<ReportsProps> = React.memo(({
-  entries, expenses, serviceTypes, expenseCategories, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
+  entries, expenses, serviceTypes, expenseCategories, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole, user
 }) => {
   const today = getTodayDate();
-  const defaultBranch = userRole === ROLES.MANAGER ? 'الكل' : (branchId || (branches.length > 0 ? branches[0].id : 'الكل'));
-  const defaultEmployee = userRole === ROLES.MANAGER ? 'الكل' : username;
+
+  // Determine if this user has a locked branch assignment
+  const isAssignedBranch = !!(user?.assignedBranchId && user.assignedBranchId !== 'all');
+
+  // For assigned employees force their branch; for managers use 'الكل'; for others use branchId
+  const defaultBranch = isAssignedBranch
+    ? user!.assignedBranchId!
+    : (userRole === ROLES.MANAGER ? 'الكل' : (branchId || (branches.length > 0 ? branches[0].id : 'الكل')));
+  // Viewers see ALL employees' data for their branch (not just their own)
+  const defaultEmployee = (userRole === ROLES.MANAGER || userRole === ROLES.VIEWER) ? 'الكل' : username;
 
   // Helper to persist filter values in sessionStorage
   const usePersistedState = <T extends string>(key: string, defaultValue: T): [T, (val: T) => void] => {
@@ -99,7 +108,8 @@ const Reports: React.FC<ReportsProps> = React.memo(({
   const resetFilters = () => {
     setStartDate(today);
     setEndDate(today);
-    setSelectedBranchId(defaultBranch);
+    // Don't reset branch for assigned employees — they are locked to their branch
+    if (!isAssignedBranch) setSelectedBranchId(defaultBranch);
     setSelectedService('الكل');
     setSelectedExpenseType('الكل');
     setSelectedEmployee(defaultEmployee);
@@ -203,7 +213,14 @@ const Reports: React.FC<ReportsProps> = React.memo(({
       return sum + amount;
     }, 0);
     const totalExpenses = filteredData.expenses.reduce((sum, e) => sum + e.amount, 0);
-    return { revenue: totalRevenue, expenses: totalExpenses, net: totalRevenue - totalExpenses };
+    const totalRemaining = filteredData.entries.reduce((sum, e) => sum + (e.remainingAmount || 0), 0);
+    
+    return { 
+      revenue: totalRevenue, 
+      expenses: totalExpenses, 
+      net: totalRevenue - totalExpenses,
+      remaining: totalRemaining
+    };
   }, [filteredData]);
 
   const branchOptions = useMemo(() => branches.map(b => ({ id: b.id, name: b.name })), [branches]);
@@ -539,10 +556,11 @@ const Reports: React.FC<ReportsProps> = React.memo(({
                 <CustomSelect
                   options={branchOptions}
                   value={selectedBranchId}
-                  onChange={setSelectedBranchId}
+                  onChange={isAssignedBranch ? () => {} : setSelectedBranchId}
                   placeholder="كل الفروع"
                   showAllOption={true}
-                  className="p-3 bg-white/40 border-white/40 rounded-xl text-xs font-black"
+                  className={`p-3 bg-white/40 border-white/40 rounded-xl text-xs font-black ${isAssignedBranch ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  disabled={isAssignedBranch}
                 />
               </div>
 
@@ -596,10 +614,11 @@ const Reports: React.FC<ReportsProps> = React.memo(({
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" >
             <StatCard title="إجمالي الإيرادات" value={stats.revenue} icon={<TrendingUp />} color="blue" footer="حصيلة العمليات وسداد المديونيات" />
             <StatCard title="إجمالي المصروفات" value={stats.expenses} icon={<Wallet />} color="red" footer="المصروفات النثرية والمكافآت" />
             <StatCard title="صافي الربح" value={stats.net} icon={<DollarSign />} color="emerald" footer="الإيرادات مطروحاً منها المصروفات" />
+            <StatCard title="المتبقي على العملاء" value={stats.remaining} icon={<Clock />} color="emerald" footer="المديونيات للعمليات المفلترة" />
           </div >
 
           {/* Tabs and Table */}

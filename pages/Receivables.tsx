@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { ServiceEntry, Branch } from '../types';
+import { ServiceEntry, Branch, User } from '../types';
 import SearchInput from '../components/SearchInput';
 import { Wallet, Clock, Printer, ArrowLeftRight, Filter, Calendar, MapPin, TrendingDown, RefreshCw } from 'lucide-react';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
@@ -24,21 +24,28 @@ interface ReceivablesProps {
   isSubmitting?: boolean;
   userRole: string;
   deliverOrder: (orderId: string, amount: number, clientName: string, collectorName: string, branchId: string, isElectronic?: boolean, electronicMethod?: string, notes?: string) => Promise<boolean>;
+  user?: User | null;
 }
 
 const Receivables: React.FC<ReceivablesProps> = ({
-  entries, serviceTypes, branches, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false, userRole, deliverOrder
+  entries, serviceTypes, branches, onUpdateEntry, onAddEntry, branchId, currentDate, username, isSyncing, onRefresh, isSubmitting = false, userRole, deliverOrder, user
 }) => {
+  const { showModal, showQuickStatus, setIsProcessing } = useModal();
+
+  // Determine if this user has a branch assignment lock
+  const isAssignedBranch = !!(user?.assignedBranchId && user.assignedBranchId !== 'all');
+
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [filterService, setFilterService] = useState<string>('الكل');
-  const [selectedBranch, setSelectedBranch] = useState<string>('الكل');
+  // Initialize branch filter from assignedBranchId if the employee has one
+  const [selectedBranch, setSelectedBranch] = useState<string>(
+    isAssignedBranch ? (user!.assignedBranchId!) : 'الكل'
+  );
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
-
-  const { showModal, showQuickStatus, setIsProcessing } = useModal();
 
   const showCustomerDetails = (entry: ServiceEntry) => {
     showModal({
@@ -129,12 +136,17 @@ const Receivables: React.FC<ReceivablesProps> = ({
   const [visibleCount, setVisibleCount] = useState(50);
 
   const filteredEntries = useMemo(() => {
+    // For assigned employees, always filter by their assigned branch
+    const effectiveBranch = isAssignedBranch
+      ? user!.assignedBranchId!
+      : selectedBranch;
+
     return entries.filter(e => {
       const isUnpaid = (e.remainingAmount || 0) > 0;
       if (!isUnpaid) return false;
 
       const matchesService = filterService === 'الكل' || e.serviceType === filterService;
-      const matchesBranch = selectedBranch === 'الكل' || normalizeArabic(e.branchId) === normalizeArabic(selectedBranch);
+      const matchesBranch = effectiveBranch === 'الكل' || normalizeArabic(e.branchId) === normalizeArabic(effectiveBranch);
 
       let matchesDate = true;
       if (startDate) matchesDate = matchesDate && e.entryDate >= startDate;
@@ -149,7 +161,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
 
       return matchesService && matchesBranch && matchesDate && isSearchMatch;
     });
-  }, [entries, filterService, selectedBranch, startDate, endDate, debouncedSearchTerm]);
+  }, [entries, filterService, selectedBranch, startDate, endDate, debouncedSearchTerm, isAssignedBranch, user]);
 
   const totalDebts = useMemo(() => {
     return filteredEntries.reduce((sum, e) => sum + (e.remainingAmount || 0), 0);
@@ -250,12 +262,13 @@ const Receivables: React.FC<ReceivablesProps> = ({
             <div className="flex-1 md:w-[150px]">
               <CustomSelect
                 options={branchOptions}
-                value={selectedBranch}
-                onChange={setSelectedBranch}
+                value={isAssignedBranch ? user!.assignedBranchId! : selectedBranch}
+                onChange={isAssignedBranch ? () => {} : setSelectedBranch}
                 placeholder="الكل"
                 showAllOption={false}
                 icon={<MapPin className="w-3.5 h-3.5" />}
-                className="py-1.5 px-2 rounded-xl border text-[10px]"
+                className={`py-1.5 px-2 rounded-xl border text-[10px] ${isAssignedBranch ? 'opacity-60 cursor-not-allowed' : ''}`}
+                disabled={isAssignedBranch}
               />
             </div>
 
