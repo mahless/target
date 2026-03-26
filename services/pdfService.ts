@@ -1,6 +1,6 @@
 import { ServiceEntry } from '../types';
 import QRCode from 'qrcode';
-import { encodeId } from '../utils';
+import { encodeId, getTodayDate } from '../utils';
 
 /* =========================
    🔐 HTML Escape Protection
@@ -255,8 +255,8 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string, prin
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div class="meta-info">
               <p class="branch-name">فرع: ${escapeHtml(entry.branchId || 'الرئيسي')}</p>
-              <div class="meta-item">تاريخ العملية: ${escapeHtml(entry.entryDate)}</div>
-              <div class="meta-item">وقت العملية: ${escapeHtml(new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))}</div>
+              <div class="meta-item">تاريخ العملية/الطباعة: ${escapeHtml(getTodayDate())}</div>
+              <div class="meta-item">وقت العملية/الطباعة: ${escapeHtml(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))}</div>
               <div class="meta-item">الموظف: ${escapeHtml(printedBy || entry.recordedBy)}</div>
             </div>
 
