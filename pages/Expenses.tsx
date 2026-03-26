@@ -76,7 +76,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
                             onClick={async () => {
                                 setIsProcessing(true);
                                 try {
-                                    await generateReceipt(entry);
+                                    await generateReceipt(entry, username);
                                 } finally {
                                     setIsProcessing(false);
                                 }

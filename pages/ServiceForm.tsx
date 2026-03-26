@@ -568,7 +568,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                     if (lastEntry) {
                       setIsProcessing(true);
                       try {
-                        await generateReceipt(lastEntry);
+                        await generateReceipt(lastEntry, username);
+                      } catch (error) {
+                        setIsProcessing(false);
                       } finally {
                         setIsProcessing(false);
                       }

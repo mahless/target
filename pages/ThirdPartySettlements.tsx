@@ -95,7 +95,7 @@ const ThirdPartySettlements: React.FC<ThirdPartySettlementsProps> = ({
             onConfirm: async () => {
                 setIsProcessing(true);
                 try {
-                    await generateReceipt(entry);
+                    await generateReceipt(entry, username);
                 } finally {
                     setIsProcessing(false);
                 }

@@ -39,7 +39,7 @@ const generateQRDataUrl = async (entryId: string): Promise<string> => {
  * @param qrDataUrl Base64 image URL of the tracking QR code
  * @returns Complete HTML string ready for iframe rendering
  */
-export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): string => {
+export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string, printedBy?: string): string => {
   return `
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
@@ -257,7 +257,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
               <p class="branch-name">فرع: ${escapeHtml(entry.branchId || 'الرئيسي')}</p>
               <div class="meta-item">تاريخ العملية: ${escapeHtml(entry.entryDate)}</div>
               <div class="meta-item">وقت العملية: ${escapeHtml(new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))}</div>
-              <div class="meta-item">الموظف: ${escapeHtml(entry.recordedBy)}</div>
+              <div class="meta-item">الموظف: ${escapeHtml(printedBy || entry.recordedBy)}</div>
             </div>
 
             <div class="qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 0px; margin-left: 10px;">
@@ -374,7 +374,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
  * @param entry The service entry to print
  * @returns A promise that resolves when printing is complete or cancelled
  */
-export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
+export const generateReceipt = async (entry: ServiceEntry, printedBy?: string): Promise<void> => {
   // Generate QR code data URL before creating the receipt
   const qrDataUrl = await generateQRDataUrl(entry.id);
 
@@ -390,7 +390,7 @@ export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
 
     document.body.appendChild(iframe);
 
-    const htmlContent = generateReceiptHtml(entry, qrDataUrl);
+    const htmlContent = generateReceiptHtml(entry, qrDataUrl, printedBy);
     const doc = iframe.contentWindow?.document;
 
     if (doc) {

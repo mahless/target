@@ -380,7 +380,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       onConfirm: async () => {
         setIsProcessing(true);
         try {
-          await generateReceipt(entry);
+          await generateReceipt(entry, username);
         } finally {
           setIsProcessing(false);
         }
@@ -392,7 +392,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   const handlePrint = useCallback(async (entry: ServiceEntry) => {
     setIsProcessing(true);
     try {
-      await generateReceipt(entry);
+      await generateReceipt(entry, username);
     } finally {
       setIsProcessing(false);
     }
