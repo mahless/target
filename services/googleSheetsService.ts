@@ -15,7 +15,8 @@ export const GoogleSheetsService = {
             const controller = new AbortController();
             const id = setTimeout(() => controller.abort(), timeout);
             try {
-                const response = await fetch(url, { ...options, signal: controller.signal });
+                const fetchOptions: RequestInit = { redirect: 'follow', ...options, signal: controller.signal };
+                const response = await fetch(url, fetchOptions);
                 clearTimeout(id);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response;
@@ -44,10 +45,38 @@ export const GoogleSheetsService = {
     async login(id: string, password: string): Promise<LoginResponse> {
         if (!GOOGLE_SCRIPT_URL) return { success: false, message: 'URL missing' };
         try {
-            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.LOGIN}&id=${id}&password=${password}`);
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.LOGIN}&id=${encodeURIComponent(id)}&password=${encodeURIComponent(password)}`);
             return await response.json();
         } catch (error) {
             return { success: false, message: 'فشل الاتصال بالسيرفر' };
+        }
+    },
+
+    /**
+     * Retrieve all app data at once (Unified Sync).
+     * 
+     * @api GET ?action=getAllData
+     * @param role - User role for authorization (optional)
+     * @param username - Username for logging/filtering (optional)
+     * @returns BackendResponse containing all tables, or null on error
+     */
+    async getAllData(role?: string, username?: string): Promise<BackendResponse | null> {
+        if (!GOOGLE_SCRIPT_URL) {
+            console.warn('Google Script URL is missing');
+            return null;
+        }
+
+        try {
+            let url = `${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.GET_ALL_DATA}&t=${Date.now()}`;
+            if (role) url += `&role=${encodeURIComponent(role)}`;
+            if (username) url += `&username=${encodeURIComponent(username)}`;
+
+            const response = await this.fetchWithRetry(url);
+            const json = await response.json() as BackendResponse;
+            return json;
+        } catch (error) {
+            console.error('getAllData Network Error:', error);
+            return null;
         }
     },
 
@@ -67,7 +96,7 @@ export const GoogleSheetsService = {
         }
 
         try {
-            let url = `${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.GET_DATA}&sheetName=${sheetName}&t=${Date.now()}`;
+            let url = `${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.GET_DATA}&sheetName=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
             if (role) url += `&role=${encodeURIComponent(role)}`;
             if (username) url += `&username=${encodeURIComponent(username)}`;
 
@@ -125,7 +154,7 @@ export const GoogleSheetsService = {
         try {
             console.log('--- ADD ROW PAYLOAD ---');
             console.log(JSON.stringify(data, null, 2));
-            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.ADD_ROW}&sheetName=${sheetName}&role=${encodeURIComponent(role)}`, {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.ADD_ROW}&sheetName=${encodeURIComponent(sheetName)}&role=${encodeURIComponent(role)}`, {
                 method: 'POST',
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(data)
@@ -150,7 +179,7 @@ export const GoogleSheetsService = {
     async getAvailableBarcode(branchId: string, category: string): Promise<string | null> {
         if (!GOOGLE_SCRIPT_URL) return null;
         try {
-            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.GET_AVAILABLE_BARCODE}&branch=${branchId}&category=${category}&t=${Date.now()}`);
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.GET_AVAILABLE_BARCODE}&branch=${encodeURIComponent(branchId)}&category=${encodeURIComponent(category)}&t=${Date.now()}`);
             const json = await response.json() as BackendResponse;
             return json.status === STATUS.SUCCESS && json.barcode ? json.barcode : null;
         } catch (error) {
@@ -224,7 +253,7 @@ export const GoogleSheetsService = {
         try {
             console.log('--- UPDATE ENTRY PAYLOAD ---');
             console.log(JSON.stringify(data, null, 2));
-            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.UPDATE_ENTRY}&sheetName=${sheetName}&role=${encodeURIComponent(role)}`, {
+            const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.UPDATE_ENTRY}&sheetName=${encodeURIComponent(sheetName)}&role=${encodeURIComponent(role)}`, {
                 method: 'POST',
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(data)

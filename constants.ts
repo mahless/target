@@ -4,6 +4,7 @@
 export const API_ACTIONS = {
   LOGIN: 'login',
   GET_DATA: 'getData',
+  GET_ALL_DATA: 'getAllData',
   GET_HR_REPORT: 'getHRReport',
   ADD_ROW: 'addRow',
   GET_AVAILABLE_BARCODE: 'getAvailableBarcode',

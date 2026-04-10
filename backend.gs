@@ -205,6 +205,10 @@ function getSS() {
 function doGet(e) {
   const action = e.parameter.action;
   
+  if (action === 'getAllData') {
+    return handleGetAllData(e.parameter.role, e.parameter.username);
+  }
+
   if (action === 'getData') {
     return handleGetData(e.parameter.sheetName, e.parameter.role, e.parameter.username);
   }
@@ -802,14 +806,14 @@ function handleLogin(id, password) {
  * 1. جلب البيانات من أي شيت (Entries, Expenses, Stock) مع فلترة الحماية
  */
 /**
- * 1. Retrieve data from a sheet with optional filtering
+ * 1. Retrieve raw data from a sheet (Unified Sync Core)
  * 
  * @param {string} sheetName - Target sheet name
  * @param {string} role - User role for authorization
  * @param {string} username - Username for filtering
- * @returns {ContentService.TextOutput} JSON response
+ * @returns {Array} Array of objects
  */
-function handleGetData(sheetName, role, username) {
+function getRawSheetData(sheetName, role, username) {
   let lock;
   try {
     if (sheetName === SHEET_NAMES.BRANCHES_CONFIG) {
@@ -817,9 +821,7 @@ function handleGetData(sheetName, role, username) {
     }
     const ss = getSS();
     
-    // We only need a read lock if it's the stock or users where simultaneous edits matter,
-    // but typically read doesn't require lock in Sheets API unless we just modified it.
-    // For safety, we can sync read operations on critical sheets.
+    // We only need a read lock if it's the stock or users where simultaneous edits matter
     const isCritical = sheetName === SHEET_NAMES.STOCK || sheetName === SHEET_NAMES.ENTRIES || sheetName === SHEET_NAMES.EXPENSES;
     
     if (isCritical) {
@@ -828,29 +830,25 @@ function handleGetData(sheetName, role, username) {
     }
 
     const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return createJSONResponse([]);
+    if (!sheet) return [];
     
     const data = sheet.getDataRange().getValues();
-    if (data.length <= 1) return createJSONResponse([]);
+    if (data.length <= 1) return [];
     
     const headers = data[0].map(h => String(h).trim());
     const rows = data.slice(1);
     const tz = ss.getSpreadsheetTimeZone();
     
     const map = getHeaderMapping(sheet, sheetName);
-    const userIsAdmin = isAdmin(role);
     
     const result = rows
       .filter(row => {
         if (!row.some(cell => String(cell).trim() !== "")) return false;
-        
-        // تطبيق فلتر الصلاحيات (اختياري، مدمج حالياً في العرض بالفرونت إند، لكن هنا للأمان)
         return true;
       })
       .map(row => {
         const obj = {};
         
-        // جلب البيانات بناءً على الهيدرز الموجودة
         headers.forEach((header, index) => {
           let val = row[index];
           if (val instanceof Date) {
@@ -858,17 +856,14 @@ function handleGetData(sheetName, role, username) {
           }
           
           const hLower = header.toLowerCase();
-          // تحويل الحقول المعرفة كسلاسل نصية
           if (hLower === 'id' || hLower === 'users_id' || hLower === 'معرف' || hLower === 'barcode' || hLower === 'الباركود' || hLower === 'nationalid' || hLower === 'الرقم القومي') {
             val = String(val || "");
           }
           
           obj[header] = val;
-          // توفير نسخة بالاسم الصغير لتسهيل الوصول في الفرونت إند
           obj[hLower] = val;
         });
 
-        // تأكيد وجود الحقول الهامة باستخدام الخريطة (Mapping)
         Object.keys(map).forEach(key => {
           const idx = map[key];
           if (idx !== undefined && idx < row.length) {
@@ -881,12 +876,55 @@ function handleGetData(sheetName, role, username) {
         return obj;
       });
     
-    return createJSONResponse(result);
+    return result;
   } catch (err) {
-    return createJSONResponse({ status: "error", message: err.toString() });
+    Logger.log("getRawSheetData Error: " + err.toString());
+    return [];
   } finally {
     if (lock) lock.releaseLock();
   }
+}
+
+/**
+ * 1b. Legacy handler for single-sheet data fetch
+ */
+function handleGetData(sheetName, role, username) {
+   try {
+      const data = getRawSheetData(sheetName, role, username);
+      return createJSONResponse(data);
+   } catch (err) {
+      return createJSONResponse({ status: "error", message: err.toString() });
+   }
+}
+
+/**
+ * 1c. Unified Data Fetch (All core sheets in one request)
+ */
+function handleGetAllData(role, username) {
+   try {
+      const entries = getRawSheetData(SHEET_NAMES.ENTRIES, role, username);
+      const expenses = getRawSheetData(SHEET_NAMES.EXPENSES, role, username);
+      const stock = getRawSheetData(SHEET_NAMES.STOCK, role, username);
+      const branches = getRawSheetData(SHEET_NAMES.BRANCHES_CONFIG, role, username);
+      const settings = getRawSheetData(SHEET_NAMES.SERVICE_EXPENSE, role, username);
+      
+      const userIsAdmin = isAdmin(role) || role === 'Admin';
+      const users = userIsAdmin ? getRawSheetData(SHEET_NAMES.USERS, role, username) : [];
+
+      return createJSONResponse({
+         status: "success",
+         data: {
+            entries: entries,
+            expenses: expenses,
+            stock: stock,
+            branches: branches,
+            settings: settings,
+            users: users
+         }
+      });
+   } catch (err) {
+      return createJSONResponse({ status: "error", message: err.toString() });
+   }
 }
 
 /**

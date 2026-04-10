@@ -113,16 +113,23 @@ export const useAppState = () => {
     isSyncingRef.current = true;
     setIsSyncing(true);
     try {
-      const [remoteEntries, remoteExpenses, remoteStock, remoteBranches, remoteUsers, remoteSettings] = await Promise.all([
-        GoogleSheetsService.getData<any>('Entries', user?.role, user?.name),
-        GoogleSheetsService.getData<any>('Expenses', user?.role, user?.name),
-        GoogleSheetsService.getData<StockItem>('Stock'),
-        GoogleSheetsService.getBranches(),
-        (normalizeArabic(user?.role || '') === normalizeArabic(ROLES.MANAGER) || user?.role === ROLES.ADMIN)
-          ? GoogleSheetsService.getData<User>('Users')
-          : Promise.resolve([]),
-        GoogleSheetsService.getData<any>('Service_Expense')
-      ]);
+      const response = await GoogleSheetsService.getAllData(user?.role, user?.name);
+      
+      let remoteEntries: any[] = [];
+      let remoteExpenses: any[] = [];
+      let remoteStock: StockItem[] = [];
+      let remoteBranches: any[] = [];
+      let remoteUsers: User[] = [];
+      let remoteSettings: any[] = [];
+
+      if (response && response.status === 'success' && response.data) {
+        remoteEntries = response.data.entries || [];
+        remoteExpenses = response.data.expenses || [];
+        remoteStock = response.data.stock || [];
+        remoteBranches = response.data.branches || [];
+        remoteUsers = response.data.users || [];
+        remoteSettings = response.data.settings || [];
+      }
 
       if (remoteEntries && remoteEntries.length > 0) {
         const mappedEntries: ServiceEntry[] = remoteEntries.map((e: any) => {
