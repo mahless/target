@@ -7,7 +7,7 @@ import { useModal } from '../context/ModalContext';
 import { STORAGE_KEYS } from '../constants';
 
 interface LoginProps {
-  onLogin: (userData: UserType) => void;
+  onLogin: (userData: UserType) => Promise<void> | void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -34,7 +34,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       // حفظ رقم الموظف الثابت في localStorage كما هو مطلوب
       localStorage.setItem(STORAGE_KEYS.ACTIVE_EMPLOYEE_ID, String(response.id));
 
-      onLogin({
+      await onLogin({
         id: response.id,
         name: response.name,
         role: response.role,

@@ -340,33 +340,90 @@ export const useAppState = () => {
       lastUserId.current = user?.id || null;
     }
 
-    // Auto-assignment for non-managers
-    // Only auto-assign if branch is NOT selected AND we haven't auto-assigned in this session yet
-    if (user && user.assignedBranchId && !branch && !hasAutoAssigned.current && branches.length > 0) {
-      const assignedBranch = branches.find(b =>
-        normalizeArabic(b.id) === normalizeArabic(user.assignedBranchId!)
-      );
-      if (assignedBranch) {
-        setBranch(assignedBranch);
-        localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
+    console.log('[AutoAssign] user:', user?.name, 'role:', user?.role, 'assignedBranchId:', user?.assignedBranchId, 'branch:', branch?.id, 'branches.length:', branches.length, 'hasAutoAssigned:', hasAutoAssigned.current);
+
+    if (user && !hasAutoAssigned.current && branches.length > 0) {
+      const isManager = normalizeArabic(user.role || '') === normalizeArabic(ROLES.MANAGER);
+
+      if (isManager && !branch) {
+        // المدير: تعيين "كل الفروع" تلقائياً إذا لم يكن فرع محدد
+        const allBranch = { id: 'all', name: 'كل الفروع' } as any;
+        setBranch(allBranch);
+        localStorage.setItem('target_branch', JSON.stringify(allBranch));
         hasAutoAssigned.current = true;
+        console.log('[AutoAssign] Manager -> set to all branches');
+      } else if (user.assignedBranchId && !branch) {
+        // موظف: تعيين الفرع المعيّن
+        const assignedBranch = branches.find(b =>
+          normalizeArabic(b.id) === normalizeArabic(user.assignedBranchId!)
+        );
+        if (assignedBranch) {
+          setBranch(assignedBranch);
+          localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
+          hasAutoAssigned.current = true;
+          console.log('[AutoAssign] Employee -> set to:', assignedBranch.name);
+        } else {
+          console.warn('[AutoAssign] Employee assignedBranchId not found in branches:', user.assignedBranchId, 'Available:', branches.map(b => b.id));
+        }
       }
     }
   }, [user, branch, branches]);
 
 
-  const handleLogin = useCallback((userData: User) => {
+  const handleLogin = useCallback(async (userData: User) => {
     setUser(userData);
     localStorage.setItem('target_user', JSON.stringify(userData));
     localStorage.setItem('target_is_logged_in', 'true');
-    if (userData.assignedBranchId) {
-      const assignedBranch = branches.find(b => b.id === userData.assignedBranchId);
+
+    // حاول تعيين الفرع من القائمة الموجودة أولاً
+    let currentBranches = branches;
+
+    // إذا لم تكن الفروع محمّلة بعد، اجلبها فوراً
+    if (currentBranches.length === 0) {
+      console.log('[Login] Branches empty, force-fetching...');
+      try {
+        const remoteBranches = await GoogleSheetsService.getBranches();
+        if (remoteBranches && remoteBranches.length > 0) {
+          const mappedBranches: Branch[] = remoteBranches.map((b: any) => {
+            const bName = b.Branch_Name || b.name || b.id;
+            return {
+              id: normalizeArabic(bName),
+              name: bName,
+              Branch_Name: bName,
+              Current_Balance: Number(b.Current_Balance || 0),
+              currentBalance: Number(b.Current_Balance || 0),
+              Authorized_IP: b.Authorized_IP,
+              Service_List: b.Service_List,
+              Expense_List: b.Expense_List
+            };
+          });
+          setBranches(mappedBranches);
+          localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
+          currentBranches = mappedBranches;
+          console.log('[Login] Force-fetched branches:', mappedBranches.length);
+        }
+      } catch (err) {
+        console.error('[Login] Failed to fetch branches:', err);
+      }
+    }
+
+    const isManager = normalizeArabic(userData.role || '') === normalizeArabic(ROLES.MANAGER);
+
+    if (isManager) {
+      const allBranch = { id: 'all', name: 'كل الفروع' } as any;
+      setBranch(allBranch);
+      localStorage.setItem('target_branch', JSON.stringify(allBranch));
+      console.log('[Login] Manager -> set to all branches');
+    } else if (userData.assignedBranchId && currentBranches.length > 0) {
+      const assignedBranch = currentBranches.find(b =>
+        normalizeArabic(b.id) === normalizeArabic(userData.assignedBranchId!)
+      );
       if (assignedBranch) {
         setBranch(assignedBranch);
         localStorage.setItem('target_branch', JSON.stringify(assignedBranch));
-        const today = new Date().toISOString().split('T')[0];
-        setCurrentDate(today);
-        localStorage.setItem('target_date', JSON.stringify(today));
+        console.log('[Login] Employee -> assigned branch:', assignedBranch.name);
+      } else {
+        console.warn('[Login] assignedBranchId not matched:', userData.assignedBranchId, 'Available:', currentBranches.map(b => b.id));
       }
     }
   }, [branches]);
