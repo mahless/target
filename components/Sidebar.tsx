@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3,
-  Calendar, MapPin, Smartphone, User as UserIcon, Building2,
-  ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package, Lock, Users, Archive
+ Home, PlusCircle, LogOut, FileText, Settings, Wallet, BarChart3,
+ Calendar, MapPin, Smartphone, User as UserIcon, Building2,
+ ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package, Lock, Users, Archive
 } from 'lucide-react';
 import { Branch, User } from '../types';
 import { useModal } from '../context/ModalContext';
@@ -11,375 +11,375 @@ import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic } from '../utils';
 
 const AttendanceModalContent: React.FC<{
-  attendanceStatus: 'checked-in' | 'checked-out';
-  onCheckIn: (name: string, id: string) => Promise<any>;
-  onCheckOut: (name: string, id: string) => Promise<any>;
-  user: User;
-  currentBranch: Branch;
-  userRole: string;
-  showHRReport: () => void;
-  onClose: () => void;
-  showQuickStatus: (message: string, type?: 'success' | 'error') => void;
+ attendanceStatus: 'checked-in' | 'checked-out';
+ onCheckIn: (name: string, id: string) => Promise<any>;
+ onCheckOut: (name: string, id: string) => Promise<any>;
+ user: User;
+ currentBranch: Branch;
+ userRole: string;
+ showHRReport: () => void;
+ onClose: () => void;
+ showQuickStatus: (message: string, type?: 'success' | 'error') => void;
 }> = ({ attendanceStatus, onCheckIn, onCheckOut, user, currentBranch, userRole, showHRReport, onClose, showQuickStatus }) => {
-  const [ip, setIp] = useState('جاري التحميل...');
+ const [ip, setIp] = useState('جاري التحميل...');
 
-  useEffect(() => {
-    let isMounted = true;
-    GoogleSheetsService.fetchClientIP().then(res => {
-      if (isMounted) setIp(res || '0.0.0.0');
-    });
-    return () => { isMounted = false; };
-  }, []);
+ useEffect(() => {
+ let isMounted = true;
+ GoogleSheetsService.fetchClientIP().then(res => {
+ if (isMounted) setIp(res || '0.0.0.0');
+ });
+ return () => { isMounted = false; };
+ }, []);
 
-  return (
-    <div className="space-y-6 text-center">
-      {!currentBranch ? (
-        <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-3xl text-amber-700">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-3" />
-          <h3 className="text-base font-black italic">تنبيه: الفرع غير محدد</h3>
-          <p className="text-[10px] font-bold mt-1">قم باختيار الفرع أولا</p>
-        </div>
-      ) : (
-        <div className={`p-4 rounded-3xl border-2 transition-all duration-500 ${attendanceStatus === 'checked-in' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 transition-colors ${attendanceStatus === 'checked-in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-            {attendanceStatus === 'checked-in' ? <Wifi className="w-8 h-8 animate-pulse" /> : <WifiOff className="w-8 h-8" />}
-          </div>
-          <h3 className={`text-lg font-black ${attendanceStatus === 'checked-in' ? 'text-green-700' : 'text-red-700'}`}>
-            {attendanceStatus === 'checked-in' ? 'أنت متصل بالعمل' : 'غير مسجل حضور'}
-          </h3>
-          <p className="text-gray-500 font-bold text-xs mt-1">
-            {attendanceStatus === 'checked-in' ? 'نتمنى لك وردية موفقة' : 'برجاء تسجيل الحضور لفتح النظام'}
-          </p>
-        </div>
-      )}
+ return (
+ <div className="space-y-6 text-center">
+ {!currentBranch ? (
+ <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-3xl text-amber-700">
+ <AlertTriangle className="w-12 h-12 mx-auto mb-3" />
+ <h3 className="text-base font-black italic">تنبيه: الفرع غير محدد</h3>
+ <p className="text-[10px] font-bold mt-1">قم باختيار الفرع أولا</p>
+ </div>
+ ) : (
+ <div className={`p-4 rounded-3xl border-2 transition-all duration-500 ${attendanceStatus === 'checked-in' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+ <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 transition-colors ${attendanceStatus === 'checked-in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+ {attendanceStatus === 'checked-in' ? <Wifi className="w-8 h-8 animate-pulse" /> : <WifiOff className="w-8 h-8" />}
+ </div>
+ <h3 className={`text-lg font-black ${attendanceStatus === 'checked-in' ? 'text-green-700' : 'text-red-700'}`}>
+ {attendanceStatus === 'checked-in' ? 'أنت متصل بالعمل' : 'غير مسجل حضور'}
+ </h3>
+ <p className="text-gray-500 font-bold text-xs mt-1">
+ {attendanceStatus === 'checked-in' ? 'نتمنى لك وردية موفقة' : 'برجاء تسجيل الحضور لفتح النظام'}
+ </p>
+ </div>
+ )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <button
-          disabled={attendanceStatus === 'checked-in' || !currentBranch}
-          onClick={async () => {
-            if (!currentBranch) return;
-            const result = await onCheckIn(user.name, currentBranch.id);
-            if (result.success) {
-              showQuickStatus('تم تسجيل الحضور بنجاح');
-              onClose();
-            } else {
-              showQuickStatus(result.message || 'فشل تسجيل الحضور', 'error');
-            }
-          }}
-          className={`py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-in' || !currentBranch
-            ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-            : 'bg-green-600 text-white shadow-green-100 hover:bg-green-700'
-            }`}
-        >
-          تسجيل حضور
-        </button>
-        <button
-          disabled={attendanceStatus === 'checked-out' || !currentBranch}
-          onClick={async () => {
-            if (!currentBranch) return;
-            const result = await onCheckOut(user.name, currentBranch.id);
-            if (result.success) {
-              showQuickStatus('تم تسجيل الانصراف بنجاح');
-              onClose();
-            } else {
-              showQuickStatus(result.message || 'فشل تسجيل الانصراف', 'error');
-            }
-          }}
-          className={`py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-out' || !currentBranch
-            ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-            : 'bg-red-600 text-white shadow-red-100 hover:bg-red-700'
-            }`}
-        >
-          تسجيل انصراف
-        </button>
-      </div>
+ <div className="grid grid-cols-2 gap-4">
+ <button
+ disabled={attendanceStatus === 'checked-in' || !currentBranch}
+ onClick={async () => {
+ if (!currentBranch) return;
+ const result = await onCheckIn(user.name, currentBranch.id);
+ if (result.success) {
+ showQuickStatus('تم تسجيل الحضور بنجاح');
+ onClose();
+ } else {
+ showQuickStatus(result.message || 'فشل تسجيل الحضور', 'error');
+ }
+ }}
+ className={`py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-in' || !currentBranch
+ ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
+ : 'bg-green-600 text-white shadow-green-100 hover:bg-green-700'
+ }`}
+ >
+ تسجيل حضور
+ </button>
+ <button
+ disabled={attendanceStatus === 'checked-out' || !currentBranch}
+ onClick={async () => {
+ if (!currentBranch) return;
+ const result = await onCheckOut(user.name, currentBranch.id);
+ if (result.success) {
+ showQuickStatus('تم تسجيل الانصراف بنجاح');
+ onClose();
+ } else {
+ showQuickStatus(result.message || 'فشل تسجيل الانصراف', 'error');
+ }
+ }}
+ className={`py-3 rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 ${attendanceStatus === 'checked-out' || !currentBranch
+ ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
+ : 'bg-red-600 text-white shadow-red-100 hover:bg-red-700'
+ }`}
+ >
+ تسجيل انصراف
+ </button>
+ </div>
 
-      {normalizeArabic(userRole) === normalizeArabic('مدير') && (
-        <button
-          onClick={showHRReport}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs bg-blue-600 text-white shadow-lg shadow-blue-100 mt-1 hover:bg-blue-700 transition-all active:scale-95"
-        >
-          <FileText className="w-5 h-5" />
-          عرض تقرير ساعات عمل الموظفين
-        </button>
-      )}
+ {normalizeArabic(userRole) === normalizeArabic('مدير') && (
+ <button
+ onClick={showHRReport}
+ className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs bg-blue-600 text-white shadow-lg shadow-blue-100 mt-1 hover:bg-blue-700 transition-all active:scale-95"
+ >
+ <FileText className="w-5 h-5" />
+ عرض تقرير ساعات عمل الموظفين
+ </button>
+ )}
 
-      <button
-        onClick={onClose}
-        className="w-full py-3 mt-4 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all active:scale-[0.98]"
-      >
-        إغلاق النافذة
-      </button>
-    </div>
-  );
+ <button
+ onClick={onClose}
+ className="w-full py-3 mt-4 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all active:scale-[0.98]"
+ >
+ إغلاق النافذة
+ </button>
+ </div>
+ );
 };
 
 interface SidebarProps {
-  onLogout: () => void;
-  isOpen: boolean;
-  setIsOpen: (val: boolean) => void;
-  currentBranch: Branch | null;
-  currentDate: string | null;
-  onBranchChange: (branch: Branch) => void;
-  onDateChange: (date: string) => void;
-  userRole: string;
-  // Added props for Attendance
-  attendanceStatus: 'checked-in' | 'checked-out';
-  onCheckIn: (username: string, branchId: string) => Promise<{ success: boolean; message?: string }>;
-  onCheckOut: (username: string, branchId: string) => Promise<{ success: boolean; message?: string }>;
-  user: User | null;
-  startSubmitting: () => void;
-  stopSubmitting: () => void;
-  branches: Branch[];
+ onLogout: () => void;
+ isOpen: boolean;
+ setIsOpen: (val: boolean) => void;
+ currentBranch: Branch | null;
+ currentDate: string | null;
+ onBranchChange: (branch: Branch) => void;
+ onDateChange: (date: string) => void;
+ userRole: string;
+ // Added props for Attendance
+ attendanceStatus: 'checked-in' | 'checked-out';
+ onCheckIn: (username: string, branchId: string) => Promise<{ success: boolean; message?: string }>;
+ onCheckOut: (username: string, branchId: string) => Promise<{ success: boolean; message?: string }>;
+ user: User | null;
+ startSubmitting: () => void;
+ stopSubmitting: () => void;
+ branches: Branch[];
 }
 
 const Sidebar: React.FC<SidebarProps> = React.memo(({
-  onLogout,
-  isOpen,
-  setIsOpen,
-  currentBranch,
-  currentDate,
-  onBranchChange,
-  onDateChange,
-  userRole,
-  attendanceStatus,
-  onCheckIn,
-  onCheckOut,
-  user,
-  startSubmitting,
-  stopSubmitting,
-  branches
+ onLogout,
+ isOpen,
+ setIsOpen,
+ currentBranch,
+ currentDate,
+ onBranchChange,
+ onDateChange,
+ userRole,
+ attendanceStatus,
+ onCheckIn,
+ onCheckOut,
+ user,
+ startSubmitting,
+ stopSubmitting,
+ branches
 }) => {
-  const { showModal, showQuickStatus } = useModal();
-  const scrollRef = useRef<HTMLDivElement>(null);
+ const { showModal, showQuickStatus } = useModal();
+ const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Restore scroll position on mount
-  useEffect(() => {
-    const savedScroll = sessionStorage.getItem('sidebar-scroll');
-    if (savedScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = parseInt(savedScroll, 10);
-    }
-  }, []);
+ // Restore scroll position on mount
+ useEffect(() => {
+ const savedScroll = sessionStorage.getItem('sidebar-scroll');
+ if (savedScroll && scrollRef.current) {
+ scrollRef.current.scrollTop = parseInt(savedScroll, 10);
+ }
+ }, []);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    sessionStorage.setItem('sidebar-scroll', target.scrollTop.toString());
-  };
+ const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+ const target = e.currentTarget;
+ sessionStorage.setItem('sidebar-scroll', target.scrollTop.toString());
+ };
 
 
 
-  const handleAttendanceClick = async () => {
-    const showHRReport = async () => {
-      startSubmitting();
-      try {
-        const reportData = await GoogleSheetsService.getHRReport();
-        showModal({
-          title: 'تقرير ساعات عمل الموظفين (الشهر الحالي)',
-          size: 'lg',
-          confirmText: 'رجوع',
-          content: (
-            <div className="space-y-4">
-              <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                <table className="w-full text-right text-sm">
-                  <thead className="bg-gray-50 text-gray-400 text-xs font-black">
-                    <tr>
-                      <th className="p-3">الموظف</th>
-                      <th className="p-3 text-center bg-blue-50 text-blue-700">الإجمالي</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y font-bold text-[10px]">
-                    {reportData.length === 0 ? (
-                      <tr><td colSpan={2} className="p-8 text-center text-gray-300 italic">لا توجد بيانات لهذا الشهر</td></tr>
-                    ) : (
-                      reportData.map((u, i) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="p-3 text-gray-800">{u.name}</td>
-                          <td className="p-2 text-center bg-blue-50/50 text-blue-700 font-black">{u.totalMonth}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ),
-          onConfirm: () => handleAttendanceClick() // Back to main attendance modal
-        });
-      } finally {
-        stopSubmitting();
-      }
-    };
+ const handleAttendanceClick = async () => {
+ const showHRReport = async () => {
+ startSubmitting();
+ try {
+ const reportData = await GoogleSheetsService.getHRReport();
+ showModal({
+ title: 'تقرير ساعات عمل الموظفين (الشهر الحالي)',
+ size: 'lg',
+ confirmText: 'رجوع',
+ content: (
+ <div className="space-y-4">
+ <div className="overflow-x-auto rounded-2xl border border-gray-100">
+ <table className="w-full text-right text-sm">
+ <thead className="bg-gray-50 text-gray-400 text-xs font-black">
+ <tr>
+ <th className="p-3">الموظف</th>
+ <th className="p-3 text-center bg-blue-50 text-blue-700">الإجمالي</th>
+ </tr>
+ </thead>
+ <tbody className="divide-y font-bold text-[10px]">
+ {reportData.length === 0 ? (
+ <tr><td colSpan={2} className="p-8 text-center text-gray-300 italic">لا توجد بيانات لهذا الشهر</td></tr>
+ ) : (
+ reportData.map((u, i) => (
+ <tr key={i} className="hover:bg-gray-50">
+ <td className="p-3 text-gray-800">{u.name}</td>
+ <td className="p-2 text-center bg-blue-50/50 text-blue-700 font-black">{u.totalMonth}</td>
+ </tr>
+ ))
+ )}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ ),
+ onConfirm: () => handleAttendanceClick() // Back to main attendance modal
+ });
+ } finally {
+ stopSubmitting();
+ }
+ };
 
-    showModal({
-      title: 'نظام الحضور والانصراف الذكي',
-      size: 'md',
-      content: (
-        <AttendanceModalContent
-          attendanceStatus={attendanceStatus}
-          onCheckIn={onCheckIn}
-          onCheckOut={onCheckOut}
-          user={user!}
-          currentBranch={currentBranch!}
-          userRole={userRole}
-          showHRReport={showHRReport}
-          onClose={() => showModal(null as any)}
-          showQuickStatus={showQuickStatus}
-        />
-      ),
-      hideFooter: true
-    });
-  };
+ showModal({
+ title: 'نظام الحضور والانصراف الذكي',
+ size: 'md',
+ content: (
+ <AttendanceModalContent
+ attendanceStatus={attendanceStatus}
+ onCheckIn={onCheckIn}
+ onCheckOut={onCheckOut}
+ user={user!}
+ currentBranch={currentBranch!}
+ userRole={userRole}
+ showHRReport={showHRReport}
+ onClose={() => showModal(null as any)}
+ showQuickStatus={showQuickStatus}
+ />
+ ),
+ hideFooter: true
+ });
+ };
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 ${isActive
-      ? 'bg-gradient-to-r from-[#00A6A6] to-[#036564] text-white shadow-lg shadow-[#00A6A6]/20 scale-[1.02]'
-      : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6]'
-    }`;
+ const linkClass = ({ isActive }: { isActive: boolean }) =>
+ `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 ${isActive
+ ? 'bg-gradient-to-r from-[#00A6A6] to-[#036564] text-white shadow-lg shadow-[#00A6A6]/20 scale-[1.02]'
+ : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6]'
+ }`;
 
-  return (
-    <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+ return (
+ <>
+ {/* Mobile Overlay */}
+ {isOpen && (
+ <div
+ className="fixed inset-0 bg-black/50 z-20 md:hidden"
+ onClick={() => setIsOpen(false)}
+ />
+ )}
 
-      {/* Sidebar Container */}
-      <aside
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className={`fixed md:relative top-0 right-0 h-full w-[280px] bg-[#01404E] text-white transition-transform duration-300 ease-in-out z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
-          } flex flex-col shadow-2xl md:shadow-none overflow-y-auto custom-scrollbar`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo Area - Fixed at top */}
-          <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-4 border-[#01404E] bg-white overflow-hidden mx-2 mt-1 rounded-2xl">
-            <div className="w-full h-3 bg-[#ffffff]"></div>
-            <div className="w-full flex items-center justify-center drop-shadow-sm px-4">
-              <img
-                src="/assets/sidebar-logo.jpg"
-                alt="Target Logo"
-                className="w-full h-auto object-contain"
-              />
-            </div>
-            <h1 className="text-base font-black text-black tracking-tight uppercase py-1.5">
-              للخدمات الحكومية
-            </h1>
-          </div>
+ {/* Sidebar Container */}
+ <aside
+ ref={scrollRef}
+ onScroll={handleScroll}
+ className={`fixed md:relative top-0 right-0 h-full w-[280px] bg-[#01404E] text-white transition-transform duration-300 ease-in-out z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
+ } flex flex-col shadow-2xl md:shadow-none overflow-y-auto custom-scrollbar`}
+ >
+ <div className="flex flex-col h-full">
+ {/* Logo Area - Fixed at top */}
+ <div className="sticky top-0 z-20 flex flex-col items-center justify-center border-4 border-[#01404E] bg-white overflow-hidden mx-2 mt-1 rounded-2xl">
+ <div className="w-full h-3 bg-[#ffffff]"></div>
+ <div className="w-full flex items-center justify-center drop-shadow-sm px-4">
+ <img
+ src="/assets/sidebar-logo.jpg"
+ alt="Target Logo"
+ className="w-full h-auto object-contain"
+ />
+ </div>
+ <h1 className="text-base font-black text-black uppercase py-1.5">
+ للخدمات الحكومية
+ </h1>
+ </div>
 
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
-          >
-            {/* Navigation Links */}
-            <nav className="p-3 space-y-1">
-              <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                <Home className="w-5 h-5" />
-                <span>الصفحة الرئيسية</span>
-              </NavLink>
+ <div
+ ref={scrollRef}
+ onScroll={handleScroll}
+ className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
+ >
+ {/* Navigation Links */}
+ <nav className="p-3 space-y-1">
+ <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Home className="w-5 h-5" />
+ <span>الصفحة الرئيسية</span>
+ </NavLink>
 
-              {userRole !== 'مشاهد' && (
-                <NavLink to="/new-service" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <PlusCircle className="w-5 h-5" />
-                  <span>تسجيل خدمة جديدة</span>
-                </NavLink>
-              )}
+ {userRole !== 'مشاهد' && (
+ <NavLink to="/new-service" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <PlusCircle className="w-5 h-5" />
+ <span>تسجيل خدمة جديدة</span>
+ </NavLink>
+ )}
 
-              {userRole !== 'مشاهد' && (
-                <NavLink to="/receivables" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Clock className="w-5 h-5" />
-                  <span>المتبقيات</span>
-                </NavLink>
-              )}
+ {userRole !== 'مشاهد' && (
+ <NavLink to="/receivables" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Clock className="w-5 h-5" />
+ <span>المتبقيات</span>
+ </NavLink>
+ )}
 
-              {userRole !== 'مشاهد' && (
-                <NavLink to="/expenses" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Wallet className="w-5 h-5" />
-                  <span>المصروفات</span>
-                </NavLink>
-              )}
+ {userRole !== 'مشاهد' && (
+ <NavLink to="/expenses" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Wallet className="w-5 h-5" />
+ <span>المصروفات</span>
+ </NavLink>
+ )}
 
-              <NavLink to="/reports" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                <BarChart3 className="w-5 h-5" />
-                <span>التقارير</span>
-              </NavLink>
+ <NavLink to="/reports" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <BarChart3 className="w-5 h-5" />
+ <span>التقارير</span>
+ </NavLink>
 
-              {userRole !== 'مشاهد' && (
-                <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Users className="w-5 h-5" />
-                  <span>تسويات مكتب خارجي</span>
-                </NavLink>
-              )}
+ {userRole !== 'مشاهد' && (
+ <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Users className="w-5 h-5" />
+ <span>تسويات مكتب خارجي</span>
+ </NavLink>
+ )}
 
-              {/* Stock / Inventory Link */}
-              {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
-                <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Package className="w-5 h-5" />
-                  <span>مخزن الباركود</span>
-                </NavLink>
-              )}
+ {/* Stock / Inventory Link */}
+ {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
+ <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Package className="w-5 h-5" />
+ <span>مخزن الباركود</span>
+ </NavLink>
+ )}
 
-              <NavLink to="/archive" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                <Archive className="w-5 h-5" />
-                <span>الأرشيف</span>
-              </NavLink>
+ <NavLink to="/archive" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Archive className="w-5 h-5" />
+ <span>الأرشيف</span>
+ </NavLink>
 
-              {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin') && (
-                <NavLink to="/admin/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
-                  <Settings className="w-5 h-5" />
-                  <span>الاعدادات</span>
-                </NavLink>
-              )}
+ {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin') && (
+ <NavLink to="/admin/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
+ <Settings className="w-5 h-5" />
+ <span>الاعدادات</span>
+ </NavLink>
+ )}
 
-              <div className="border-t border-white/5 my-2 mx-4"></div>
+ <div className="border-t border-white/5 my-2 mx-4"></div>
 
-              {/* Attendance Button/Link */}
-              {userRole === 'مدير' ? (
-                <NavLink
-                  to="/admin/attendance"
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
-                      ? 'bg-[#00A6A6] text-white shadow-lg'
-                      : 'bg-black/20 text-gray-300 hover:bg-black/30'
-                    }`
-                  }
-                  onClick={() => { if (isOpen) setIsOpen(false); }}
-                >
-                  <Clock className="w-5 h-5" />
-                  <span className="font-black text-sm">الحضور والانصراف</span>
-                </NavLink>
-              ) : userRole !== 'مشاهد' ? (
-                <button
-                  onClick={handleAttendanceClick}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
-                    ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                    : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
-                    }`}
-                >
-                  <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                  <span className="font-black text-sm">الحضور والانصراف</span>
-                </button>
-              ) : null}
-            </nav>
+ {/* Attendance Button/Link */}
+ {userRole === 'مدير' ? (
+ <NavLink
+ to="/admin/attendance"
+ className={({ isActive }) =>
+ `w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 ${isActive
+ ? 'bg-[#00A6A6] text-white shadow-lg'
+ : 'bg-black/20 text-gray-300 hover:bg-black/30'
+ }`
+ }
+ onClick={() => { if (isOpen) setIsOpen(false); }}
+ >
+ <Clock className="w-5 h-5" />
+ <span className="font-black text-sm">الحضور والانصراف</span>
+ </NavLink>
+ ) : userRole !== 'مشاهد' ? (
+ <button
+ onClick={handleAttendanceClick}
+ className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 border ${attendanceStatus === 'checked-in'
+ ? 'bg-green-500/10 border-green-500/30 text-green-400'
+ : 'bg-black/20 border-white/5 text-white/40 hover:bg-black/30 hover:text-white'
+ }`}
+ >
+ <div className={`w-2 h-2 rounded-full ${attendanceStatus === 'checked-in' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+ <span className="font-black text-sm">الحضور والانصراف</span>
+ </button>
+ ) : null}
+ </nav>
 
-            {/* Logout Button */}
-            <div className="p-4 border-t border-white/5">
-              <button
-                onClick={onLogout}
-                className="flex w-full items-center gap-3 px-4 py-2.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>تسجيل الخروج</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
-    </>
-  );
+ {/* Logout Button */}
+ <div className="p-4 border-t border-white/5">
+ <button
+ onClick={onLogout}
+ className="flex w-full items-center gap-3 px-4 py-2.5 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-black"
+ >
+ <LogOut className="w-5 h-5" />
+ <span>تسجيل الخروج</span>
+ </button>
+ </div>
+ </div>
+ </div>
+ </aside>
+ </>
+ );
 });
 
 export default Sidebar;
