@@ -66,7 +66,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
  const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
 
- const commonInputClass ="w-full p-3 md:p-3.5 border border-[#01404E]/10 rounded-2xl bg-[#01404E]/5 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs md:text-sm";
+ const commonInputClass = "w-full py-2.5 px-3.5 border border-[#01404E]/10 rounded-xl bg-[#01404E]/5 text-[#01404E] font-bold placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs";
 
  // Search Logic
  const matchingClients = useMemo(() => {
@@ -300,8 +300,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
  return (
  <div className="max-w-4xl mx-auto p-2 md:p-3">
- <div className={`bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium border border-white/20 transition-opacity animate-premium-in relative z-30 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
- <div className="bg-[#01404E] p-3 md:p-4 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5">
+ <div className={`transition-opacity animate-premium-in relative z-30 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
+ <div className="mb-4 text-[#01404E] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
  <div className="flex items-center gap-3">
  <div className="w-2 h-8 bg-[#00A6A6] rounded-full"></div>
  <h2 className="text-xl font-black whitespace-nowrap">تسجيل معاملة جديدة</h2>
@@ -309,7 +309,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
  {/* Quick Client Lookup - Moved to Header */}
  <div className="relative w-full md:max-w-xs group">
- <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4 group-focus-within:text-[#00A6A6] transition-colors" />
+ <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#01404E]/30 w-4 h-4 group-focus-within:text-[#00A6A6] transition-colors" />
  <input
  type="text"
  value={clientSearchTerm}
@@ -318,19 +318,19 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  setShowSearchResults(true);
  }}
  placeholder="بحث سريع عن عميل سابق..."
- className="w-full pr-10 pl-4 py-2.5 border border-white/30 rounded-xl bg-white/5 text-white text-xs font-bold placeholder:text-white/50 focus:bg-white focus:text-[#01404E] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-inner"
+ className="w-full pr-10 pl-4 py-2.5 border border-[#01404E]/10 rounded-xl bg-[#01404E]/5 text-[#01404E] text-xs font-bold placeholder:text-[#01404E]/50 focus:bg-white focus:text-[#01404E] focus:ring-4 focus:ring-[#00A6A6]/10 focus:border-[#00A6A6] outline-none transition-all shadow-sm"
  />
  {showSearchResults && matchingClients.length > 0 && (
- <div className="absolute top-full right-0 left-0 mt-2 bg-[#01404E] rounded-xl shadow-lux border border-white/10 z-[60] overflow-hidden backdrop-blur-xl">
+ <div className="absolute top-full right-0 left-0 mt-2 bg-white rounded-xl shadow-lg border border-[#01404E]/5 z-[60] overflow-hidden">
  {matchingClients.map(client => (
- <button key={client.id} type="button" onClick={() => handleSelectClient(client)} className="w-full flex items-center justify-between p-3 hover:bg-white/5 border-b border-white/5 last:border-none text-right group">
+ <button key={client.id} type="button" onClick={() => handleSelectClient(client)} className="w-full flex items-center justify-between p-3 hover:bg-[#01404E]/5 border-b border-[#01404E]/5 last:border-none text-right group">
  <div className="flex items-center gap-3">
  <div className="w-8 h-8 rounded-lg bg-[#00A6A6]/10 flex items-center justify-center text-[#00A6A6] group-hover:bg-[#00A6A6] group-hover:text-white transition-all">
  <UserCheck className="w-4 h-4" />
  </div>
  <div>
- <p className="font-black text-white text-[11px]">{client.name}</p>
- <p className="text-[9px] text-white/40 font-bold uppercase">{client.id}</p>
+ <p className="font-black text-[#01404E] text-[11px]">{client.name}</p>
+ <p className="text-[9px] text-[#01404E]/40 font-bold uppercase">{client.id}</p>
  </div>
  </div>
  </button>
@@ -339,7 +339,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  )}
  </div>
 
- <span className="text-white/40 text-xs font-black bg-white/5 px-4 py-2 rounded-2xl border border-white/10 whitespace-nowrap">{currentDate}</span>
+ <span className="text-[#01404E]/40 text-xs font-black bg-[#01404E]/5 px-4 py-2 rounded-2xl border border-[#01404E]/10 whitespace-nowrap">{currentDate}</span>
  </div>
 
  <div className="p-2 md:p-3 space-y-1.5">
@@ -347,7 +347,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  <form onSubmit={handleSubmit} className="space-y-2">
 
  {/* Section: Basic Info */}
- <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-1 bg-white/40 rounded-3xl border border-[#01404E]/5 shadow-sm">
+ <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
  <div className="md:col-span-2">
  <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mb-1 mr-1">الاسم بالكامل {!isOtherService && <span className="text-red-500">*</span>}</label>
  <input required={!isOtherService} type="text" value={clientName} onChange={e => setClientName(e.target.value)} className={commonInputClass} placeholder="الاسم رباعي" />
@@ -375,7 +375,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  showAllOption={false}
  />
  </div>
- {serviceType === 'بطاقة رقم قومي' ? (
+ {serviceType === 'بطاقة رقم قومي' && (
  <div className="animate-slideIn space-y-2">
  <div className="flex items-center justify-between px-1">
  <label className="block text-[10px] font-black text-[#01404E]/60 uppercase ]">الباركود</label>
@@ -428,45 +428,45 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  )}
  </div>
  </div>
- ) : (
- <div className={`animate-slideIn space-y-1 ${isSellingForm ? 'hidden' : ''}`}>
- <label className="block text-[10px] font-black text-gray-900 uppercase mr-1">ملاحظات إضافية</label>
- <input
- type="text"
- value={notes}
- onChange={(e) => setNotes(e.target.value)}
- className={`${commonInputClass} !p-4 !rounded-2xl !border !border-yellow-400`}
- placeholder="سجل ملاحظة صغيرة هنا..."
- />
- </div>
  )}
  </div>
-
- {/* RE-ADDED: Speed Selection */}
- {(serviceType === 'بطاقة رقم قومي' || serviceType === 'جواز سفر') && (
- <div className="bg-[#036564]/5 p-4 rounded-[2rem] border border-[#036564]/10 animate-fadeIn">
- <label className="flex items-center gap-2 text-[10px] font-black text-[#036564] uppercase ] mb-2 mr-1">
- <Zap className="w-4 h-4 text-[#00A6A6]" />
- سرعة تنفيذ الخدمة <span className="text-red-500 mr-1">*</span>
- </label>
- <div className="flex flex-wrap gap-3">
- {(serviceType === 'بطاقة رقم قومي' ? ID_CARD_SPEEDS : PASSPORT_SPEEDS).map(s => (
- <button
- key={s}
- type="button"
- onClick={() => setSpeed(s as ServiceSpeed)}
- className={`px-8 py-3 rounded-2xl text-sm font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-lg shadow-[#036564]/20 scale-105' : 'bg-white text-[#01404E]/60 border-transparent hover:border-[#036564]/20'}`}
- >
- {s}
- </button>
- ))}
- </div>
- </div>
- )}
- </div>
+  {/* Speed + Notes on same row */}
+  <div className="flex flex-col md:flex-row gap-4 items-end">
+    {(serviceType === 'بطاقة رقم قومي' || serviceType === 'جواز سفر') && (
+      <div className="flex-1 animate-fadeIn">
+        <label className="flex items-center gap-2 text-[10px] font-black text-[#036564] uppercase mb-2 mr-1">
+          <Zap className="w-3.5 h-3.5 text-[#00A6A6]" />
+          سرعة تنفيذ الخدمة <span className="text-red-500 mr-1">*</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {(serviceType === 'بطاقة رقم قومي' ? ID_CARD_SPEEDS : PASSPORT_SPEEDS).map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSpeed(s as ServiceSpeed)}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-md scale-105' : 'bg-white text-[#01404E]/60 border-[#01404E]/10 hover:border-[#036564]/30'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+    <div className={`flex-1 space-y-1 ${isSellingForm ? 'hidden' : ''}`}>
+      <label className="block text-[10px] font-black text-[#01404E]/60 uppercase mr-1">ملاحظات إضافية</label>
+      <input
+        type="text"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        className={`${commonInputClass} border-yellow-400 bg-yellow-50/30`}
+        placeholder="سجل ملاحظة هنا..."
+      />
+    </div>
+  </div>
+  </div>
 
  {/* Section: Electronic Payment Card */}
- <div className="bg-gray-50 p-3 rounded-2xl space-y-2 border border-gray-100 shadow-inner">
+ <div className="p-2 space-y-2">
  <div className="flex items-center gap-3">
  <input type="checkbox" id="elecCheck" checked={isElectronic} onChange={e => setIsElectronic(e.target.checked)} className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500" />
  <label htmlFor="elecCheck" className="text-sm font-black text-gray-800 flex items-center gap-2 cursor-pointer select-none">
@@ -495,7 +495,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  </div>
 
  {/* Section: Options (Third Party & Selling Form) */}
- <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 p-3 rounded-2xl border border-gray-100 shadow-inner">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2">
  <div className="flex items-center gap-3">
  <input
  type="checkbox"
@@ -541,7 +541,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
  </div>
 
  {/* Section: Financials Summary */}
- <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t pt-2.5">
+ <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-2 pt-4">
  <div>
  <label className="block text-xs font-black text-gray-700 mb-2 mr-1">إجمالي سعر الخدمة</label>
  <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-lg`} placeholder="0" />
