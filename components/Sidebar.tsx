@@ -6,7 +6,6 @@ import {
   ChevronDown, Menu, X, Wifi, WifiOff, AlertTriangle, Clock, Package, Lock, Users, Archive
 } from 'lucide-react';
 import { Branch, User } from '../types';
-import CustomSelect from './CustomSelect';
 import { useModal } from '../context/ModalContext';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic } from '../utils';
@@ -237,15 +236,6 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
       : 'text-gray-300 hover:bg-white/5 hover:text-[#00A6A6]'
     }`;
 
-  const controlInputClass = "w-full p-2.5 mt-1 border border-white/10 rounded-xl bg-black/20 text-white font-bold text-xs focus:ring-4 focus:ring-[#00A6A6]/20 focus:border-[#00A6A6] outline-none transition-all";
-  const branchOptions = useMemo(() => {
-    const options = branches.map(b => ({ id: b.id, name: b.name }));
-    if (normalizeArabic(userRole) === normalizeArabic('مدير')) {
-      return [{ id: 'all', name: 'كل الفروع' }, ...options];
-    }
-    return options;
-  }, [branches, userRole]);
-
   return (
     <>
       {/* Mobile Overlay */}
@@ -284,62 +274,6 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
             onScroll={handleScroll}
             className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar"
           >
-            {/* Quick Controls Section */}
-            <div className="p-3 border-b border-white/5 bg-black/10">
-              <div className="space-y-2">
-                <div>
-                  <CustomSelect
-                    label="الفرع الحالي"
-                    labelClassName="text-white/60"
-                    options={branchOptions}
-                    value={currentBranch?.id || ''}
-                    onChange={(val) => {
-                      if (val === 'all') {
-                        onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
-                        return;
-                      }
-                      if (!val) {
-                        const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
-                        if (isManager) {
-                          onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
-                        } else {
-                          onBranchChange(null as any);
-                        }
-                        return;
-                      }
-                      const selected = branches.find(b => b.id === val);
-                      if (selected) onBranchChange(selected);
-                    }}
-                    icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
-                    placeholder="اختر فرع"
-                    disabled={userRole === 'موظف'}
-                    showAllOption={false}
-                    dark={true}
-                    className="p-2.5 rounded-xl border text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="flex items-center justify-between gap-1 text-[10px] font-black text-white/40 px-1 uppercase tracking-wider">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      التاريخ
-                    </div>
-                    <span className="text-[9px] text-[#00A6A6] flex items-center gap-0.5">
-                      <Lock className="w-2.5 h-2.5" />
-                      مثبت
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={currentDate || ''}
-                    readOnly
-                    className={`${controlInputClass} opacity-50 cursor-not-allowed`}
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Navigation Links */}
             <nav className="p-3 space-y-1">
               <NavLink to="/dashboard" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Menu, User, Calendar, MapPin } from 'lucide-react';
 import { Branch } from '../types';
+import CustomSelect from './CustomSelect';
+import { normalizeArabic } from '../utils';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -8,9 +10,20 @@ interface HeaderProps {
   date: string | null;
   username: string;
   pageTitle: string;
+  branches?: Branch[];
+  userRole?: string;
+  onBranchChange?: (branch: Branch) => void;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date, username, pageTitle }) => {
+const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date, username, pageTitle, branches = [], userRole = '', onBranchChange }) => {
+  const branchOptions = useMemo(() => {
+    const options = branches.map(b => ({ id: b.id, name: b.name }));
+    if (normalizeArabic(userRole) === normalizeArabic('مدير')) {
+      return [{ id: 'all', name: 'كل الفروع' }, ...options];
+    }
+    return options;
+  }, [branches, userRole]);
+
   return (
     <header className="bg-[#01404E] h-14 shadow-[0_4px_20px_rgba(0,0,0,0.2)] flex items-center justify-between px-4 sticky top-0 z-20 text-white border-b border-white/5">
       <div className="flex items-center gap-3">
@@ -27,17 +40,41 @@ const Header: React.FC<HeaderProps> = React.memo(({ toggleSidebar, branch, date,
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-4 text-[9px] sm:text-xs">
-        {branch && (
-          <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-md">
-            <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#00A6A6]" />
-            <span className="hidden sm:inline font-black">{branch.name}</span>
-          </div>
-        )}
+        <div className="w-32 sm:w-48">
+          <CustomSelect
+            options={branchOptions}
+            value={branch?.id || ''}
+            onChange={(val) => {
+              if (!onBranchChange) return;
+              if (val === 'all') {
+                onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                return;
+              }
+              if (!val) {
+                const isManager = normalizeArabic(userRole) === normalizeArabic('مدير');
+                if (isManager) {
+                  onBranchChange({ id: 'all', name: 'كل الفروع' } as any);
+                } else {
+                  onBranchChange(null as any);
+                }
+                return;
+              }
+              const selected = branches.find(b => b.id === val);
+              if (selected) onBranchChange(selected);
+            }}
+            icon={<MapPin className="w-3 h-3 text-[#00A6A6]" />}
+            placeholder="اختر فرع"
+            disabled={userRole === 'موظف'}
+            showAllOption={false}
+            dark={true}
+            className="px-2 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border text-[10px] sm:text-xs bg-white/5 backdrop-blur-md"
+          />
+        </div>
 
         {date && (
-          <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-md">
+          <div className="flex items-center gap-1 text-white bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 sm:h-9 rounded-lg sm:rounded-xl border border-white/10 backdrop-blur-md">
             <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#00A6A6]" />
-            <span className="font-mono pt-0.5 font-black">{date}</span>
+            <span className="font-mono pt-0.5 font-black flex-1 text-center">{date}</span>
           </div>
         )}
 
