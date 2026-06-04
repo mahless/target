@@ -175,7 +175,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
         isElectronic,
         electronicAmount: isElectronic ? Number(electronicAmount) : 0,
         electronicMethod: isElectronic ? (electronicMethod as ElectronicMethod) : undefined,
-        notes: isSellingForm ? 'بيع استمارة لطرف اخر' : notes,
+        notes: isSellingForm ? (notes ? `بيع استمارة: ${notes}` : 'بيع استمارة لطرف اخر') : notes,
         branchId,
         entryDate: currentDate,
         timestamp: Date.now(),
@@ -360,7 +360,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                     </div>
                   </div>
                 )}
-                <div className={`flex-1 space-y-1 ${isSellingForm ? 'hidden' : ''}`}>
+                <div className="flex-1 space-y-1">
                   <label className="block text-[10px] font-black text-[#01404E]/60 uppercase mr-1">ملاحظات إضافية</label>
                   <input
                     type="text"
