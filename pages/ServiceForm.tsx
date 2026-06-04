@@ -350,16 +350,12 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                       <Zap className="w-3.5 h-3.5 text-[#00A6A6]" />
                       سرعة تنفيذ الخدمة <span className="text-red-500 mr-1">*</span>
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-4 py-2.5">
                       {(serviceType === 'بطاقة رقم قومي' ? ID_CARD_SPEEDS : PASSPORT_SPEEDS).map(s => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setSpeed(s as ServiceSpeed)}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all border-2 ${speed === s ? 'bg-[#036564] text-white border-[#036564] shadow-md scale-105' : 'bg-white text-[#01404E]/60 border-[#01404E]/10 hover:border-[#036564]/30'}`}
-                        >
-                          {s}
-                        </button>
+                        <label key={s} className="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="serviceSpeed" checked={speed === s} onChange={() => setSpeed(s as ServiceSpeed)} className="w-4 h-4 text-[#00A6A6] focus:ring-[#00A6A6]" />
+                          <span className="text-[10px] md:text-xs font-black text-[#01404E]">{s}</span>
+                        </label>
                       ))}
                     </div>
                   </div>
@@ -464,7 +460,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-700 mb-2 mr-1">المتبقي الآجل</label>
-                <input readOnly type="number" value={remainingAmount} className={`w-full p-3.5 border-none rounded-xl font-black text-lg outline-none shadow-inner ${remainingAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-300 text-gray-500'}`} />
+                <input readOnly type="number" value={remainingAmount} className={`w-full py-2.5 px-3.5 border-none rounded-xl font-black text-lg outline-none shadow-inner ${remainingAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-300 text-gray-500'}`} />
               </div>
             </div>
 
