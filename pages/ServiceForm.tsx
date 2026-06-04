@@ -55,7 +55,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [notes, setNotes] = useState('');
 
   const serviceOptions = useMemo(() => serviceTypes.map(s => ({ id: s, name: s })), [serviceTypes]);
-  const methodOptions = useMemo(() => ELECTRONIC_METHODS.map(m => ({ id: m as string, name: m as string })), []);
+
 
   // UI State
   const [error, setError] = useState<string | null>(null);
@@ -384,15 +384,16 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               </div>
               {isElectronic && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
-                  <div>
-                    <CustomSelect
-                      label="وسيلة التحصيل"
-                      options={methodOptions}
-                      value={electronicMethod}
-                      onChange={(v) => setElectronicMethod(v as ElectronicMethod)}
-                      placeholder="اختر الوسيلة..."
-                      showAllOption={false}
-                    />
+                  <div className="flex-1 animate-fadeIn">
+                    <label className="block text-[10px] md:text-xs font-black text-gray-600 uppercase mb-2 mr-1">وسيلة التحصيل</label>
+                    <div className="flex flex-wrap items-center gap-4 py-2.5">
+                      {ELECTRONIC_METHODS.map(m => (
+                        <label key={m} className="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="elecMethod" checked={electronicMethod === m} onChange={() => setElectronicMethod(m as ElectronicMethod)} className="w-4 h-4 text-blue-600 focus:ring-blue-600" />
+                          <span className="text-[10px] md:text-xs font-black text-gray-700">{m}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-black text-gray-600 mb-2 mr-1">القيمة المحولة</label>
