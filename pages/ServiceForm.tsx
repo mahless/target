@@ -316,18 +316,20 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 </div>
                 {serviceType === 'بطاقة رقم قومي' && (
                   <div className="animate-slideIn">
-                    <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mb-2 mr-1">الباركود</label>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-4 px-1">
+                    <div className="flex items-center justify-between px-1 mb-2">
+                      <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mr-1">الباركود</label>
+                      <div className="flex items-center gap-4">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="radio" name="barcodeType" checked={!isExternalBarcode} onChange={() => setIsExternalBarcode(false)} className="w-4 h-4 text-[#00A6A6] focus:ring-[#00A6A6]" />
-                          <span className="text-[10px] font-black text-[#01404E]">داخلي (افتراضي)</span>
+                          <span className="text-[10px] font-black text-[#01404E]">داخلي</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="radio" name="barcodeType" checked={isExternalBarcode} onChange={() => setIsExternalBarcode(true)} className="w-4 h-4 text-[#00A6A6] focus:ring-[#00A6A6]" />
                           <span className="text-[10px] font-black text-[#01404E]">خارجي</span>
                         </label>
                       </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
                       <input
                         required
                         type="text"
