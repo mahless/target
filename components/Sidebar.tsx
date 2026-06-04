@@ -314,14 +314,6 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
  </NavLink>
  )}
 
- {/* Stock / Inventory Link */}
- {(normalizeArabic(userRole) === normalizeArabic('مدير') || userRole === 'Admin' || normalizeArabic(userRole) === normalizeArabic('مساعد')) && (
- <NavLink to="/admin/inventory" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
- <Package className="w-5 h-5" />
- <span>مخزن الباركود</span>
- </NavLink>
- )}
-
  <NavLink to="/archive" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
  <Archive className="w-5 h-5" />
  <span>الأرشيف</span>
