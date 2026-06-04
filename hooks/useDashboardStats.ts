@@ -8,8 +8,9 @@ export const useDashboardStats = (entries: ServiceEntry[], expenses: Expense[], 
 
  // 1. حساب المحصل الفعلي اليوم (Cash In):
  // نستخدم الـ entries الممررة مباشرة لأنها مفلترة فعلاً في الـ Dashboard
- const activeToday = entries.filter(e => e.status === 'active' || !e.status);
- const totalCollectedToday = activeToday.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
+  const ACTIVE_STATUSES = ['active', 'قيد المراجعة', 'قيد التنفيذ', 'جاهزة للتسليم'];
+  const activeToday = entries.filter(e => !e.status || ACTIVE_STATUSES.includes(e.status));
+  const totalCollectedToday = activeToday.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
 
  // 2. حساب إجمالي رسوم الإلغاء (لليوم)
  const cancelledToday = entries.filter(e => e.status === 'cancelled');
