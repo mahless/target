@@ -48,8 +48,10 @@ export const validateServiceSubmission = (ctx: ServiceValidationContext): string
         entries
     } = ctx;
 
+    const isBirthCertFirstTime = normalizeArabic(serviceType) === normalizeArabic('شهادة ميلاد اول مرة');
+
     // 1. National ID Check
-    if (!isOtherService && !isSellingForm && nationalId.length !== 14) {
+    if (!isOtherService && !isSellingForm && !isBirthCertFirstTime && nationalId.length !== 14) {
         return "الرقم القومي يجب أن يكون 14 رقم";
     }
 

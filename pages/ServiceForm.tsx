@@ -63,6 +63,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [lastEntry, setLastEntry] = useState<ServiceEntry | null>(null);
 
   const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
+  const isBirthCertFirstTime = normalizeArabic(serviceType) === normalizeArabic('شهادة ميلاد اول مرة');
 
   const commonInputClass = "w-full py-2.5 px-3.5 border border-[#01404E]/10 rounded-xl bg-[#01404E]/5 text-[#01404E] font-bold placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs";
 
@@ -159,7 +160,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
       const newEntry: ServiceEntry = {
         id: entryId,
         clientName: clientName || (isOtherService ? 'كاش' : ''),
-        nationalId: nationalId || (isOtherService ? '-' : ''),
+        nationalId: nationalId || (isOtherService || isBirthCertFirstTime ? '-' : ''),
         phoneNumber: phoneNumber || (isOtherService ? '-' : ''),
         serviceType,
         barcode: serviceType === 'بطاقة رقم قومي' ? barcode : undefined,
@@ -291,8 +292,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                 <input required={!isOtherService} type="text" value={clientName} onChange={e => setClientName(e.target.value)} className={commonInputClass} placeholder="الاسم رباعي" />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mb-1 mr-1">الرقم القومي {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
-                <input required={!isOtherService && !isSellingForm} type="text" maxLength={14} value={nationalId} onChange={e => setNationalId(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="14 رقم" />
+                <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mb-1 mr-1">الرقم القومي {(!isOtherService && !isSellingForm && !isBirthCertFirstTime) && <span className="text-red-500">*</span>}</label>
+                <input required={!isOtherService && !isSellingForm && !isBirthCertFirstTime} type="text" maxLength={14} value={nationalId} onChange={e => setNationalId(toEnglishDigits(e.target.value).replace(/\D/g, ''))} className={`${commonInputClass} font-mono`} placeholder="14 رقم" />
               </div>
               <div className="md:col-span-1">
                 <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mb-1 mr-1">رقم الهاتف {(!isOtherService && !isSellingForm) && <span className="text-red-500">*</span>}</label>
