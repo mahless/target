@@ -113,6 +113,23 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  });
  }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole]);
 
+ const filteredEntries = useMemo(() => {
+    // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ)
+    if (debouncedSearchTerm) {
+      return allEntries.filter(e => {
+        return searchMultipleFields(debouncedSearchTerm, [
+          e.clientName,
+          e.nationalId,
+          e.phoneNumber,
+          e.workOrderNumber || ''
+        ]);
+      });
+    }
+
+    // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار
+    return dailyEntries;
+  }, [dailyEntries, allEntries, debouncedSearchTerm]);
+
  const dailyExpenses = useMemo(() => {
  const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
  if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
@@ -520,31 +537,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  });
  };
 
- const filteredEntries = useMemo(() => {
- // حالة البحث: البحث في كل عمليات الفرع (تاريخ مفتوح)
- if (debouncedSearchTerm) {
- const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
 
- // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر نتائج بحث عامة
- if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
-
- return allEntries.filter(e => {
- const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
- const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
- e.clientName,
- e.nationalId,
- e.phoneNumber,
- e.workOrderNumber || ''
- ]);
-
- // في البحث بالرئيسية، يرى كل عمليات النطاق المختار
- return matchesBranch && matchesSearch;
- });
- }
-
- // الحالة الافتراضية: عرض عمليات اليوم فقط
- return dailyEntries;
- }, [dailyEntries, allEntries, debouncedSearchTerm, branchId, normalizedBranch, userRole]);
 
  return (
  <div className="px-3 pb-3 pt-1 md:px-5 md:pb-5 md:pt-2 space-y-2">
