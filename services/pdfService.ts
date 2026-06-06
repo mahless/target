@@ -30,7 +30,7 @@ const generateQRDataUrl = async (entryId: string): Promise<string> => {
   }
 };
 
-export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): string => {
+export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string, printedBy?: string): string => {
   return `
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
@@ -232,7 +232,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
               <p class="branch-name">فرع: ${escapeHtml(entry.branchId || 'الرئيسي')}</p>
               <div class="meta-item">تاريخ العملية: ${escapeHtml(entry.entryDate)}</div>
               <div class="meta-item">وقت العملية: ${escapeHtml(new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))}</div>
-              <div class="meta-item">الموظف: ${escapeHtml(entry.recordedBy)}</div>
+              <div class="meta-item">الموظف: ${escapeHtml(printedBy || entry.recordedBy)}</div>
             </div>
 
             <div class="qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 5px; margin-left: 10px;">
@@ -271,7 +271,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
             <div class="total-item"><span class="total-label">المتبقي</span><span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${escapeHtml(entry.remainingAmount)} EGP</span></div>
           </div>
           
-          <div class="instructions" style="font-size: 7.5pt; color: #444; font-weight: 700; margin-bottom: 6px; line-height: 1.5; text-align: right; background: #fafafa; padding: 4px 6px; border: 1px solid #eee; border-radius: 4px;">
+          <div class="instructions" style="font-size: 6.5pt; color: #444; font-weight: 700; margin-bottom: 6px; line-height: 1.3; text-align: right; background: #fafafa; padding: 4px 6px; border: 1px solid #eee; border-radius: 4px;">
             <div style="margin-bottom: 2px;">1- عند التصوير يتم دفع 15 جنيه رسوم نموذج تصوير / فتره الانتظار من ساعه الي ساعتين / يجب وجود جميع اصول المستندات</div>
             <div>2- عند طلب الغاء الخدمه يتم خصم التكاليف وشطب اختام المكتب. وقد يؤدي الي تلف الاستماره / لا يحق المطالبه بتكلفه الخدمه بعد 3 شهور من التنفيذ</div>
           </div>
@@ -337,7 +337,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
   `;
 };
 
-export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
+export const generateReceipt = async (entry: ServiceEntry, printedBy?: string): Promise<void> => {
   // Generate QR code data URL before creating the receipt
   const qrDataUrl = await generateQRDataUrl(entry.id);
 
@@ -353,7 +353,7 @@ export const generateReceipt = async (entry: ServiceEntry): Promise<void> => {
 
     document.body.appendChild(iframe);
 
-    const htmlContent = generateReceiptHtml(entry, qrDataUrl);
+    const htmlContent = generateReceiptHtml(entry, qrDataUrl, printedBy);
     const doc = iframe.contentWindow?.document;
 
     if (doc) {

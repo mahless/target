@@ -42,7 +42,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
  onConfirm: async () => {
  setIsProcessing(true);
  try {
- await generateReceipt(entry);
+ await generateReceipt(entry, username);
  } finally {
  setIsProcessing(false);
  }

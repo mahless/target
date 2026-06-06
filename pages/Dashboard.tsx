@@ -185,23 +185,23 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  onConfirm: async () => {
  setIsProcessing(true);
  try {
- await generateReceipt(entry);
+ await generateReceipt(entry, username);
  } finally {
  setIsProcessing(false);
  }
  },
  cancelText: 'تراجع'
  });
- }, [showModal, setIsProcessing]);
+ }, [showModal, setIsProcessing, username]);
 
  const handlePrint = useCallback(async (entry: ServiceEntry) => {
  setIsProcessing(true);
  try {
- await generateReceipt(entry);
+ await generateReceipt(entry, username);
  } finally {
  setIsProcessing(false);
  }
- }, [setIsProcessing]);
+ }, [setIsProcessing, username]);
 
  // --- NEW: Work Order Number handler ---
  const handleSetWorkOrderNumber = useCallback((entry: ServiceEntry) => {

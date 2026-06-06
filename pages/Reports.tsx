@@ -116,7 +116,7 @@ const Reports: React.FC<ReportsProps> = ({
  onConfirm: async () => {
  setIsProcessing(true);
  try {
- await generateReceipt(entry);
+ await generateReceipt(entry, username);
  } finally {
  setIsProcessing(false);
  }
