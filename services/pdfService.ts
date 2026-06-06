@@ -62,7 +62,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         .container {
           max-width: 210mm;
           margin: 0 auto;
-          padding: 20px 80px;
+          padding: 10px 80px;
           position: relative;
           overflow: hidden;
         }
@@ -86,7 +86,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         .header {
           text-align: center;
           padding-top: 2px;
-          padding-bottom: 5px;
+          padding-bottom: 2px;
           margin-bottom: 2px;
         }
 
@@ -221,7 +221,7 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
         <img src="./assets/watermark.jpg" class="watermark" alt="Watermark" id="watermarkImg" />
         
         <div class="header">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #ddd; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 5px; border-bottom: 1px solid #ddd; margin-bottom: 6px;">
             <h1 class="company-name">تارجت للخدمات الحكومية</h1>
             <div style="width: 120px;">
               <img src="./assets/sidebar-logo.jpg" style="width: 100%; height: auto; object-fit: contain;" alt="Logo" id="logoImg" />
@@ -269,6 +269,11 @@ export const generateReceiptHtml = (entry: ServiceEntry, qrDataUrl: string): str
             <div class="total-item"><span class="total-label">الإجمالي</span><span class="total-value">${escapeHtml(entry.serviceCost)} EGP</span></div>
             <div class="total-item"><span class="total-label">المدفوع</span><span class="total-value" style="color: green;">${escapeHtml(entry.amountPaid)} EGP</span></div>
             <div class="total-item"><span class="total-label">المتبقي</span><span class="total-value" style="color: ${entry.remainingAmount > 0 ? 'red' : '#000'}">${escapeHtml(entry.remainingAmount)} EGP</span></div>
+          </div>
+          
+          <div class="instructions" style="font-size: 7.5pt; color: #444; font-weight: 700; margin-bottom: 6px; line-height: 1.5; text-align: right; background: #fafafa; padding: 4px 6px; border: 1px solid #eee; border-radius: 4px;">
+            <div style="margin-bottom: 2px;">1- عند التصوير يتم دفع 15 جنيه رسوم نموذج تصوير / فتره الانتظار من ساعه الي ساعتين / يجب وجود جميع اصول المستندات</div>
+            <div>2- عند طلب الغاء الخدمه يتم خصم التكاليف وشطب اختام المكتب. وقد يؤدي الي تلف الاستماره / لا يحق المطالبه بتكلفه الخدمه بعد 3 شهور من التنفيذ</div>
           </div>
           
           <div class="contact-info">
