@@ -82,10 +82,9 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
     if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
       const userEntries = entries.filter(e => {
         const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-        const ACTIVE_STATUSES = ['active', 'قيد المراجعة', 'قيد التنفيذ', 'جاهزة للتسليم'];
-        const isActive = !e.status || ACTIVE_STATUSES.includes(e.status);
+        const isNotCancelled = e.status !== 'cancelled';
         const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
-        return matchesUser && isActive && matchesBranch;
+        return matchesUser && isNotCancelled && matchesBranch;
       });
 
       const userExpenses = expenses.filter(ex => {

@@ -169,10 +169,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
    if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
      const userEntries = allEntries.filter(e => {
        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-       const ACTIVE_STATUSES = ['active', 'قيد المراجعة', 'قيد التنفيذ', 'جاهزة للتسليم'];
-       const isActive = !e.status || ACTIVE_STATUSES.includes(e.status);
+       const isNotCancelled = e.status !== 'cancelled';
        const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-       return matchesUser && isActive && matchesBranch;
+       return matchesUser && isNotCancelled && matchesBranch;
      });
      
      const userExpenses = allExpenses.filter(ex => {
