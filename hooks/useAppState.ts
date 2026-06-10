@@ -169,20 +169,10 @@ export const useAppState = () => {
  notes: e.notes || e['ملاحظات'] || ''
  };
  });
- setEntries(prev => {
- const mergedMap = new Map();
- prev.forEach(item => mergedMap.set(item.id, item));
- mappedEntries.forEach(item => {
- if (item.id && item.id !== 'undefined') mergedMap.set(item.id, item);
- });
- const next = Array.from(mergedMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
- if (next.length === prev.length) {
- const isIdentical = next.every((e, i) => e.id === prev[i].id && e.timestamp === prev[i].timestamp && e.status === prev[i].status);
- if (isIdentical) return prev;
- }
- return next;
- });
- }
+      const next = mappedEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setEntries(next);
+      localStorage.setItem('target_entries', JSON.stringify(next));
+    }
 
  if (remoteExpenses && remoteExpenses.length > 0) {
  const mappedExpenses: Expense[] = remoteExpenses.map((ex: any) => {
@@ -212,20 +202,10 @@ export const useAppState = () => {
  notes: ex.notes || ex['ملاحظات'] || ''
  };
  });
- setExpenses(prev => {
- const mergedMap = new Map();
- prev.forEach(item => mergedMap.set(item.id, item));
- mappedExpenses.forEach(item => {
- if (item.id && item.id !== 'undefined') mergedMap.set(item.id, item);
- });
- const next = Array.from(mergedMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
- if (next.length === prev.length) {
- const isIdentical = next.every((e, i) => e.id === prev[i].id && e.timestamp === prev[i].timestamp);
- if (isIdentical) return prev;
- }
- return next;
- });
- }
+      const next = mappedExpenses.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setExpenses(next);
+      localStorage.setItem('target_expenses', JSON.stringify(next));
+    }
 
  if (remoteStock && remoteStock.length > 0) {
  const mappedStock: StockItem[] = remoteStock.map((s: any) => ({
@@ -460,19 +440,21 @@ export const useAppState = () => {
  if (!result.success) {
  setEntries(prev => prev.filter(e => e.id !== entry.id));
  } else {
- if (entry.amountPaid > 0) {
- setBranches(prev => prev.map(b =>
- normalizeArabic(b.Branch_Name) === normalizeArabic(entry.branchId)
- ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + entry.amountPaid }
- : b
- ));
- }
- }
- return result.success;
- } finally {
- stopSubmitting();
- }
- }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role]);
+        if (entry.amountPaid > 0) {
+          setBranches(prev => prev.map(b =>
+            normalizeArabic(b.Branch_Name) === normalizeArabic(entry.branchId)
+              ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + entry.amountPaid }
+              : b
+          ));
+        }
+        // الجلب الشامل لتحديث الواجهة بأحدث بيانات دون الاعتماد على الكاش
+        syncAll();
+      }
+      return result.success;
+    } finally {
+      stopSubmitting();
+    }
+  }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, syncAll]);
 
  const updateEntry = useCallback(async (updatedEntry: ServiceEntry): Promise<boolean> => {
  if (isSubmitting) return false;
@@ -506,6 +488,8 @@ export const useAppState = () => {
  if (updatedEntry.status === 'cancelled' && updatedEntry.barcode) {
  await GoogleSheetsService.updateStockStatus(updatedEntry.barcode, 'Available', '', user?.role || 'موظف');
  }
+ // الجلب الشامل لتحديث الواجهة بأحدث بيانات دون الاعتماد على الكاش
+ syncAll();
  } else {
  setEntries(prev => prev.map(e => e.id === updatedEntry.id ? entries.find(x => x.id === updatedEntry.id)! : e));
  }
@@ -513,7 +497,7 @@ export const useAppState = () => {
  } finally {
  stopSubmitting();
  }
- }, [isSubmitting, startSubmitting, stopSubmitting, user?.role, entries]);
+ }, [isSubmitting, startSubmitting, stopSubmitting, user?.role, entries, syncAll]);
 
  const addExpense = useCallback(async (expense: Expense): Promise<boolean> => {
  if (isSubmitting) return false;
@@ -525,12 +509,14 @@ export const useAppState = () => {
  if (!result.success) setExpenses(prev => prev.filter(e => e.id !== expense.id));
  else {
  setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(expense.branchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) - expense.amount } : b));
+ // الجلب الشامل لتحديث الواجهة بأحدث بيانات دون الاعتماد على الكاش
+ syncAll();
  }
  return result.success;
  } finally {
  stopSubmitting();
  }
- }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role]);
+ }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, syncAll]);
 
  const deleteExpense = useCallback(async (id: string, amount: number, branchId: string): Promise<{ success: boolean; message?: string }> => {
  if (isSubmitting) return { success: false, message: 'جاري التنفيذ...' };
@@ -540,12 +526,14 @@ export const useAppState = () => {
  if (res.success) {
  setExpenses(prev => prev.filter(e => String(e.id).trim() !== String(id).trim()));
  setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(branchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + amount } : b));
+ // الجلب الشامل لتحديث الواجهة بأحدث بيانات دون الاعتماد على الكاش
+ syncAll();
  }
  return res;
  } finally {
  stopSubmitting();
  }
- }, [isSubmitting, startSubmitting, stopSubmitting]);
+ }, [isSubmitting, startSubmitting, stopSubmitting, syncAll]);
 
  const deliverOrder = useCallback(async (orderId: string, collectedAmount: number, clientName: string, collectorName: string, targetBranchId: string): Promise<boolean> => {
  if (isSubmitting) return false;
@@ -557,12 +545,14 @@ export const useAppState = () => {
  if (collectedAmount > 0) {
  setBranches(prev => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(targetBranchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + collectedAmount } : b));
  }
+ // الجلب الشامل لتحديث الواجهة بأحدث بيانات دون الاعتماد على الكاش
+ syncAll();
  }
  return success;
  } finally {
  stopSubmitting();
  }
- }, [isSubmitting, startSubmitting, stopSubmitting]);
+ }, [isSubmitting, startSubmitting, stopSubmitting, syncAll]);
 
  const branchTransfer = useCallback(async (data: { fromBranch: string, toBranch: string, amount: number }): Promise<{ success: boolean; message?: string }> => {
  if (isSubmitting) return { success: false, message: 'جاري التنفيذ...' };
@@ -617,12 +607,14 @@ export const useAppState = () => {
  'المتبقي': 0,
  'الحالة': 'تم التسليم'
  }, user?.role || 'موظف').catch(err => console.error("Failed to save incoming transfer entry", err));
+ // الجلب الشامل لتحديث الواجهة بأحدث بيانات دون الاعتماد على الكاش
+ syncAll();
  }
  return result;
  } finally {
  stopSubmitting();
  }
- }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, currentDate]);
+ }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, currentDate, syncAll]);
 
  /*
  * Attendance State

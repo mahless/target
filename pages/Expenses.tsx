@@ -9,6 +9,7 @@ import { useModal } from '../context/ModalContext';
 import CustomSelect from '../components/CustomSelect';
 import SearchInput from '../components/SearchInput';
 import { GoogleSheetsService } from '../services/googleSheetsService';
+import { ROLES } from '../constants';
 
 interface ExpensesProps {
  expenses: Expense[];
@@ -21,10 +22,11 @@ interface ExpensesProps {
  isSubmitting?: boolean;
  branches: import('../types').Branch[];
  onDeleteExpense: (id: string, amount: number, branchId: string) => Promise<{ success: boolean; message?: string }>;
+ userRole: string;
 }
 
 
-const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategories, onAddExpense, branchId, currentDate, username, isSubmitting = false, branches, onDeleteExpense }) => {
+const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategories, onAddExpense, branchId, currentDate, username, isSubmitting = false, branches, onDeleteExpense, userRole }) => {
  const { showModal, showQuickStatus, setIsProcessing } = useModal();
  // Removed local isSubmitting state
  // @ts-ignore
@@ -37,29 +39,84 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
 
  const categoryOptions = useMemo(() => expenseCategories.map(c => ({ id: c, name: c })), [expenseCategories]);
 
- const todaysExpenses = expenses.filter(e => e.branchId === branchId && e.date === currentDate);
- const totalExpenses = todaysExpenses.reduce((sum, e) => sum + e.amount, 0);
+ const normalizedUsername = useMemo(() => normalizeArabic(username), [username]);
 
- const filteredExpenses = useMemo(() => {
- return expenses.filter(ex => {
- const matchesBranch = !branchId || ex.branchId === branchId;
- const matchesDate = ex.date === currentDate;
- const matchesSearch = !debouncedSearchTerm || searchMultipleFields(debouncedSearchTerm, [
- ex.notes || '',
- ex.category
- ]);
+ const todaysExpenses = useMemo(() => {
+    return expenses.filter(e => {
+      const matchesBranch = !branchId || e.branchId === branchId;
+      const matchesDate = e.date === currentDate;
+      let matchesUser = true;
+      if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+        matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
+      }
+      return matchesBranch && matchesDate && matchesUser;
+    });
+  }, [expenses, branchId, currentDate, userRole, normalizedUsername]);
 
- // If search is active, ignore date constraint
- if (debouncedSearchTerm) {
- return matchesSearch && matchesBranch;
- }
+  const totalExpenses = useMemo(() => todaysExpenses.reduce((sum, e) => sum + e.amount, 0), [todaysExpenses]);
 
- return matchesDate && matchesBranch && matchesSearch;
- });
- }, [expenses, branchId, currentDate, debouncedSearchTerm]);
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(ex => {
+      const matchesBranch = !branchId || ex.branchId === branchId;
+      const matchesDate = ex.date === currentDate;
+      const matchesSearch = !debouncedSearchTerm || searchMultipleFields(debouncedSearchTerm, [
+        ex.notes || '',
+        ex.category
+      ]);
+      
+      let matchesUser = true;
+      if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+        matchesUser = ex.recordedBy ? normalizeArabic(ex.recordedBy) === normalizedUsername : false;
+      }
 
- const currentBranch = branches.find(b => b.id === branchId);
- const currentBalance = currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0;
+      // If search is active, ignore date constraint
+      if (debouncedSearchTerm) {
+        return matchesSearch && matchesBranch && matchesUser;
+      }
+
+      return matchesDate && matchesBranch && matchesSearch && matchesUser;
+    });
+  }, [expenses, branchId, currentDate, debouncedSearchTerm, userRole, normalizedUsername]);
+
+  const currentBalance = useMemo(() => {
+    if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+      const userEntries = entries.filter(e => {
+        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+        const ACTIVE_STATUSES = ['active', 'قيد المراجعة', 'قيد التنفيذ', 'جاهزة للتسليم'];
+        const isActive = !e.status || ACTIVE_STATUSES.includes(e.status);
+        const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
+        return matchesUser && isActive && matchesBranch;
+      });
+
+      const userExpenses = expenses.filter(ex => {
+        const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
+        const matchesBranch = !branchId || normalizeArabic(ex.branchId) === normalizeArabic(branchId);
+        return matchesUser && matchesBranch;
+      });
+
+      const totalCollected = userEntries.reduce((acc, curr) => {
+        const amount = curr.serviceType === 'تحويل وارد'
+          ? (Number(curr.serviceCost) || 0)
+          : (Number(curr.amountPaid) || 0);
+        return acc + amount;
+      }, 0);
+
+      const userCancelledEntries = entries.filter(e => {
+        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+        const isCancelled = e.status === 'cancelled';
+        const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
+        return matchesUser && isCancelled && matchesBranch;
+      });
+      const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
+
+      const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+      return (totalCollected + totalAdminFees) - totalSpent;
+    }
+
+    const currentBranch = branches.find(b => b.id === branchId);
+    return currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0;
+  }, [branchId, userRole, branches, entries, expenses, normalizedUsername]);
 
 
  const showCustomerDetails = (entry: ServiceEntry) => {

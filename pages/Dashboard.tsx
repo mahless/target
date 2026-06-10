@@ -101,45 +101,62 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
  // الفلترة الداخلية الحيوية والموحدة (using pre-normalized values)
  const dailyEntries = useMemo(() => {
- const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+   const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
 
- // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر أي بيانات
- if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
+   // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر أي بيانات
+   if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
 
- return allEntries.filter(e => {
- const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
- const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
- return matchesBranch && matchesDate;
- });
- }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole]);
+   return allEntries.filter(e => {
+     const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+     const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
+     
+     let matchesUser = true;
+     if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+       matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
+     }
+     
+     return matchesBranch && matchesDate && matchesUser;
+   });
+ }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
 
  const filteredEntries = useMemo(() => {
-    // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ)
-    if (debouncedSearchTerm) {
-      return allEntries.filter(e => {
-        return searchMultipleFields(debouncedSearchTerm, [
-          e.clientName,
-          e.nationalId,
-          e.phoneNumber,
-          e.workOrderNumber || ''
-        ]);
-      });
-    }
+   // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ)
+   if (debouncedSearchTerm) {
+     return allEntries.filter(e => {
+       const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
+         e.clientName,
+         e.nationalId,
+         e.phoneNumber,
+         e.workOrderNumber || ''
+       ]);
+       
+       if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+         return matchesSearch && e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+       }
+       return matchesSearch;
+     });
+   }
 
-    // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار
-    return dailyEntries;
-  }, [dailyEntries, allEntries, debouncedSearchTerm]);
+   // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار
+   return dailyEntries;
+ }, [dailyEntries, allEntries, debouncedSearchTerm, userRole, normalizedUsername]);
 
  const dailyExpenses = useMemo(() => {
- const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
- if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
+   const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+   if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
 
- return allExpenses.filter(e => {
- const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
- const matchesDate = normalizeDate(e.date) === normalizedDateToday;
- return matchesBranch && matchesDate;
- });
- }, [allExpenses, branchId, normalizedBranch, normalizedDateToday, userRole]);
+   return allExpenses.filter(e => {
+     const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+     const matchesDate = normalizeDate(e.date) === normalizedDateToday;
+     
+     let matchesUser = true;
+     if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+       matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
+     }
+     
+     return matchesBranch && matchesDate && matchesUser;
+   });
+ }, [allExpenses, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
 
  const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
 
@@ -149,13 +166,48 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  }, [branches, normalizedBranch, branchId]);
 
  const currentBranchBalance = useMemo(() => {
- const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
- if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return 0;
+   if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+     const userEntries = allEntries.filter(e => {
+       const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+       const ACTIVE_STATUSES = ['active', 'قيد المراجعة', 'قيد التنفيذ', 'جاهزة للتسليم'];
+       const isActive = !e.status || ACTIVE_STATUSES.includes(e.status);
+       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+       return matchesUser && isActive && matchesBranch;
+     });
+     
+     const userExpenses = allExpenses.filter(ex => {
+       const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
+       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(ex.branchId) === normalizedBranch;
+       return matchesUser && matchesBranch;
+     });
 
- return (branchId === BRANCHES.ALL || !branchId)
- ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
- : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
- }, [branchId, userRole, branches, currentBranch]);
+     const totalCollected = userEntries.reduce((acc, curr) => {
+       const amount = curr.serviceType === 'تحويل وارد'
+         ? (Number(curr.serviceCost) || 0)
+         : (Number(curr.amountPaid) || 0);
+       return acc + amount;
+     }, 0);
+
+     const userCancelledEntries = allEntries.filter(e => {
+       const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+       const isCancelled = e.status === 'cancelled';
+       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+       return matchesUser && isCancelled && matchesBranch;
+     });
+     const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
+
+     const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+     return (totalCollected + totalAdminFees) - totalSpent;
+   }
+
+   const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+   if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return 0;
+
+   return (branchId === BRANCHES.ALL || !branchId)
+     ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
+     : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
+ }, [branchId, userRole, branches, currentBranch, allEntries, allExpenses, normalizedUsername, normalizedBranch]);
 
  // Debounced refresh handler (S7: Performance optimization)
  const handleRefreshClick = useCallback(() => {
