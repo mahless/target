@@ -167,17 +167,20 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
  const currentBranchBalance = useMemo(() => {
    if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+     // خزنة المساعد = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم)
      const userEntries = allEntries.filter(e => {
        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
        const isNotCancelled = e.status !== 'cancelled';
        const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-       return matchesUser && isNotCancelled && matchesBranch;
+       const isToday = e.entryDate === currentDate;
+       return matchesUser && isNotCancelled && matchesBranch && isToday;
      });
      
      const userExpenses = allExpenses.filter(ex => {
        const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
        const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(ex.branchId) === normalizedBranch;
-       return matchesUser && matchesBranch;
+       const isToday = ex.date === currentDate;
+       return matchesUser && matchesBranch && isToday;
      });
 
      const totalCollected = userEntries.reduce((acc, curr) => {
@@ -191,7 +194,8 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
        const isCancelled = e.status === 'cancelled';
        const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-       return matchesUser && isCancelled && matchesBranch;
+       const isToday = e.entryDate === currentDate;
+       return matchesUser && isCancelled && matchesBranch && isToday;
      });
      const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
 

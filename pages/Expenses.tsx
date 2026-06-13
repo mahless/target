@@ -80,17 +80,20 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
 
   const currentBalance = useMemo(() => {
     if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
+      // خزنة المساعد = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم)
       const userEntries = entries.filter(e => {
         const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
         const isNotCancelled = e.status !== 'cancelled';
         const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
-        return matchesUser && isNotCancelled && matchesBranch;
+        const isToday = e.entryDate === currentDate;
+        return matchesUser && isNotCancelled && matchesBranch && isToday;
       });
 
       const userExpenses = expenses.filter(ex => {
         const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
         const matchesBranch = !branchId || normalizeArabic(ex.branchId) === normalizeArabic(branchId);
-        return matchesUser && matchesBranch;
+        const isToday = ex.date === currentDate;
+        return matchesUser && matchesBranch && isToday;
       });
 
       const totalCollected = userEntries.reduce((acc, curr) => {
@@ -104,7 +107,8 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
         const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
         const isCancelled = e.status === 'cancelled';
         const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
-        return matchesUser && isCancelled && matchesBranch;
+        const isToday = e.entryDate === currentDate;
+        return matchesUser && isCancelled && matchesBranch && isToday;
       });
       const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
 
