@@ -218,15 +218,9 @@ export const useAppState = () => {
  usage_date: s.Usage_Date || s.usage_date,
  order_id: s.Order_ID || s.order_id
  }));
- setStock(prev => {
- if (prev.length === mappedStock.length) {
- const isSame = mappedStock.every((s, i) => s.barcode === prev[i].barcode && s.status === prev[i].status);
- if (isSame) return prev;
- }
- localStorage.setItem('target_stock', JSON.stringify(mappedStock));
- return mappedStock;
- });
- }
+    setStock(mappedStock);
+    localStorage.setItem('target_stock', JSON.stringify(mappedStock));
+  }
 
  if (remoteBranches && remoteBranches.length > 0) {
  const mappedBranches: Branch[] = remoteBranches.map((b: any) => {
@@ -242,15 +236,9 @@ export const useAppState = () => {
  Expense_List: b.Expense_List
  };
  });
- setBranches(prev => {
- if (prev.length === mappedBranches.length) {
- const isSame = mappedBranches.every((b, i) => b.id === prev[i].id && b.Current_Balance === prev[i].Current_Balance);
- if (isSame) return prev;
- }
- localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
- return mappedBranches;
- });
- }
+    setBranches(mappedBranches);
+    localStorage.setItem('target_branches', JSON.stringify(mappedBranches));
+  }
 
  if (remoteSettings && remoteSettings.length > 0) {
  const settings = remoteSettings[0];
