@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { ServiceEntry, Expense, Branch } from '../types';
 import TransferForm from '../components/TransferForm';
 import SearchInput from '../components/SearchInput';
-import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, ArrowUpCircle, MoreVertical } from 'lucide-react';
+import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, ArrowUpCircle, MoreVertical, CreditCard } from 'lucide-react';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import ActionDropdown from '../components/ActionDropdown';
 import { generateReceipt } from '../services/pdfService';
@@ -17,7 +17,8 @@ const ICONS = {
  dollar: <DollarSign />,
  alert: <AlertTriangle />,
  users: <Users />,
- clock: <Clock />
+ clock: <Clock />,
+ card: <CreditCard />
 } as const;
 
 interface DashboardProps {
@@ -566,8 +567,9 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  return (
  <div className="px-3 pb-3 pt-1 md:px-5 md:pb-5 md:pt-2 space-y-2">
  {/* Stats Cards */}
- <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+ <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
  <StatCard title="كاش الخزنة" value={currentBranchBalance} icon={ICONS.dollar} gradient="accent" footer="صافي المبلغ المتوفر بالدرج حالياً" />
+ <StatCard title="تحصيل إلكتروني" value={stats.electronic} icon={ICONS.card} color="blue" footer="إجمالي التحويلات الإلكترونية اليوم" />
  <StatCard title="مصروفات اليوم" value={stats.expenses} icon={ICONS.alert} gradient="luxury" footer="إجمالي مصروفات اليوم" />
  <StatCard title="المتبقي على العملاء" value={stats.remaining} icon={ICONS.users} gradient="dark" footer="مديونيات اليوم" />
  <StatCard title="مصاريف معلقة" value={stats.pendingThirdParty} icon={ICONS.clock} gradient="teal" footer="تكاليف طرف ثالث" />
@@ -661,10 +663,19 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  </td>
  <td className="py-3 px-8 text-center font-black text-[#01404E]/60 text-xs md:text-sm">{entry.recordedBy || '-'}</td>
  <td className="py-3 px-8 text-center font-black text-[#01404E] text-sm md:text-base">
+ <div className="flex flex-col items-center justify-center">
+ <span>
  {entry.serviceType === 'تحويل وارد'
  ? toEnglishDigits(String(entry.serviceCost))
  : toEnglishDigits(String(entry.amountPaid))
  }
+ </span>
+ {entry.isElectronic && (
+ <span className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mt-1 font-bold whitespace-nowrap border border-blue-200">
+ {entry.electronicMethod || 'إلكتروني'}
+ </span>
+ )}
+ </div>
  </td>
  <td className="py-3 px-8 text-center text-red-600 font-black text-sm md:text-base">{toEnglishDigits(String(entry.remainingAmount))}</td>
  {userRole !== ROLES.VIEWER && (

@@ -40,12 +40,16 @@ export const useDashboardStats = (entries: ServiceEntry[], expenses: Expense[], 
  // 5. إجمالي المصروفات اليوم
  const totalExpensesToday = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
+ // 6. إجمالي الدفع الإلكتروني اليوم
+ const totalElectronicToday = activeToday.reduce((acc, curr) => acc + (Number(curr.electronicAmount) || 0), 0);
+
  return {
  revenue: totalRevenueToday,
  remaining: netRemainingToday,
  expenses: totalExpensesToday,
  netCash: totalRevenueToday - totalExpensesToday,
- pendingThirdParty: pendingThirdPartyToday
+ pendingThirdParty: pendingThirdPartyToday,
+ electronic: totalElectronicToday
  };
  }, [entries, expenses, currentDate]);
 };
