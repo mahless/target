@@ -364,7 +364,8 @@ export const useAppActions = (
         if (collectedAmount > 0) {
           setBranches((prev: Branch[]) => prev.map(b => normalizeArabic(b.Branch_Name) === normalizeArabic(targetBranchId) ? { ...b, Current_Balance: (Number(b.Current_Balance) || 0) + collectedAmount } : b));
         }
-        syncAll();
+        // Delay sync to let the backend commit the balance update before we fetch
+        setTimeout(() => syncAll(), 1500);
       }
       return success;
     } finally {
