@@ -672,7 +672,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  </span>
  {entry.isElectronic && (
  <span className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mt-1 font-bold whitespace-nowrap border border-blue-200">
- {entry.electronicMethod || 'إلكتروني'}
+ {entry.electronicMethod || 'إلكتروني'} {toEnglishDigits(String(entry.electronicAmount || ''))}
  </span>
  )}
  </div>
