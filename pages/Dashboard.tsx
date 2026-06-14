@@ -37,38 +37,7 @@ interface DashboardProps {
  userRole: string;
 }
 
-const StatCard = React.memo(({ title, value, icon, color, footer, gradient }: any) => {
- const gradientClasses: any = {
- teal: 'from-[#036564] to-[#01404E] text-white shadow-[#036564]/20',
- accent: 'from-[#00A6A6] to-[#036564] text-white shadow-[#00A6A6]/20',
- dark: 'from-[#01404E] to-[#01404E] text-white shadow-[#01404E]/20',
- luxury: 'from-[#01404E] to-[#01404E] text-white shadow-[#01404E]/20'
- };
-
- return (
- <div className={`relative overflow-hidden bg-gradient-to-br ${gradientClasses[gradient] || gradientClasses.teal} p-3 rounded-[2rem] shadow-lux transition-all duration-500 hover:translate-y-[-8px] hover:shadow-2xl group animate-premium-in`}>
- {/* Decorative background circle */}
- <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-
- <div className="relative z-10 flex justify-between items-start">
- <div>
- <p className="text-[10px] md:text-xs text-white/70 font-black uppercase ] mb-1">{title}</p>
- <div className="flex items-baseline gap-1">
- <p className="text-2xl md:text-[28px] font-black">{value?.toLocaleString('en-US')}</p>
- <span className="text-[9px] md:text-[10px] font-bold opacity-60">ج.م</span>
- </div>
- </div>
- <div className="p-2 bg-white/10 backdrop-blur-md rounded-2xl shadow-premium border border-white/10 group-hover:rotate-12 transition-transform">
- {React.cloneElement(icon, { className:"w-5 h-5 text-white" })}
- </div>
- </div>
- <div className="relative z-10 mt-2.5 pt-1.5 border-t border-white/5 text-[9px] text-white/50 font-bold leading-relaxed flex items-center gap-2">
- <span className="w-1.5 h-1.5 rounded-full bg-[#00A6A6] animate-pulse"></span>
- {footer}
- </div>
- </div>
- );
-});
+import StatCard from '../components/StatCard';
 
 const Dashboard: React.FC<DashboardProps> = React.memo(({
  allEntries, allExpenses, currentDate, branchId, onUpdateEntry, isSyncing, onRefresh,
@@ -183,12 +152,12 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
        return matchesUser && matchesBranch && isToday;
      });
 
-     const totalCollected = userEntries.reduce((acc, curr) => {
-       const amount = curr.serviceType === 'تحويل وارد'
-         ? (Number(curr.serviceCost) || 0)
-         : (Number(curr.amountPaid) || 0);
-       return acc + amount;
-     }, 0);
+      const totalCollected = userEntries.reduce((acc, curr) => {
+        const amount = curr.serviceType === 'تحويل وارد'
+          ? (Number(curr.serviceCost) || 0)
+          : (Number(curr.amountPaid) || 0) - (Number(curr.electronicAmount) || 0);
+        return acc + amount;
+      }, 0);
 
      const userCancelledEntries = allEntries.filter(e => {
        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;

@@ -194,21 +194,6 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
           GoogleSheetsService.updateStockStatus(barcode, 'Used', username, userRole, entryId);
         }
 
-        // Automation: Record electronic collection as an expense to balance safe cash
-        if (isElectronic && electronicAmount > 0) {
-          const electronicExpense: Expense = {
-            id: `elec-${Date.now()}-${entryId}`,
-            category: 'تحصيل إلكتروني',
-            amount: Number(electronicAmount),
-            notes: `تحصيل ${electronicMethod} | عميل: ${clientName} | ${serviceType}`,
-            branchId,
-            date: currentDate,
-            timestamp: Date.now(),
-            recordedBy: username
-          };
-          await onAddExpense(electronicExpense);
-        }
-
         setLastEntry(newEntry);
         setSuccessMsg("تم حفظ المعاملة بنجاح!");
 

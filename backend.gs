@@ -1141,8 +1141,10 @@ function handleAddRow(sheetName, data) {
         }
       }
 
-      if (amountPaid > 0) {
-        updateBranchBalance(branch, amountPaid);
+      const electronicAmount = parseFloat(data['electronicAmount'] || data['electronicamount'] || 0);
+      const physicalCash = amountPaid - electronicAmount;
+      if (physicalCash > 0) {
+        updateBranchBalance(branch, physicalCash);
       }
     }
 
@@ -1192,10 +1194,13 @@ function handleUpdateEntry(sheetName, data) {
     const rowToUpdate = values[rowIndex];
     const oldStatusIdx = getColIndex(sheetName, "status");
     const oldAmountPaidIdx = getColIndex(sheetName, "amountPaid");
+    const oldElectronicAmountIdx = getColIndex(sheetName, "electronicAmount");
     const branchIdx = getColIndex(sheetName, "branchId");
     
     const oldStatus = oldStatusIdx !== undefined ? String(rowToUpdate[oldStatusIdx]) : "";
     const oldAmountPaid = oldAmountPaidIdx !== undefined ? parseFloat(rowToUpdate[oldAmountPaidIdx] || 0) : 0;
+    const oldElectronicAmount = oldElectronicAmountIdx !== undefined ? parseFloat(rowToUpdate[oldElectronicAmountIdx] || 0) : 0;
+    const oldPhysicalCash = oldAmountPaid - oldElectronicAmount;
     const branch = branchIdx !== undefined ? String(rowToUpdate[branchIdx]) : "";
 
     // تحديث البيانات في المصفوفة
@@ -1222,14 +1227,16 @@ function handleUpdateEntry(sheetName, data) {
     if (sheetName === SHEET_NAMES.ENTRIES || normalizeArabic(sheetName) === normalizeArabic('المعاملات')) {
       const newStatus = data['status'] || oldStatus;
       const newAmountPaid = data['amountPaid'] !== undefined ? parseFloat(data['amountPaid']) : oldAmountPaid;
+      const newElectronicAmount = data['electronicAmount'] !== undefined ? parseFloat(data['electronicAmount']) : oldElectronicAmount;
+      const newPhysicalCash = newAmountPaid - newElectronicAmount;
 
       const isNowCancelled = normalizeArabic(newStatus) === normalizeArabic(ENTRY_STATUS.CANCELLED_AR) || newStatus.toLowerCase() === ENTRY_STATUS.CANCELLED_EN;
       const wasCancelled = normalizeArabic(oldStatus) === normalizeArabic(ENTRY_STATUS.CANCELLED_AR) || oldStatus.toLowerCase() === ENTRY_STATUS.CANCELLED_EN;
 
       if (isNowCancelled && !wasCancelled) {
-        updateBranchBalance(branch, -oldAmountPaid);
-      } else if (!isNowCancelled && !wasCancelled && newAmountPaid !== oldAmountPaid) {
-        updateBranchBalance(branch, newAmountPaid - oldAmountPaid);
+        updateBranchBalance(branch, -oldPhysicalCash);
+      } else if (!isNowCancelled && !wasCancelled && newPhysicalCash !== oldPhysicalCash) {
+        updateBranchBalance(branch, newPhysicalCash - oldPhysicalCash);
       }
     }
 

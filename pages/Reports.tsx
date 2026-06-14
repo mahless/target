@@ -27,34 +27,7 @@ interface ReportsProps {
 
 
 
-const StatCard = ({ title, value, icon, color, footer }: any) => {
- const colorMap: any = {
- blue: { bg: 'from-blue-600 to-blue-900', icon: 'text-blue-500', shadow: 'shadow-blue-900/20' },
- red: { bg: 'from-red-600 to-red-900', icon: 'text-red-500', shadow: 'shadow-red-900/20' },
- emerald: { bg: 'from-[#00A6A6] to-[#036564]', icon: 'text-[#00A6A6]', shadow: 'shadow-[#036564]/20' }
- };
- const theme = colorMap[color] || colorMap.blue;
-
- return (
- <div className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} p-2.5 rounded-[2rem] shadow-lux group transition-all duration-500 hover:scale-[1.02]`}>
- <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
- <div className="relative z-10 flex flex-col h-full justify-between gap-0.5">
- <div className="flex justify-between items-start">
- <div className="flex flex-col">
- <span className="text-[10px] md:text-xs font-black text-white/40 uppercase ] mb-1">{title}</span>
- <span className="text-2xl md:text-[28px] font-black text-white">{value.toLocaleString()}<span className="text-sm md:text-lg mr-2 opacity-50 uppercase">ج.م</span></span>
- </div>
- <div className="p-2.5 bg-white/10 backdrop-blur-xl rounded-2xl text-white shadow-xl border border-white/10 group-hover:rotate-12 transition-transform">
- {React.cloneElement(icon, { className: 'w-6 h-6' })}
- </div>
- </div>
- <div className="pt-1.5 border-t border-white/5 text-[10px] text-white/40 font-black uppercase">
- {footer}
- </div>
- </div>
- </div>
- );
-};
+import StatCard from '../components/StatCard';
 
 const Reports: React.FC<ReportsProps> = ({
  entries, expenses, serviceTypes, expenseCategories, branches, manualDate, branchId, onUpdateEntry, onAddExpense, isSyncing, onRefresh, username, userRole
