@@ -41,9 +41,7 @@ export const useDashboardStats = (entries: ServiceEntry[], expenses: Expense[], 
  const totalExpensesToday = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
  // 6. إجمالي الدفع الإلكتروني اليوم
- // نحسب من العمليات الأصلية فقط (ليس السدادات) وغير الملغية
- const originalActiveToday = activeToday.filter(e => !e.parentEntryId);
- const totalElectronicToday = originalActiveToday.reduce((acc, curr) => acc + (Number(curr.electronicAmount) || 0), 0);
+ const totalElectronicToday = activeToday.reduce((acc, curr) => acc + (Number(curr.electronicAmount) || 0), 0);
 
  return {
  revenue: totalRevenueToday,
