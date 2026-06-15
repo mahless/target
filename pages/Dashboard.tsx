@@ -85,23 +85,21 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
 
   const filteredEntries = useMemo(() => {
-    // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ) للموظف الحالي
+    // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ) للجميع للتمكن من إيجاد عمليات الزملاء
     if (debouncedSearchTerm) {
       return allEntries.filter(e => {
-        const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
+        return searchMultipleFields(debouncedSearchTerm, [
           e.clientName,
           e.nationalId,
           e.phoneNumber,
           e.workOrderNumber || ''
         ]);
-        
-        return matchesSearch && e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
       });
     }
 
     // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار للمستخدم الحالي
     return dailyEntries;
-  }, [dailyEntries, allEntries, debouncedSearchTerm, normalizedUsername]);
+  }, [dailyEntries, allEntries, debouncedSearchTerm]);
 
   const dailyExpenses = useMemo(() => {
     const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
