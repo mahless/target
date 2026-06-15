@@ -764,6 +764,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  <td className="py-3 px-8 text-center text-red-600 font-black text-sm md:text-base">{toEnglishDigits(String(entry.remainingAmount))}</td>
  {userRole !== ROLES.VIEWER && (
  <td className="py-3 px-8 text-center">
+ {normalizeArabic(entry.serviceType) !== normalizeArabic('باقي خدمة') && (
  <ActionDropdown
  entry={entry}
  userRole={userRole}
@@ -777,6 +778,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  onEditData={handleEditData}
  isSubmitting={isSubmitting}
  />
+ )}
  </td>
  )}
  </tr>

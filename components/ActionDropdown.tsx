@@ -115,23 +115,9 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
  <Printer size={14} className="text-blue-500" />
  </button>
 
- {entry.remainingAmount > 0 && (
- <button
- type="button"
- onClick={(e) => {
- e.preventDefault();
- e.stopPropagation();
- handleAction(() => onDeliver(entry));
- }}
- className="w-full text-right px-4 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-colors border-b border-gray-50"
- >
- تحصيل مديونية
- </button>
- )}
-
  {(entry.status === STATUS.ACTIVE || entry.status === STATUS.PENDING) && !entry.parentEntryId && (
  <>
- {(!String(entry.notes || '').includes('بيع استمارة لطرف اخر')) && (
+ {(!String(entry.notes || '').includes('بيع استمارة لطرف اخر')) && (!entry.remainingAmount || entry.remainingAmount <= 0) && (
  <button
  type="button"
  onClick={(e) => {
@@ -196,7 +182,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
  </>
  )}
 
- {entry.status === STATUS.READY && (
+ {entry.status === STATUS.READY && (!entry.remainingAmount || entry.remainingAmount <= 0) && (
  <button
  type="button"
  onClick={(e) => {
