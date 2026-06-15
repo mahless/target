@@ -651,46 +651,48 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  </div>
  </div>
 
- {/* Filters Row: Date Range & Selectors */}
- <div className="relative z-[60] flex flex-wrap items-center gap-3 bg-white/40 p-2 rounded-[1.5rem] border border-white/30 shadow-sm mx-1 animate-premium-in">
-   {/* Date Range without outer container styling */}
-   <div className="flex items-center gap-2 shrink-0">
-     <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap px-1">من:</span>
-     <input
-       type="date"
-       value={startDate}
-       onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
-       className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[110px] cursor-pointer"
-     />
-     <div className="w-px h-4 bg-[#01404E]/20"></div>
-     <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap px-1">إلى:</span>
-     <input
-       type="date"
-       value={endDate}
-       onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
-       className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[110px] cursor-pointer"
-     />
-   </div>
+  {/* Filters Row: Date Range & Selectors */}
+  <div className="relative z-[60] flex flex-col md:flex-row flex-wrap items-center gap-3 mx-1 animate-premium-in">
+    {/* Date Range Box */}
+    <div className="flex items-center justify-between gap-2 shrink-0 bg-white border-2 border-[#01404E]/10 rounded-xl px-4 h-[42px] w-full md:w-auto hover:border-[#00A6A6] transition-colors">
+      <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap">من:</span>
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
+        className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[100px] cursor-pointer"
+      />
+      <div className="w-px h-4 bg-[#01404E]/20 mx-1"></div>
+      <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap">إلى:</span>
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
+        className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[100px] cursor-pointer"
+      />
+    </div>
 
    <div className="w-full md:w-[180px]">
-     <CustomSelect
-       options={serviceOptions}
-       value={selectedService}
-       onChange={setSelectedService}
-       placeholder="كل الخدمات"
-       showAllOption={true}
-     />
+      <CustomSelect
+        options={serviceOptions}
+        value={selectedService}
+        onChange={setSelectedService}
+        placeholder="كل الخدمات"
+        showAllOption={true}
+        className="px-4 h-[42px] rounded-xl border-2"
+      />
    </div>
 
    {(userRole === 'مدير' || userRole === 'مشرف') && (
      <div className="w-full md:w-[180px]">
-       <CustomSelect
-         options={employeeOptions}
-         value={selectedEmployee}
-         onChange={setSelectedEmployee}
-         placeholder="كل الموظفين"
-         showAllOption={true}
-       />
+        <CustomSelect
+          options={employeeOptions}
+          value={selectedEmployee}
+          onChange={setSelectedEmployee}
+          placeholder="كل الموظفين"
+          showAllOption={true}
+          className="px-4 h-[42px] rounded-xl border-2"
+        />
      </div>
    )}
 
@@ -702,11 +704,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
          e.stopPropagation();
          resetFilters();
        }}
-       className="flex items-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-xl text-xs font-black transition-all border border-red-500/20 active:scale-95 md:ml-auto"
-     >
-       <X className="w-4 h-4" />
-       <span>إلغاء الفلاتر</span>
-     </button>
+        className="flex items-center justify-center gap-2 px-4 h-[42px] bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-xl text-xs font-black transition-all border border-red-500/20 active:scale-95 md:ml-auto w-full md:w-auto"
+      >
+        <X className="w-4 h-4" />
+        <span>إلغاء الفلاتر</span>
+      </button>
    )}
  </div>
 
