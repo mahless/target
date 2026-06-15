@@ -228,7 +228,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
  };
 
 
- const inputClasses ="w-full p-3 md:p-4 border border-[#01404E]/10 rounded-2xl bg-[#01404E]/5 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs md:text-base";
+ const inputClasses ="w-full px-4 h-[42px] border border-[#01404E]/10 rounded-xl bg-[#01404E]/5 text-[#01404E] font-black placeholder-[#01404E]/30 focus:bg-white focus:border-[#00A6A6] focus:ring-4 focus:ring-[#00A6A6]/5 outline-none transition-all shadow-sm text-xs md:text-sm";
 
  return (
  <div className={`p-3 md:p-6 space-y-3 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -250,6 +250,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
  onChange={(v) => setCategory(v as ExpenseCategory)}
  placeholder="اختر النوع..."
  showAllOption={false}
+ className="px-4 h-[42px] rounded-xl border border-[#01404E]/10 bg-[#01404E]/5 text-xs md:text-sm"
  />
  </div>
 
@@ -263,12 +264,12 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
  required
  value={amount}
  onChange={(e) => setAmount(Number(toEnglishDigits(e.target.value)))}
- className={`${inputClasses} text-xl md:text-2xl text-red-600 !py-3`}
+ className={`${inputClasses} text-base md:text-lg text-red-600`}
  placeholder="0.00"
  />
- <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 bg-white/10 px-3 py-1 rounded-lg">ج.م</div>
+ <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 bg-white/10 px-2 py-0.5 rounded-md">ج.م</div>
  </div>
- <p className="text-[10px] text-gray-400 mt-3 font-bold flex items-center gap-2 px-1">
+ <p className="text-[10px] text-gray-400 mt-2 font-bold flex items-center gap-2 px-1">
  <div className="w-1.5 h-1.5 rounded-full bg-[#00A6A6]"></div>
  الرصيد المتاح: <span className="text-[#01404E] dir-ltr">{currentBalance.toLocaleString()}</span> ج.م
  </p>
@@ -279,8 +280,8 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
  <textarea
  value={notes}
  onChange={e => setNotes(e.target.value)}
- rows={4}
- className={`${inputClasses} resize-none !rounded-[1.5rem]`}
+ rows={2}
+ className={`${inputClasses} h-auto py-3 resize-none`}
  placeholder="اكتب الغرض من المصروف هنا..."
  ></textarea>
  </div>
@@ -288,12 +289,12 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
  <button
  type="submit"
  disabled={isSubmitting}
- className={`w-full relative overflow-hidden group font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all duration-500 shadow-lux active:scale-[0.98] ${isSubmitting ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-red-600 to-red-800 text-white hover:from-red-500 hover:to-red-700'}`}
+ className={`w-full relative overflow-hidden group font-black h-[42px] rounded-xl flex items-center justify-center gap-2 transition-all duration-500 shadow-lux active:scale-[0.98] ${isSubmitting ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-red-600 to-red-800 text-white hover:from-red-500 hover:to-red-700'}`}
  >
  <div className="absolute top-0 left-0 w-full h-full bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
- <div className="relative z-10 flex items-center gap-3">
- {isSubmitting ? <Clock className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 border-white group-hover:scale-110 transition-transform" />}
- <span className="text-base">{isSubmitting ? 'جاري الحفظ...' : 'تسجيل المبلغ'}</span>
+ <div className="relative z-10 flex items-center gap-2">
+ {isSubmitting ? <Clock className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 border-white group-hover:scale-110 transition-transform" />}
+ <span className="text-xs md:text-sm">{isSubmitting ? 'جاري الحفظ...' : 'تسجيل المبلغ'}</span>
  </div>
  </button>
  </form>
