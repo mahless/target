@@ -133,56 +133,57 @@ const Receivables: React.FC<ReceivablesProps> = ({
  return (
  <div className={`p-3 md:p-6 space-y-1.5 transition-opacity animate-premium-in ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
 
- <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-1 relative z-30">
- <div className="flex items-center gap-4 shrink-0">
- <div className="w-1.5 h-10 bg-[#00A6A6] rounded-full shadow-lg shadow-[#00A6A6]/20"></div>
- <div>
- <h3 className="text-xl font-black text-[#01404E] whitespace-nowrap">البحث في المديونيات</h3>
- <p className="text-[10px] text-[#036564] font-black uppercase ] mt-1">{currentDate}</p>
- </div>
- </div>
+  <div className="px-1 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-30">
+  <div className="flex items-center gap-3">
+  <div className={`w-2 h-8 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
+  <div>
+  <h3 className="text-lg font-black text-[#01404E] whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث في المديونيات' : 'البحث في المديونيات'}</h3>
+  <p className="text-[9px] text-[#036564] font-black uppercase mt-0.5">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
+  </div>
+  </div>
 
- <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto bg-white/50 p-1.5 rounded-2xl border border-white/40 shadow-premium">
- <div className="w-full lg:w-[350px]">
- <SearchInput
- value={searchTerm}
- onChange={setSearchTerm}
- placeholder="ابحث بالاسم، رقم قومي، هاتف، أو أمر شغل..."
- className="w-full"
- />
- </div>
+  <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
+  <SearchInput
+  value={searchTerm}
+  onChange={setSearchTerm}
+  placeholder="ابحث بالاسم، رقم قومي، هاتف، أو أمر شغل..."
+  className="w-full lg:w-[280px]"
+  />
+  
+  <div className="w-full md:w-[180px]">
+  <CustomSelect
+  options={serviceOptions}
+  value={filterService}
+  onChange={setFilterService}
+  placeholder="كل الخدمات"
+  showAllOption={true}
+  className="px-4 h-[42px] rounded-xl border-2"
+  />
+  </div>
 
- <div className="w-full md:w-[200px]">
- <CustomSelect
- options={serviceOptions}
- value={filterService}
- onChange={setFilterService}
- placeholder="كل الخدمات"
- showAllOption={true}
- />
- </div>
-
- <button
- type="button"
- onClick={(e) => {
- e.preventDefault();
- e.stopPropagation();
- onRefresh();
- }}
- disabled={isSyncing || isSubmitting}
- className={`w-full md:w-auto px-6 h-[58px] rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-md active:scale-95 shrink-0 ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400' : 'bg-[#01404E] text-white hover:bg-[#036564]'}`}
- >
- <Clock className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
- <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
- </button>
- </div>
- </div>
+  <div className="flex items-center gap-2 w-full sm:w-auto">
+  <button
+  type="button"
+  onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  onRefresh();
+  }}
+  disabled={isSyncing || isSubmitting}
+  className={`flex-1 flex items-center justify-center gap-2 h-[42px] px-4 rounded-xl text-[10px] font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
+  >
+  <Clock className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+  <span className="whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
+  </button>
+  </div>
+  </div>
+  </div>
 
  <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/20 shadow-premium overflow-hidden">
  <div className="min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar text-right">
  <table className="w-full border-collapse">
  <thead className="sticky top-0 z-20">
- <tr className="bg-[#01404E] text-white/50 text-[10px] md:text-xs font-black ] uppercase border-b border-white/5">
+ <tr className="bg-[#01404E] text-white/50 text-[10px] md:text-xs font-black uppercase border-b border-white/5">
  <th className="py-2.5 px-8 text-right first:rounded-tr-[2rem]">بيان مديونية العميل</th>
  <th className="py-2.5 px-6 text-center">الموظف</th>
  <th className="py-2.5 px-6 text-center">المبلغ المتبقي</th>
