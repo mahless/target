@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { ServiceEntry, Expense, Branch } from '../types';
 import TransferForm from '../components/TransferForm';
 import SearchInput from '../components/SearchInput';
-import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, ArrowUpCircle, MoreVertical, CreditCard } from 'lucide-react';
+import CustomSelect from '../components/CustomSelect';
+import { DollarSign, Users, Clock, Printer, XCircle, AlertTriangle, RefreshCw, ArrowUpCircle, MoreVertical, CreditCard, X } from 'lucide-react';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 import ActionDropdown from '../components/ActionDropdown';
 import { generateReceipt } from '../services/pdfService';
@@ -67,22 +68,56 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  // Pre-normalize comparison strings (S2, S3: Performance optimization)
  const normalizedBranch = useMemo(() => normalizeArabic(branchId), [branchId]);
  const normalizedDateToday = useMemo(() => normalizeDate(currentDate), [currentDate]);
- const normalizedUsername = useMemo(() => normalizeArabic(username), [username]);
+  const normalizedUsername = useMemo(() => normalizeArabic(username), [username]);
 
-  // الفلترة الداخلية الحيوية والموحدة (using pre-normalized values)
+  // Filter States
+  const [startDate, setStartDate] = useState(currentDate);
+  const [endDate, setEndDate] = useState(currentDate);
+  const [selectedService, setSelectedService] = useState('الكل');
+  const [selectedEmployee, setSelectedEmployee] = useState(userRole === 'مدير' || userRole === 'مشرف' ? 'الكل' : username);
+
+  // Auto-generate options from data
+  const serviceOptions = useMemo(() => {
+    const services = new Set<string>();
+    allEntries.forEach(e => { if (e.serviceType) services.add(e.serviceType); });
+    return Array.from(services).map(s => ({ id: s, name: s }));
+  }, [allEntries]);
+
+  const employeeOptions = useMemo(() => {
+    const names = new Set<string>();
+    allEntries.forEach(e => { if (e.recordedBy && e.recordedBy !== 'الموظف') names.add(e.recordedBy); });
+    allExpenses.forEach(ex => { if (ex.recordedBy && ex.recordedBy !== 'الموظف') names.add(ex.recordedBy); });
+    return Array.from(names).map(name => ({ id: name, name }));
+  }, [allEntries, allExpenses]);
+
+  const isFilterActive = startDate !== currentDate || endDate !== currentDate || selectedService !== 'الكل' || (userRole === 'مدير' || userRole === 'مشرف' ? selectedEmployee !== 'الكل' : false);
+
+  const resetFilters = () => {
+    setStartDate(currentDate);
+    setEndDate(currentDate);
+    setSelectedService('الكل');
+    setSelectedEmployee(userRole === 'مدير' || userRole === 'مشرف' ? 'الكل' : username);
+  };
+
+  // الفلترة الداخلية الحيوية والموحدة
   const dailyEntries = useMemo(() => {
     const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
 
-    // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر أي بيانات
     if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
 
     return allEntries.filter(e => {
       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-      const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
-      const matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
-      return matchesBranch && matchesDate && matchesUser;
+      const d = normalizeDate(e.entryDate);
+      const matchesDate = d >= normalizeDate(startDate) && d <= normalizeDate(endDate);
+      const matchesService = selectedService === 'الكل' || e.serviceType === selectedService;
+      
+      const isManagerOrAdmin = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+      const requestedEmployee = isManagerOrAdmin ? selectedEmployee : username;
+      const matchesUser = requestedEmployee === 'الكل' ? true : e.recordedBy ? normalizeArabic(e.recordedBy) === normalizeArabic(requestedEmployee) : false;
+      
+      return matchesBranch && matchesDate && matchesService && matchesUser;
     });
-  }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
+  }, [allEntries, branchId, normalizedBranch, startDate, endDate, selectedService, selectedEmployee, userRole, username]);
 
   const filteredEntries = useMemo(() => {
     // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ) للجميع للتمكن من إيجاد عمليات الزملاء
@@ -97,7 +132,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       });
     }
 
-    // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار للمستخدم الحالي
+    // الحالة الافتراضية: عرض عمليات اليوم المفلترة
     return dailyEntries;
   }, [dailyEntries, allEntries, debouncedSearchTerm]);
 
@@ -107,11 +142,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 
     return allExpenses.filter(e => {
       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-      const matchesDate = normalizeDate(e.date) === normalizedDateToday;
-      const matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
+      const d = normalizeDate(e.date);
+      const matchesDate = d >= normalizeDate(startDate) && d <= normalizeDate(endDate);
+      
+      const isManagerOrAdmin = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+      const requestedEmployee = isManagerOrAdmin ? selectedEmployee : username;
+      const matchesUser = requestedEmployee === 'الكل' ? true : e.recordedBy ? normalizeArabic(e.recordedBy) === normalizeArabic(requestedEmployee) : false;
+      
       return matchesBranch && matchesDate && matchesUser;
     });
-  }, [allExpenses, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
+  }, [allExpenses, branchId, normalizedBranch, startDate, endDate, selectedEmployee, userRole, username]);
 
   const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
 
@@ -121,20 +161,26 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
   }, [branches, normalizedBranch, branchId]);
 
   const currentBranchBalance = useMemo(() => {
-    // خزنة الموظف الحالي = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم لمطابقة الدرج)
+    // خزنة الموظف = محصل الفترة - مصروفات الفترة (حسب الفلتر)
     const userEntries = allEntries.filter(e => {
-      const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      const isManagerOrAdmin = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+      const requestedEmployee = isManagerOrAdmin ? selectedEmployee : username;
+      const matchesUser = requestedEmployee === 'الكل' ? true : e.recordedBy && normalizeArabic(e.recordedBy) === normalizeArabic(requestedEmployee);
       const isNotCancelled = e.status !== 'cancelled';
       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-      const isToday = e.entryDate === currentDate;
-      return matchesUser && isNotCancelled && matchesBranch && isToday;
+      const d = normalizeDate(e.entryDate);
+      const matchesDate = d >= normalizeDate(startDate) && d <= normalizeDate(endDate);
+      return matchesUser && isNotCancelled && matchesBranch && matchesDate;
     });
     
     const userExpenses = allExpenses.filter(ex => {
-      const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
+      const isManagerOrAdmin = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+      const requestedEmployee = isManagerOrAdmin ? selectedEmployee : username;
+      const matchesUser = requestedEmployee === 'الكل' ? true : ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizeArabic(requestedEmployee);
       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(ex.branchId) === normalizedBranch;
-      const isToday = ex.date === currentDate;
-      return matchesUser && matchesBranch && isToday;
+      const d = normalizeDate(ex.date);
+      const matchesDate = d >= normalizeDate(startDate) && d <= normalizeDate(endDate);
+      return matchesUser && matchesBranch && matchesDate;
     });
 
     const totalCollected = userEntries.reduce((acc, curr) => {
@@ -145,18 +191,21 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
     }, 0);
 
     const userCancelledEntries = allEntries.filter(e => {
-      const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      const isManagerOrAdmin = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+      const requestedEmployee = isManagerOrAdmin ? selectedEmployee : username;
+      const matchesUser = requestedEmployee === 'الكل' ? true : e.recordedBy && normalizeArabic(e.recordedBy) === normalizeArabic(requestedEmployee);
       const isCancelled = e.status === 'cancelled';
       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-      const isToday = e.entryDate === currentDate;
-      return matchesUser && isCancelled && matchesBranch && isToday;
+      const d = normalizeDate(e.entryDate);
+      const matchesDate = d >= normalizeDate(startDate) && d <= normalizeDate(endDate);
+      return matchesUser && isCancelled && matchesBranch && matchesDate;
     });
     const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
 
     const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
     return (totalCollected + totalAdminFees) - totalSpent;
-  }, [branchId, branches, allEntries, allExpenses, normalizedUsername, normalizedBranch, currentDate]);
+  }, [branchId, allEntries, allExpenses, normalizedUsername, normalizedBranch, startDate, endDate, selectedEmployee, userRole, username]);
 
  // Debounced refresh handler (S7: Performance optimization)
  const handleRefreshClick = useCallback(() => {
@@ -555,21 +604,21 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  <div className="space-y-2">
  {/* Header Row - Sitting on background */}
  <div className="px-1 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
- <div className="flex items-center gap-4">
- <div className={`w-3 h-10 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
+ <div className="flex items-center gap-3">
+ <div className={`w-2 h-8 rounded-full shadow-lg ${debouncedSearchTerm ? 'bg-[#00A6A6] shadow-[#00A6A6]/20' : 'bg-[#036564] shadow-[#036564]/20'}`}></div>
  <div>
- <h3 className="text-xl font-black text-[#01404E] whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث المتقدم' : 'سجل العمليات اليومي'}</h3>
- <p className="text-[10px] text-[#036564] font-black uppercase ] mt-1">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
+ <h3 className="text-lg font-black text-[#01404E] whitespace-nowrap">{debouncedSearchTerm ? 'نتائج البحث المتقدم' : 'سجل العمليات اليومي'}</h3>
+ <p className="text-[9px] text-[#036564] font-black uppercase mt-0.5">{debouncedSearchTerm ? `بناءً على: ${debouncedSearchTerm}` : currentDate}</p>
  </div>
  </div>
- <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+ <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
  <SearchInput
  value={searchTerm}
  onChange={setSearchTerm}
  placeholder="ابحث بالاسم، رقم قومي، هاتف، أو أمر شغل..."
- className="w-full lg:w-[350px]"
+ className="w-full lg:w-[280px]"
  />
- <div className="flex items-center gap-3 w-full sm:w-auto">
+ <div className="flex items-center gap-2 w-full sm:w-auto">
  <button
  type="button"
  onClick={(e) => {
@@ -578,10 +627,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  handleRefreshClick();
  }}
  disabled={isSyncing || isSubmitting || isRefreshCooldown}
- className={`flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
+ className={`flex-1 flex items-center justify-center gap-2 h-[42px] px-4 rounded-xl text-[10px] font-black transition-all shadow-md active:scale-95 ${(isSyncing || isSubmitting || isRefreshCooldown) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#01404E] text-white hover:bg-[#01404E]'}`}
  >
- <Clock className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
- <span className="text-xs whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
+ <Clock className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+ <span className="whitespace-nowrap">{isSyncing ? 'جاري السحب...' : 'تحديث البيانات'}</span>
  </button>
  {(userRole === ROLES.MANAGER || userRole === ROLES.ASSISTANT || userRole === ROLES.ADMIN) && (
  <button
@@ -592,14 +641,73 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  handleTransfer();
  }}
  disabled={isSyncing || isSubmitting}
- className="flex-1 flex items-center justify-center gap-3 h-[58px] px-6 rounded-2xl font-black bg-[#036564] text-white hover:bg-[#01404E] transition-all shadow-md active:scale-95 group"
+ className="flex-1 flex items-center justify-center gap-2 h-[42px] px-4 rounded-xl text-[10px] font-black bg-[#036564] text-white hover:bg-[#01404E] transition-all shadow-md active:scale-95 group"
  >
- <DollarSign className="w-4 h-4 shrink-0 group-hover:scale-125 transition-transform" />
- <span className="text-xs whitespace-nowrap">تحويل مالي</span>
+ <DollarSign className="w-3.5 h-3.5 shrink-0 group-hover:scale-125 transition-transform" />
+ <span className="whitespace-nowrap">تحويل مالي</span>
  </button>
  )}
  </div>
  </div>
+ </div>
+
+ {/* Filters Row: Date Range & Selectors */}
+ <div className="relative z-[60] flex flex-wrap items-center gap-3 bg-white/40 p-2 rounded-[1.5rem] border border-white/30 shadow-sm mx-1 animate-premium-in">
+   {/* Date Range without outer container styling */}
+   <div className="flex items-center gap-2 shrink-0">
+     <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap px-1">من:</span>
+     <input
+       type="date"
+       value={startDate}
+       onChange={(e) => setStartDate(toEnglishDigits(e.target.value))}
+       className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[110px] cursor-pointer"
+     />
+     <div className="w-px h-4 bg-[#01404E]/20"></div>
+     <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap px-1">إلى:</span>
+     <input
+       type="date"
+       value={endDate}
+       onChange={(e) => setEndDate(toEnglishDigits(e.target.value))}
+       className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[110px] cursor-pointer"
+     />
+   </div>
+
+   <div className="w-full md:w-[180px]">
+     <CustomSelect
+       options={serviceOptions}
+       value={selectedService}
+       onChange={setSelectedService}
+       placeholder="كل الخدمات"
+       showAllOption={true}
+     />
+   </div>
+
+   {(userRole === 'مدير' || userRole === 'مشرف') && (
+     <div className="w-full md:w-[180px]">
+       <CustomSelect
+         options={employeeOptions}
+         value={selectedEmployee}
+         onChange={setSelectedEmployee}
+         placeholder="كل الموظفين"
+         showAllOption={true}
+       />
+     </div>
+   )}
+
+   {isFilterActive && (
+     <button
+       type="button"
+       onClick={(e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         resetFilters();
+       }}
+       className="flex items-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-xl text-xs font-black transition-all border border-red-500/20 active:scale-95 md:ml-auto"
+     >
+       <X className="w-4 h-4" />
+       <span>إلغاء الفلاتر</span>
+     </button>
+   )}
  </div>
 
  {/* Table Body Container - Reverting to white background as per user preference */}
