@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { User, Branch } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { User, Branch, ServiceEntry, Expense } from '../types';
 import {
  Users, Building2, UserPlus, Trash2, Edit3, Shield, MapPin,
- Lock, Key, Save, X, PlusCircle, AlertCircle, List
+ Lock, Key, Save, X, PlusCircle, AlertCircle, List,
+ TrendingUp, Activity, ArrowUpRight, ArrowDownRight, BarChart2, PieChart as PieChartIcon, ListChecks
 } from 'lucide-react';
-import { normalizeArabic, toEnglishDigits } from '../utils';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import { normalizeArabic, normalizeDate, toEnglishDigits } from '../utils';
 import { useModal } from '../context/ModalContext';
 import { ROLES, BRANCHES } from '../constants';
 
@@ -115,6 +117,8 @@ interface AdminDashboardProps {
  branches: Branch[];
  serviceTypes: string[];
  expenseCategories: string[];
+ entries: ServiceEntry[];
+ expenses: Expense[];
  onManageUsers: (data: any) => Promise<{ success: boolean; message?: string }>;
  onManageBranches: (data: any) => Promise<{ success: boolean; message?: string }>;
  onUpdateSettings: (serviceList: string[], expenseList: string[]) => Promise<{ success: boolean; message?: string }>;
@@ -122,11 +126,30 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
- users, branches, serviceTypes, expenseCategories, onManageUsers, onManageBranches, onUpdateSettings, isSubmitting
+ users, branches, serviceTypes, expenseCategories, entries, expenses, onManageUsers, onManageBranches, onUpdateSettings, isSubmitting
 }) => {
- const [activeTab, setActiveTab] = useState<'employees' | 'branches' | 'lists'>(() => {
- return (sessionStorage.getItem('admin-dashboard-active-tab') as any) || 'employees';
- });
+  const [activeTab, setActiveTab] = useState<'employees' | 'branches' | 'lists' | 'performance'>(() => {
+  return (sessionStorage.getItem('admin-dashboard-active-tab') as any) || 'employees';
+  });
+
+  // Performance tab state
+  const today = new Date().toISOString().split('T')[0];
+  const [perfStartDate, setPerfStartDate] = useState(today);
+  const [perfEndDate, setPerfEndDate] = useState(today);
+
+  const performanceData = useMemo(() => {
+  const sDate = normalizeDate(perfStartDate);
+  const eDate = normalizeDate(perfEndDate);
+  const fEntries = entries.filter(e => {
+    const d = normalizeDate(e.entryDate);
+    return d >= sDate && d <= eDate;
+  });
+  const fExpenses = expenses.filter(ex => {
+    const d = normalizeDate(ex.date);
+    return d >= sDate && d <= eDate;
+  });
+  return { entries: fEntries, expenses: fExpenses };
+  }, [entries, expenses, perfStartDate, perfEndDate]);
 
  useEffect(() => {
  sessionStorage.setItem('admin-dashboard-active-tab', activeTab);
@@ -268,6 +291,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
  >
  <List className="w-3.5 h-3.5" />
  القوائم
+ </button>
+ <button
+ onClick={() => setActiveTab('performance')}
+ className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'performance' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'text-[#01404E]/40 hover:text-[#01404E] hover:bg-white/50'}`}
+ >
+ <BarChart2 className={`w-3.5 h-3.5 ${activeTab === 'performance' ? 'animate-pulse' : ''}`} />
+ أداء الفروع
  </button>
  </div>
  </div>
@@ -513,7 +543,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
  </div>
  </div>
  </div>
- ) : (
+ ) : activeTab === 'lists' ? (
  /* Lists Tab */
  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
  {/* Services Management */}
@@ -616,7 +646,204 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
  </div>
  </div>
  </div>
- )}
+ ) : activeTab === 'performance' ? (
+ <div className="space-y-2">
+ {/* Performance Header & Internal Filters */}
+ <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/50 p-4 rounded-[2rem] border border-white/40 shadow-premium">
+ <div className="flex items-center gap-4">
+ <div className="w-10 h-10 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
+ <BarChart2 className="w-5 h-5" />
+ </div>
+ <div>
+ <h3 className="text-lg font-black text-[#01404E]">تحليلات أداء الفروع</h3>
+ <p className="text-[10px] text-blue-600 font-black uppercase mt-0.5">مقارنة الفروع والنمو</p>
+ </div>
+ </div>
+
+ <div className="flex items-center gap-3 bg-white/60 p-2 rounded-2xl border border-white/40 shadow-inner">
+ <div className="flex items-center gap-2">
+ <span className="text-[10px] font-black text-[#01404E]/60">من:</span>
+ <input
+ type="date"
+ value={perfStartDate}
+ onChange={(e) => setPerfStartDate(toEnglishDigits(e.target.value))}
+ className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[110px]"
+ />
+ </div>
+ <div className="w-px h-4 bg-[#01404E]/10"></div>
+ <div className="flex items-center gap-2">
+ <span className="text-[10px] font-black text-[#01404E]/60">إلى:</span>
+ <input
+ type="date"
+ value={perfEndDate}
+ onChange={(e) => setPerfEndDate(toEnglishDigits(e.target.value))}
+ className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[110px]"
+ />
+ </div>
+ </div>
+ </div>
+
+ {/* Performance Analytics Content */}
+ {(() => {
+ const chartData = branches.map(b => {
+ const bEntries = performanceData.entries.filter(e => normalizeArabic(e.branchId || '') === normalizeArabic(b.name));
+ const bExpenses = performanceData.expenses.filter(ex => normalizeArabic(ex.branchId || '') === normalizeArabic(b.name));
+
+ const revenue = bEntries.reduce((sum, e) => {
+ const amount = e.serviceType === 'تحويل وارد' ? (e.serviceCost || 0) : (e.amountPaid || 0);
+ return sum + amount;
+ }, 0);
+ const debt = bEntries.reduce((sum, e) => sum + (e.remainingAmount || 0), 0);
+ const expenseValue = bExpenses.reduce((sum, ex) => sum + (ex.amount || 0), 0);
+
+ return {
+ name: b.name,
+ إيرادات: revenue,
+ مصروفات: expenseValue,
+ صافي: revenue - expenseValue,
+ مديونية: debt,
+ عمليات: bEntries.length
+ };
+ }).filter(d => d.إيرادات > 0 || d.مصروفات > 0 || d.عمليات > 0 || d.مديونية > 0)
+ .sort((a, b) => b.إيرادات - a.إيرادات);
+
+ const topBranch = chartData[0] || { name: '-', إيرادات: 0 };
+ const mostActive = [...chartData].sort((a, b) => b.عمليات - a.عمليات)[0] || { name: '-', عمليات: 0 };
+
+ return (
+ <div className="space-y-2">
+ {/* Performance Mini Stats */}
+ <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+ <div className="bg-white/80 p-4 rounded-3xl border border-white/40 shadow-premium flex items-center gap-4">
+ <div className="w-12 h-12 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center">
+ <TrendingUp className="w-6 h-6" />
+ </div>
+ <div>
+ <p className="text-[10px] text-gray-400 font-black uppercase">أعلى فرع إيراداً</p>
+ <p className="text-base font-black text-[#01404E]">{topBranch.name}</p>
+ </div>
+ </div>
+ <div className="bg-white/80 p-4 rounded-3xl border border-white/40 shadow-premium flex items-center gap-4">
+ <div className="w-12 h-12 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center">
+ <Activity className="w-6 h-6" />
+ </div>
+ <div>
+ <p className="text-[10px] text-gray-400 font-black uppercase">الأكثر حركية</p>
+ <p className="text-base font-black text-[#01404E]">{mostActive.name}</p>
+ </div>
+ </div>
+ <div className="bg-white/80 p-4 rounded-3xl border border-white/40 shadow-premium flex items-center gap-4">
+ <div className="w-12 h-12 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center">
+ <ArrowUpRight className="w-6 h-6" />
+ </div>
+ <div>
+ <p className="text-[10px] text-gray-400 font-black uppercase">إجمالي العائد</p>
+ <p className="text-base font-black text-[#01404E]">{performanceData.entries.reduce((sum, e) => sum + (e.serviceType === 'تحويل وارد' ? e.serviceCost : e.amountPaid), 0).toLocaleString()} ج.م</p>
+ </div>
+ </div>
+ <div className="bg-white/80 p-4 rounded-3xl border border-white/40 shadow-premium flex items-center gap-4">
+ <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-2xl flex items-center justify-center">
+ <ArrowDownRight className="w-6 h-6" />
+ </div>
+ <div>
+ <p className="text-[10px] text-gray-400 font-black uppercase">إجمالي النفقات</p>
+ <p className="text-base font-black text-[#01404E]">{performanceData.expenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()} ج.م</p>
+ </div>
+ </div>
+ </div>
+
+ {/* Charts Grid */}
+ <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+ {/* Bar Chart */}
+ <div className="bg-white/80 backdrop-blur-xl p-4 rounded-[2.5rem] border border-white/40 shadow-premium">
+ <h4 className="text-sm font-black text-[#01404E] mb-2 flex items-center gap-2">
+ <BarChart2 className="w-4 h-4 text-blue-600" />
+ مقارنة الإيرادات والمصروفات للفروع
+ </h4>
+ <div className="h-[350px] w-full">
+ <ResponsiveContainer width="100%" height="100%">
+ <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+ <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+ <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#01404E' }} />
+ <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#01404E' }} />
+ <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '20px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 900 }} itemStyle={{ fontSize: '12px' }} />
+ <Legend verticalAlign="top" height={36} wrapperStyle={{ fontWeight: 900, fontSize: '12px' }} />
+ <Bar dataKey="إيرادات" fill="#00A6A6" radius={[6, 6, 0, 0]} barSize={20} />
+ <Bar dataKey="مصروفات" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={20} />
+ </BarChart>
+ </ResponsiveContainer>
+ </div>
+ </div>
+
+ {/* Pie Chart */}
+ <div className="bg-white/80 backdrop-blur-xl p-4 rounded-[2.5rem] border border-white/40 shadow-premium">
+ <h4 className="text-sm font-black text-[#01404E] mb-2 flex items-center gap-2">
+ <PieChartIcon className="w-4 h-4 text-red-600" />
+ توزيع المديونيات على الفروع (المتبقي)
+ </h4>
+ <div className="h-[350px] w-full">
+ <ResponsiveContainer width="100%" height="100%">
+ <PieChart>
+ <Pie data={chartData} cx="50%" cy="50%" innerRadius={80} outerRadius={120} paddingAngle={5} dataKey="مديونية">
+ {chartData.map((_entry, index) => (
+ <Cell key={`cell-${index}`} fill={['#ef4444', '#f97316', '#dc2626', '#b91c1c', '#991b1b'][index % 5]} />
+ ))}
+ </Pie>
+ <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '20px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 900 }} />
+ <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontWeight: 900, fontSize: '12px' }} />
+ </PieChart>
+ </ResponsiveContainer>
+ </div>
+ </div>
+ </div>
+
+ {/* Performance Leaderboard Table */}
+ <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/40 shadow-premium overflow-hidden">
+ <div className="p-6 border-b border-[#01404E]/5 flex items-center justify-between">
+ <h4 className="text-sm font-black text-[#01404E] flex items-center gap-2">
+ <ListChecks className="w-4 h-4 text-blue-600" />
+ ترتيب أداء الفروع
+ </h4>
+ </div>
+ <div className="overflow-x-auto">
+ <table className="w-full">
+ <thead className="bg-[#01404E]/5">
+ <tr className="text-[10px] md:text-xs font-black uppercase text-gray-400 border-b border-[#01404E]/5">
+ <th className="py-4 px-6 text-right">الفرع</th>
+ <th className="py-4 px-6 text-center">الإيرادات</th>
+ <th className="py-4 px-6 text-center">المصروفات</th>
+ <th className="py-4 px-6 text-center">المديونية</th>
+ <th className="py-4 px-6 text-center">الصافي</th>
+ <th className="py-4 px-6 text-center">حجم العمليات</th>
+ </tr>
+ </thead>
+ <tbody className="divide-y divide-[#01404E]/5">
+ {chartData.map((data, idx) => (
+ <tr key={data.name} className="hover:bg-blue-50/50 transition-all">
+ <td className="py-4 px-6">
+ <div className="flex items-center gap-3">
+ <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
+ {idx + 1}
+ </span>
+ <span className="font-black text-[#01404E] text-xs md:text-sm">{data.name}</span>
+ </div>
+ </td>
+ <td className="py-4 px-6 text-center font-black text-emerald-600">+{data.إيرادات.toLocaleString()} ج.م</td>
+ <td className="py-4 px-6 text-center font-black text-red-500">-{data.مصروفات.toLocaleString()} ج.م</td>
+ <td className="py-4 px-6 text-center font-black text-orange-600">{data.مديونية.toLocaleString()} ج.م</td>
+ <td className="py-4 px-6 text-center font-black text-[#01404E] text-xs md:text-sm">{data.صافي.toLocaleString()} ج.م</td>
+ <td className="py-4 px-6 text-center font-black text-blue-600">{data.عمليات} عملية</td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ );
+ })()}
+ </div>
+ ) : null}
  </div>
  );
 };

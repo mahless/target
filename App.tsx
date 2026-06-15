@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ServiceForm from './pages/ServiceForm';
 import Expenses from './pages/Expenses';
-import Reports from './pages/Reports';
+
 import Receivables from './pages/Receivables';
 import AdminInventory from './pages/AdminInventory';
 import AttendanceDashboard from './pages/AttendanceDashboard';
@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
       case '/new-service': return 'تسجيل خدمة جديدة';
       case '/receivables': return 'سجل المتبقيات والتحصيل';
       case '/expenses': return 'إدارة المصروفات';
-      case '/reports': return 'تقارير الأداء المالي';
+
       case '/admin/inventory': return 'إدارة المخزن';
       case '/admin/attendance': return 'لوحة الحضور والانصراف';
       case '/admin/dashboard': return 'لوحة التحكم الإدارية';
@@ -180,23 +180,7 @@ const AppContent: React.FC = () => {
                         />
                       )
                     } />
-                    <Route path="/reports" element={
-                      <Reports
-                        entries={entries}
-                        expenses={expenses}
-                        serviceTypes={serviceTypes}
-                        expenseCategories={expenseCategories}
-                        branches={branches}
-                        manualDate={currentDate || ''}
-                        branchId={branch?.id || ''}
-                        onUpdateEntry={updateEntry}
-                        onAddExpense={addExpense}
-                        isSyncing={isSyncing}
-                        onRefresh={syncAll}
-                        username={user?.name || ''}
-                        userRole={userRole}
-                      />
-                    } />
+
                     <Route path="/third-party-settlements" element={
                       userRole === 'مشاهد' ? <Navigate to="/dashboard" /> : (
                         <ThirdPartySettlements
@@ -239,6 +223,8 @@ const AppContent: React.FC = () => {
                           branches={branches}
                           serviceTypes={serviceTypes}
                           expenseCategories={expenseCategories}
+                          entries={entries}
+                          expenses={expenses}
                           onManageUsers={manageUsers}
                           onManageBranches={manageBranches}
                           onUpdateSettings={updateSettings}

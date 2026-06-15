@@ -302,11 +302,6 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({
  </NavLink>
  )}
 
- <NavLink to="/reports" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
- <BarChart3 className="w-5 h-5" />
- <span>التقارير</span>
- </NavLink>
-
  {userRole !== 'مشاهد' && (
  <NavLink to="/third-party-settlements" className={linkClass} onClick={() => { if (isOpen) setIsOpen(false); }}>
  <Users className="w-5 h-5" />
