@@ -79,47 +79,42 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, entries, expenseCategorie
   }, [expenses, branchId, currentDate, debouncedSearchTerm, userRole, normalizedUsername]);
 
   const currentBalance = useMemo(() => {
-    if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
-      // خزنة المساعد = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم)
-      const userEntries = entries.filter(e => {
-        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-        const isNotCancelled = e.status !== 'cancelled';
-        const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
-        const isToday = e.entryDate === currentDate;
-        return matchesUser && isNotCancelled && matchesBranch && isToday;
-      });
+    // خزنة الموظف الحالي (الكاش الفعلي فقط) = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم)
+    const userEntries = entries.filter(e => {
+      const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      const isNotCancelled = e.status !== 'cancelled';
+      const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
+      const isToday = e.entryDate === currentDate;
+      return matchesUser && isNotCancelled && matchesBranch && isToday;
+    });
 
-      const userExpenses = expenses.filter(ex => {
-        const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
-        const matchesBranch = !branchId || normalizeArabic(ex.branchId) === normalizeArabic(branchId);
-        const isToday = ex.date === currentDate;
-        return matchesUser && matchesBranch && isToday;
-      });
+    const userExpenses = expenses.filter(ex => {
+      const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
+      const matchesBranch = !branchId || normalizeArabic(ex.branchId) === normalizeArabic(branchId);
+      const isToday = ex.date === currentDate;
+      return matchesUser && matchesBranch && isToday;
+    });
 
-      const totalCollected = userEntries.reduce((acc, curr) => {
-        const amount = curr.serviceType === 'تحويل وارد'
-          ? (Number(curr.serviceCost) || 0)
-          : (Number(curr.amountPaid) || 0);
-        return acc + amount;
-      }, 0);
+    const totalCollected = userEntries.reduce((acc, curr) => {
+      const amount = curr.serviceType === 'تحويل وارد'
+        ? (Number(curr.serviceCost) || 0)
+        : (Number(curr.amountPaid) || 0) - (Number(curr.electronicAmount) || 0);
+      return acc + amount;
+    }, 0);
 
-      const userCancelledEntries = entries.filter(e => {
-        const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-        const isCancelled = e.status === 'cancelled';
-        const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
-        const isToday = e.entryDate === currentDate;
-        return matchesUser && isCancelled && matchesBranch && isToday;
-      });
-      const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
+    const userCancelledEntries = entries.filter(e => {
+      const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      const isCancelled = e.status === 'cancelled';
+      const matchesBranch = !branchId || normalizeArabic(e.branchId) === normalizeArabic(branchId);
+      const isToday = e.entryDate === currentDate;
+      return matchesUser && isCancelled && matchesBranch && isToday;
+    });
+    const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
 
-      const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
-      return (totalCollected + totalAdminFees) - totalSpent;
-    }
-
-    const currentBranch = branches.find(b => b.id === branchId);
-    return currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0;
-  }, [branchId, userRole, branches, entries, expenses, normalizedUsername]);
+    return (totalCollected + totalAdminFees) - totalSpent;
+  }, [branchId, entries, expenses, normalizedUsername, currentDate]);
 
 
  const showCustomerDetails = (entry: ServiceEntry) => {
