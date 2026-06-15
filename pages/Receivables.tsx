@@ -99,7 +99,8 @@ const Receivables: React.FC<ReceivablesProps> = ({
  notes: `سداد متبقي من عملية: ${entry.serviceType}`,
  timestamp: Date.now(),
  entryDate: currentDate || '',
- barcode: entry.barcode
+ barcode: entry.barcode,
+ recordedBy: username
  };
  const success = await onAddEntry(settlementEntry);
  if (success) {

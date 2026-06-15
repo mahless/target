@@ -69,118 +69,96 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  const normalizedDateToday = useMemo(() => normalizeDate(currentDate), [currentDate]);
  const normalizedUsername = useMemo(() => normalizeArabic(username), [username]);
 
- // الفلترة الداخلية الحيوية والموحدة (using pre-normalized values)
- const dailyEntries = useMemo(() => {
-   const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+  // الفلترة الداخلية الحيوية والموحدة (using pre-normalized values)
+  const dailyEntries = useMemo(() => {
+    const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
 
-   // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر أي بيانات
-   if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
+    // إذا لم يكن مستخدماً بصلاحيات عالية ولم يختر فرعاً، لا تظهر أي بيانات
+    if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
 
-   return allEntries.filter(e => {
-     const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-     const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
-     
-     let matchesUser = true;
-     if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
-       matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
-     }
-     
-     return matchesBranch && matchesDate && matchesUser;
-   });
- }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
+    return allEntries.filter(e => {
+      const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+      const matchesDate = normalizeDate(e.entryDate) === normalizedDateToday;
+      const matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
+      return matchesBranch && matchesDate && matchesUser;
+    });
+  }, [allEntries, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
 
- const filteredEntries = useMemo(() => {
-   // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ)
-   if (debouncedSearchTerm) {
-     return allEntries.filter(e => {
-       const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
-         e.clientName,
-         e.nationalId,
-         e.phoneNumber,
-         e.workOrderNumber || ''
-       ]);
-       
-       if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
-         return matchesSearch && e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-       }
-       return matchesSearch;
-     });
-   }
+  const filteredEntries = useMemo(() => {
+    // حالة البحث: البحث في كل العمليات (كل الفروع وكل التواريخ) للموظف الحالي
+    if (debouncedSearchTerm) {
+      return allEntries.filter(e => {
+        const matchesSearch = searchMultipleFields(debouncedSearchTerm, [
+          e.clientName,
+          e.nationalId,
+          e.phoneNumber,
+          e.workOrderNumber || ''
+        ]);
+        
+        return matchesSearch && e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      });
+    }
 
-   // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار
-   return dailyEntries;
- }, [dailyEntries, allEntries, debouncedSearchTerm, userRole, normalizedUsername]);
+    // الحالة الافتراضية: عرض عمليات اليوم فقط للفرع المختار للمستخدم الحالي
+    return dailyEntries;
+  }, [dailyEntries, allEntries, debouncedSearchTerm, normalizedUsername]);
 
- const dailyExpenses = useMemo(() => {
-   const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
-   if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
+  const dailyExpenses = useMemo(() => {
+    const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN, ROLES.ASSISTANT].some(r => normalizeArabic(userRole) === normalizeArabic(r));
+    if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return [];
 
-   return allExpenses.filter(e => {
-     const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-     const matchesDate = normalizeDate(e.date) === normalizedDateToday;
-     
-     let matchesUser = true;
-     if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
-       matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
-     }
-     
-     return matchesBranch && matchesDate && matchesUser;
-   });
- }, [allExpenses, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
+    return allExpenses.filter(e => {
+      const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+      const matchesDate = normalizeDate(e.date) === normalizedDateToday;
+      const matchesUser = e.recordedBy ? normalizeArabic(e.recordedBy) === normalizedUsername : false;
+      return matchesBranch && matchesDate && matchesUser;
+    });
+  }, [allExpenses, branchId, normalizedBranch, normalizedDateToday, userRole, normalizedUsername]);
 
- const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
+  const stats = useDashboardStats(dailyEntries, dailyExpenses, currentDate);
 
- const currentBranch = useMemo(() => {
- if (branchId === BRANCHES.ALL) return null;
- return branches.find(b => normalizeArabic(b.id) === normalizedBranch);
- }, [branches, normalizedBranch, branchId]);
+  const currentBranch = useMemo(() => {
+    if (branchId === BRANCHES.ALL) return null;
+    return branches.find(b => normalizeArabic(b.id) === normalizedBranch);
+  }, [branches, normalizedBranch, branchId]);
 
- const currentBranchBalance = useMemo(() => {
-   if (normalizeArabic(userRole) === normalizeArabic(ROLES.ASSISTANT)) {
-     // خزنة المساعد = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم)
-     const userEntries = allEntries.filter(e => {
-       const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-       const isNotCancelled = e.status !== 'cancelled';
-       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-       const isToday = e.entryDate === currentDate;
-       return matchesUser && isNotCancelled && matchesBranch && isToday;
-     });
-     
-     const userExpenses = allExpenses.filter(ex => {
-       const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
-       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(ex.branchId) === normalizedBranch;
-       const isToday = ex.date === currentDate;
-       return matchesUser && matchesBranch && isToday;
-     });
+  const currentBranchBalance = useMemo(() => {
+    // خزنة الموظف الحالي = محصل اليوم فقط - مصروفات اليوم فقط (تبدأ من صفر كل يوم لمطابقة الدرج)
+    const userEntries = allEntries.filter(e => {
+      const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      const isNotCancelled = e.status !== 'cancelled';
+      const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+      const isToday = e.entryDate === currentDate;
+      return matchesUser && isNotCancelled && matchesBranch && isToday;
+    });
+    
+    const userExpenses = allExpenses.filter(ex => {
+      const matchesUser = ex.recordedBy && normalizeArabic(ex.recordedBy) === normalizedUsername;
+      const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(ex.branchId) === normalizedBranch;
+      const isToday = ex.date === currentDate;
+      return matchesUser && matchesBranch && isToday;
+    });
 
-      const totalCollected = userEntries.reduce((acc, curr) => {
-        const amount = curr.serviceType === 'تحويل وارد'
-          ? (Number(curr.serviceCost) || 0)
-          : (Number(curr.amountPaid) || 0) - (Number(curr.electronicAmount) || 0);
-        return acc + amount;
-      }, 0);
+    const totalCollected = userEntries.reduce((acc, curr) => {
+      const amount = curr.serviceType === 'تحويل وارد'
+        ? (Number(curr.serviceCost) || 0)
+        : (Number(curr.amountPaid) || 0) - (Number(curr.electronicAmount) || 0);
+      return acc + amount;
+    }, 0);
 
-     const userCancelledEntries = allEntries.filter(e => {
-       const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
-       const isCancelled = e.status === 'cancelled';
-       const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
-       const isToday = e.entryDate === currentDate;
-       return matchesUser && isCancelled && matchesBranch && isToday;
-     });
-     const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
+    const userCancelledEntries = allEntries.filter(e => {
+      const matchesUser = e.recordedBy && normalizeArabic(e.recordedBy) === normalizedUsername;
+      const isCancelled = e.status === 'cancelled';
+      const matchesBranch = branchId === BRANCHES.ALL || !branchId || normalizeArabic(e.branchId) === normalizedBranch;
+      const isToday = e.entryDate === currentDate;
+      return matchesUser && isCancelled && matchesBranch && isToday;
+    });
+    const totalAdminFees = userCancelledEntries.reduce((acc, curr) => acc + (Number(curr.adminFee) || 0), 0);
 
-     const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const totalSpent = userExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
-     return (totalCollected + totalAdminFees) - totalSpent;
-   }
-
-   const isHighLevelUser = [ROLES.MANAGER, ROLES.ADMIN].some(r => normalizeArabic(userRole) === normalizeArabic(r));
-   if (!isHighLevelUser && (!branchId || branchId === BRANCHES.ALL)) return 0;
-
-   return (branchId === BRANCHES.ALL || !branchId)
-     ? branches.reduce((acc, b) => acc + (b.Current_Balance || b.currentBalance || 0), 0)
-     : (currentBranch?.Current_Balance ?? currentBranch?.currentBalance ?? 0);
- }, [branchId, userRole, branches, currentBranch, allEntries, allExpenses, normalizedUsername, normalizedBranch]);
+    return (totalCollected + totalAdminFees) - totalSpent;
+  }, [branchId, branches, allEntries, allExpenses, normalizedUsername, normalizedBranch, currentDate]);
 
  // Debounced refresh handler (S7: Performance optimization)
  const handleRefreshClick = useCallback(() => {
