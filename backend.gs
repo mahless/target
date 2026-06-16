@@ -1,0 +1,2075 @@
+/**
+ * ============================================
+ * BACKEND.GS - Google Apps Script Backend
+ * ============================================
+ * 
+ * PURPOSE:
+ * Server-side logic for a government services management system.
+ * Handles CRUD operations for:
+ * - Service entries (transactions)
+ * - Expenses tracking
+ * - Stock/barcode inventory
+ * - User management & authentication
+ * - Branch balance management
+ * - Employee attendance tracking
+ * 
+ * ARCHITECTURE:
+ * - Entry Points: doGet() and doPost() handle all HTTP requests
+ * - Data Storage: Google Sheets (7 sheets: Entries, Expenses, Stock, Users, 
+ *   Attendance, Branches_Config, Service_Expense)
+ * - Concurrency: LockService prevents race conditions on write operations
+ * - Caching: Header mappings cached for 6 hours via CacheService
+ * - Timezone: All dates use Africa/Cairo timezone
+ * 
+ * FRONTEND INTEGRATION:
+ * React + Vite + TypeScript frontend calls this backend via:
+ * - google.script.run for async operations
+ * - URL parameters for GET requests (?action=getData&sheetName=Users)
+ * - JSON body for POST requests (action specified in URL params)
+ * 
+ * SECURITY:
+ * - Role-based access: Admin (مدير), Assistant (مساعد), Employee (موظف), Viewer (عارض)
+ * - Authorization checks in doPost() before sensitive operations
+ * - IP-based attendance verification for check-in/check-out
+ * 
+ * DEPLOYMENT:
+ * Published as web app with "Anyone with link" access
+ * Frontend hosted separately (Vite build)
+ */
+
+// ============================================
+// CONSTANTS - Extracted magic strings for consistency
+// ============================================
+
+// Sheet Names (prevent typos, centralized naming)
+const SHEET_NAMES = {
+  ATTENDANCE: 'Attendance',
+  USERS: 'Users',
+  ENTRIES: 'Entries',
+  STOCK: 'Stock',
+  EXPENSES: 'Expenses',
+  BRANCHES_CONFIG: 'Branches_Config',
+  SERVICE_EXPENSE: 'Service_Expense'
+};
+
+// Status Values
+const STOCK_STATUS = {
+  AVAILABLE: 'Available',
+  USED: 'Used',
+  DAMAGED: 'Damaged'
+};
+
+const ENTRY_STATUS = {
+  ACTIVE: 'active',
+  DELIVERED: 'تم التسليم',
+  CANCELLED_AR: 'ملغي',
+  CANCELLED_EN: 'cancelled'
+};
+
+// Special Service Types
+const SERVICE_TYPES = {
+  DEBT_SETTLEMENT: 'سداد مديونية',
+  BRANCH_TRANSFER_OUT: 'تحويل صادر'
+};
+
+// Text Field Names (for formatting as plain text)
+const TEXT_FIELD_NAMES = [
+  'phoneNumber', 'رقم الهاتف', 'phone',
+  'barcode', 'الباركود', 'Barcode',
+  'nationalId', 'الرقم القومي'
+];
+
+// ============================================
+// SHEET CONFIGURATION
+// ============================================
+
+const SHEET_CONFIG = {
+  Attendance: ['id', 'username', 'branchId', 'Type', 'ip', 'Timestamp', 'date', 'Total_Hours', 'users_ID'],
+  Users: ['id', 'name', 'password', 'role', 'assignedBranchId'],
+  Entries: [
+    'id', 'clientName', 'nationalId', 'phoneNumber', 'serviceType', 'amountPaid', 'date', 'branchId', 
+    'recordedBy', 'thirdPartyName', 'thirdPartyCost', 'serviceCost', 'isCostPaid', 'costPaidDate', 
+    'remainingAmount', 'barcode', 'speed', 'notes', 'status', 'electronicAmount', 'electronicMethod', 
+    'isElectronic', 'cancellationReason', 'adminFee', 'timestamp', 'hasThirdParty', 'costPaidBy', 
+    'entryDate', 'parentEntryId', 'paymentMethod', 'Barcode_Source', 'workOrderNumber', 'statusUpdateDate'
+  ],
+  Stock: ['Barcode', 'Category', 'Branch', 'Status', 'Created_At', 'Used_By', 'Usage_Date', 'Order_ID', 'Error_Reported_By', 'Error_Note'],
+  Expenses: ['id', 'category', 'amount', 'date', 'branchId', 'notes', 'timestamp', 'recordedBy', 'relatedEntryId'],
+  Branches_Config: ['Branch_Name', 'Current_Balance', 'Authorized_IP', 'Last_Reset_Date'],
+  Service_Expense: ['Service_List', 'Expense_List']
+};
+
+// ============================================
+// HELPER FUNCTIONS - Wrappers for repeated logic
+// ============================================
+
+/**
+ * Get current date in Cairo timezone (yyyy-MM-dd format)
+ * Centralizes date formatting to ensure consistency
+ */
+function getCairoDate() {
+  return Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+}
+
+/**
+ * Get current date and time in Cairo timezone (yyyy-MM-dd HH:mm:ss format)
+ * Used for timestamp fields
+ */
+function getCairoDateTime() {
+  return Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd HH:mm:ss");
+}
+
+/**
+ * Check if user has Admin role (مدير or Admin)
+ * @param {string} role - User role
+ * @returns {boolean} True if user is admin
+ */
+function isAdmin(role) {
+  return normalizeArabic(role) === normalizeArabic('مدير') || role === 'Admin';
+}
+
+/**
+ * Check if user has Admin or Assistant role (مدير, مساعد, or Admin)
+ * @param {string} role - User role
+ * @returns {boolean} True if user is admin or assistant
+ */
+function isAdminOrAssistant(role) {
+  return isAdmin(role) || normalizeArabic(role) === normalizeArabic('مساعد');
+}
+
+// ============================================
+// UTILITY FUNCTIONS - Core helpers used throughout
+// ============================================
+
+/**
+ * Get column index by name with flexible matching
+ * Searches header mapping for exact or normalized matches (case-insensitive, Arabic normalization)
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {string} colName - Column name to find
+ * @returns {number|undefined} Zero-based column index, or undefined if not found
+ */
+function getColIndex(sheetName, colName) {
+  const map = getHeaderMapping(null, sheetName);
+  // البحث في المابينج بشكل مرن ( case-insensitive والبحث عن بدائل)
+  const normalizedSearch = normalizeArabic(colName).toLowerCase();
+  
+  // أولاً البحث عن تطابق مباشر
+  if (map[colName] !== undefined) return map[colName];
+  
+  // ثانياً البحث عن تطابق بعد التوحيد
+  for (let key in map) {
+    if (normalizeArabic(key).toLowerCase() === normalizedSearch) {
+      return map[key];
+    }
+  }
+  
+  return undefined;
+}
+
+/**
+ * Cached spreadsheet reference to avoid multiple getActiveSpreadsheet() calls
+ * Reduces API quota usage and improves performance
+ */
+let cachedSS = null;
+
+/**
+ * Get active spreadsheet with caching
+ * @returns {Spreadsheet} Active spreadsheet object
+ */
+function getSS() {
+  if (cachedSS) return cachedSS;
+  cachedSS = SpreadsheetApp.getActiveSpreadsheet();
+  return cachedSS;
+}
+
+// ============================================
+// ENTRY POINTS - HTTP Request Handlers
+// ============================================
+
+/**
+ * Handle GET requests (Read Operations)
+ * Routes to appropriate handler based on 'action' parameter
+ * Supported actions:
+ * - getData: Fetch sheet data with optional role-based filtering
+ * - getAvailableBarcode: Get oldest available barcode for assignment
+ * - getHRReport: Generate attendance report for admin dashboard
+ * - login: Authenticate user and return role/permissions
+ * - getUserLogs: Get detailed attendance logs for a user
+ * - getBranches: Fetch branch configuration
+ * 
+ * @param {Object} e - Event parameter with query string params
+ * @param {string} e.parameter.action - Action to perform
+ * @returns {ContentService.TextOutput} JSON response
+ */
+function doGet(e) {
+  const action = e.parameter.action;
+  
+  if (action === 'getData') {
+    return handleGetData(e.parameter.sheetName, e.parameter.role, e.parameter.username);
+  }
+  
+  if (action === 'getAvailableBarcode') {
+    return handleGetAvailableBarcode(e.parameter.branch, e.parameter.category);
+  }
+
+  if (action === 'getHRReport') {
+    return handleGetHRReport(e.parameter.month);
+  }
+
+  if (action === 'login') {
+    return handleLogin(e.parameter.id, e.parameter.password);
+  }
+
+  if (action === 'getUserLogs') {
+    return handleGetUserLogs(e.parameter.username, e.parameter.month);
+  }
+
+  if (action === 'getBranches') {
+    return handleGetData(SHEET_NAMES.BRANCHES_CONFIG);
+  }
+  
+  if (action === 'searchArchives') {
+    const results = searchAllArchives(e.parameter.query);
+    return createJSONResponse(results);
+  }
+
+  return createJSONResponse({ status: "error", message: "Invalid Action" });
+}
+
+/**
+ * Handle POST requests (Write Operations)
+ * Routes to appropriate handler with authorization checks
+ * Supported actions:
+ * - addRow: Add new entry/expense (All roles)
+ * - addStockBatch: Batch upload barcodes (Admin/Assistant only)
+ * - updateStockStatus: Mark barcode as used/available/damaged
+ * - updateStockItem: Edit barcode details (number, branch)
+ * - deleteStockItem: Permanently remove barcode
+ * - updateEntry: Modify existing service entry
+ * - attendance: Check-in/check-out with IP verification
+ * - deliverOrder: Mark order delivered + collect remaining debt
+ * - branchTransfer: Transfer funds between branches (Admin/Assistant)
+ * - manageUsers: Add/update/delete users (Admin only)
+ * - manageBranches: Add/delete branches (Admin only)
+ * - deleteExpense: Remove expense and refund to branch balance
+ * - updateSettings: Update service/expense type lists (Admin only)
+ * 
+ * @param {Object} e - Event parameter
+ * @param {Object} e.postData - POST body
+ * @param {string} e.parameter.action - Action to perform
+ * @param {string} e.parameter.role - User role for authorization
+ * @returns {ContentService.TextOutput} JSON response
+ */
+function doPost(e) {
+  let requestData;
+  try {
+    requestData = JSON.parse(e.postData.contents);
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: "Invalid JSON" });
+  }
+
+  const action = e.parameter.action;
+  const userRole = e.parameter.role || "employee"; // الافتراضي موظف
+
+  if (action === 'addRow') {
+    // حماية: المدير هو الوحيد الذي يمكنه مسح أو تعديل بيانات قديمة، لكن الكل يمكنه الإضافة
+    return handleAddRow(e.parameter.sheetName, requestData);
+  }
+
+  if (action === 'addStockBatch') {
+    // حماية: المساعد والمدير فقط يمكنهما إضافة مخزون
+    if (userRole === 'موظف') {
+      return createJSONResponse({ status: "error", message: "Unauthorized: Employees cannot add stock" });
+    }
+    return handleAddStockBatch(requestData);
+  }
+
+  if (action === 'updateStockStatus') {
+    return handleUpdateStockStatus(requestData);
+  }
+
+  if (action === 'updateStockItem') {
+    return handleUpdateStockItem(requestData);
+  }
+
+  if (action === 'deleteStockItem') {
+    return handleDeleteStockItem(requestData.barcode);
+  }
+
+  if (action === 'updateEntry') {
+    return handleUpdateEntry(e.parameter.sheetName, requestData);
+  }
+
+  if (action === 'attendance') {
+    return handleAttendance(requestData);
+  }
+
+  if (action === 'deliverOrder') {
+    return handleDeliverOrder(requestData);
+  }
+
+  if (action === 'branchTransfer') {
+    const isAuthorized = isAdminOrAssistant(userRole);
+    if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins and Assistants only" });
+    return handleBranchTransfer(requestData);
+  }
+
+  if (action === 'manageUsers') {
+    const isAuthorized = isAdmin(userRole);
+    if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
+    return handleManageUsers(requestData);
+  }
+
+  if (action === 'manageBranches') {
+    const isAuthorized = isAdmin(userRole);
+    if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
+    return handleManageBranches(requestData);
+  }
+
+
+  if (action === 'deleteExpense') {
+    return handleDeleteExpense(requestData);
+  }
+
+  if (action === 'updateSettings') {
+    const isAuthorized = isAdmin(userRole);
+    if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
+    return handleUpdateSettings(requestData);
+  }
+
+  if (action === 'archiveData') {
+    const isAuthorized = isAdmin(userRole);
+    if (!isAuthorized) return createJSONResponse({ status: "error", message: "Unauthorized: Admins only" });
+    const result = archiveDataByRange(requestData.startDate, requestData.endDate);
+    return createJSONResponse(result);
+  }
+
+  return createJSONResponse({ status: "error", message: "Invalid POST Action" });
+}
+
+/**
+ * دالة حذف مصروف وإرجاع المبالغ للخزنة
+ * نسخة مطورة (Resilient) تتعرف على المسميات العربية والإنجليزية للأعمدة
+ */
+/**
+ * Delete an expense and refund to branch balance
+ * 
+ * @param {Object} data - {id}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleDeleteExpense(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000); 
+    const ss = getSS();
+    
+    console.log("Starting handleDeleteExpense for ID: " + data.id);
+    
+    let sheet = ss.getSheetByName(SHEET_NAMES.EXPENSES) || ss.getSheetByName("المصروفات");
+    if (!sheet) {
+      const allSheets = ss.getSheets();
+      sheet = allSheets.find(s => normalizeArabic(s.getName()).includes("مصروفات"));
+    }
+    
+    if (!sheet) {
+      console.log("Error: Sheet not found");
+      return createJSONResponse({ status: "error", message: "لم يتم العثور على جدول المصروفات" });
+    }
+
+    console.log("Found Sheet: " + sheet.getName());
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    console.log("Sheet Headers: " + JSON.stringify(headers));
+    
+    const findCol = (synonyms) => {
+      const normalizedSyn = synonyms.map(s => normalizeArabic(s).toLowerCase());
+      for (let i = 0; i < headers.length; i++) {
+        const h = normalizeArabic(headers[i]).toLowerCase();
+        if (normalizedSyn.includes(h)) return i;
+      }
+      return undefined;
+    };
+
+    const idCol = findCol(["id", "ID", "المعرف", "مسلسل", "كود"]);
+    const amountCol = findCol(["amount", "المبلغ", "القيمة", "السعر"]);
+    const branchCol = findCol(["branchId", "branch", "الفرع", "فرع", "اسم الفرع"]);
+
+    console.log("Column Mapping - ID: " + idCol + ", Amount: " + amountCol + ", Branch: " + branchCol);
+
+    if (idCol === undefined || amountCol === undefined || branchCol === undefined) {
+      const missing = [];
+      if (idCol === undefined) missing.push("ID");
+      if (amountCol === undefined) missing.push("المبلغ");
+      if (branchCol === undefined) missing.push("الفرع");
+      return createJSONResponse({ status: "error", message: "نقص في أعمدة الجدول: " + missing.join(", ") });
+    }
+
+    const values = sheet.getDataRange().getValues();
+    const targetId = String(data.id || "").trim();
+    
+    let foundRowIndex = -1;
+    let amountToRefund = 0;
+    let branchId = "";
+
+    for (let i = 1; i < values.length; i++) {
+      const currentId = String(values[i][idCol]).trim();
+      if (currentId === targetId) {
+        foundRowIndex = i + 1;
+        amountToRefund = parseFloat(values[i][amountCol] || 0);
+        branchId = String(values[i][branchCol]);
+        break;
+      }
+    }
+
+    console.log("Search Result - Found: " + (foundRowIndex !== -1) + ", Row: " + foundRowIndex);
+
+    if (foundRowIndex === -1) {
+      return createJSONResponse({ status: "error", message: "المصروف غير موجود في السجلات (الرمز المبحوث عنه: " + targetId + ")" });
+    }
+
+    sheet.deleteRow(foundRowIndex);
+    SpreadsheetApp.flush(); 
+
+    const refundSuccess = updateBranchBalance(branchId, amountToRefund);
+    console.log("Refund Process - Branch: " + branchId + ", Amount: " + amountToRefund + ", Status: " + refundSuccess);
+
+    return createJSONResponse({ 
+      status: "success", 
+      message: "تم حذف المصروف بنجاح وإعادة المبلغ (" + amountToRefund + ") لرصيد فرع " + branchId,
+      refunded: amountToRefund,
+      refundSuccess: refundSuccess
+    });
+
+  } catch (e) {
+    console.log("Exception in handleDeleteExpense: " + e.toString());
+    return createJSONResponse({ status: "error", message: "فشل الحذف: " + e.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 7. تسليم المعاملة وتحصيل المتبقي (Delivery & Collection)
+ */
+/**
+ * 7. Deliver Order and Collect Remaining Amount
+ * 
+ * @param {Object} data - {orderId, remainingCollected, clientName, collectorName, branchId}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleDeliverOrder(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheetEntries = ss.getSheetByName(SHEET_NAMES.ENTRIES);
+    if (!sheetEntries) return createJSONResponse({ status: "error", message: "Entries sheet not found" });
+
+    const map = getHeaderMapping(sheetEntries, SHEET_NAMES.ENTRIES);
+    const idColIdx = getColIndex(SHEET_NAMES.ENTRIES, "id");
+    const statusColIdx = getColIndex(SHEET_NAMES.ENTRIES, "status");
+    const deliveredDateColIdx = getColIndex(SHEET_NAMES.ENTRIES, "deliveredDate");
+
+    if (idColIdx === undefined) return createJSONResponse({ status: "error", message: "ID Column not found" });
+
+    const dataRange = sheetEntries.getDataRange();
+    const values = dataRange.getValues();
+    
+    let rowIndex = -1;
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][idColIdx]) === String(data.orderId)) {
+        rowIndex = i;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) return createJSONResponse({ status: "error", message: "Order not found" });
+
+    const cairoTime = getCairoDate();
+
+    // 1. تحديث حالة الطلب وتاريخ التسليم
+    if (statusColIdx !== undefined) {
+      sheetEntries.getRange(rowIndex + 1, statusColIdx + 1).setValue(ENTRY_STATUS.DELIVERED);
+    }
+    if (deliveredDateColIdx !== undefined) {
+      sheetEntries.getRange(rowIndex + 1, deliveredDateColIdx + 1).setValue(cairoTime);
+    }
+
+    // 2. إذا كان هناك مبلغ محصل (سداد مديونية)
+    const remainingCollected = parseFloat(data.remainingCollected || 0);
+    if (remainingCollected > 0) {
+      const headerKeys = SHEET_CONFIG[SHEET_NAMES.ENTRIES];
+      const newRow = headerKeys.map(key => {
+        const k = key.toLowerCase();
+        if (k === 'id') return Date.now().toString() + "-collect";
+        if (k === 'clientname') return data.clientName;
+        if (k === 'servicetype') return SERVICE_TYPES.DEBT_SETTLEMENT;
+        if (k === 'amountpaid') return remainingCollected;
+        if (k === 'servicecost') return 0; // سداد المديونية تكلفته صفرية لأنه تحصيل فقط
+        if (k === 'remainingamount') return 0;
+        if (k === 'thirdpartycost') return 0; // فصل منطق الطرف الثالث: السداد لا يحمل تكلفة مورد
+        if (k === 'hasthirdparty') return false;
+        if (k === 'thirdpartyname') return ""; // مسح اسم المورد لضمان عدم الفلترة الخاطئة
+        if (k === 'iscostpaid') return false;
+        if (k === 'entrydate') return cairoTime;
+        if (k === 'timestamp') return Date.now();
+        if (k === 'recordedby') return data.collectorName;
+        if (k === 'branchid') return data.branchId;
+        if (k === 'status') return ENTRY_STATUS.ACTIVE;
+        if (k === 'parententryid') return data.orderId;
+        return "";
+      });
+      sheetEntries.appendRow(newRow);
+      applyTextFormatting(sheetEntries, map, sheetEntries.getLastRow());
+      
+      // 3. تحديث رصيد الفرع المحصل
+      updateBranchBalance(data.branchId, remainingCollected);
+    }
+
+    return createJSONResponse({ status: "success" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 6. نظام الحضور والانصراف (Attendance)
+ */
+/**
+ * 6. Attendance System (Check-in/Check-out)
+ * 
+ * @param {Object} data - {users_ID, username, branchId, type, ip}
+ * @returns {ContentService.TextOutput} JSON response {status, timestamp?}
+ */
+function handleAttendance(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    let sheet = ss.getSheetByName(SHEET_NAMES.ATTENDANCE);
+    
+    // إنشاء الشيت إذا لم تكن موجودة بالهيدرز الصحيحة
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAMES.ATTENDANCE);
+      sheet.appendRow(SHEET_CONFIG[SHEET_NAMES.ATTENDANCE]);
+    }
+    
+    const idxUserID = getColIndex(SHEET_NAMES.ATTENDANCE, "users_ID");
+    const idxType = getColIndex(SHEET_NAMES.ATTENDANCE, "Type");
+    const idxTimestamp = getColIndex(SHEET_NAMES.ATTENDANCE, "Timestamp");
+    const idxHours = getColIndex(SHEET_NAMES.ATTENDANCE, "Total_Hours");
+    const idxBranch = getColIndex(SHEET_NAMES.ATTENDANCE, "branchId");
+    const idxIP = getColIndex(SHEET_NAMES.ATTENDANCE, "ip");
+
+    if ([idxUserID, idxType, idxTimestamp, idxHours].some(idx => idx === undefined)) {
+      return createJSONResponse({ status: "error", message: "هيكل جدول الحضور غير مكتمل" });
+    }
+
+    // 1. التحقق من الـ IP (Dynamic Whitelist Logic)
+    let isAuthorized = true;
+    const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
+    
+    if (configSheet) {
+      const idxBranchName = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+      const idxAuthIP = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Authorized_IP");
+      const configData = configSheet.getDataRange().getValues();
+      
+      if (idxBranchName !== undefined && idxAuthIP !== undefined) {
+        const targetBranch = normalizeArabic(data.branchId);
+        let branchAllowedIP = "0.0.0.0";
+        let foundConfig = false;
+        
+        for (let i = 1; i < configData.length; i++) {
+          if (normalizeArabic(configData[i][idxBranchName]) === targetBranch) {
+            branchAllowedIP = String(configData[i][idxAuthIP]).trim();
+            foundConfig = true;
+            break;
+          }
+        }
+        
+        if (foundConfig && branchAllowedIP !== "0.0.0.0" && branchAllowedIP !== "" && data.ip !== branchAllowedIP) {
+          isAuthorized = false;
+        }
+      }
+    }
+    
+    if (!isAuthorized) {
+       return createJSONResponse({ 
+         status: "error", 
+         message: `لا يمكن تسجيل الحضور من هذا الموقع. IP الجهاز الحالي (${data.ip}) غير مطابق للـ IP المعتمد لهذا الفرع في الإعدادات.` 
+       });
+    }
+
+    const today = new Date();
+    const cairoTimeStr = getCairoDateTime();
+    const todayDateStr = getCairoDate();
+    
+    let totalHours = 0;
+
+    // منطق حساب الساعات عند الانصراف
+    if (data.type === 'check-out') {
+      const rows = sheet.getDataRange().getValues();
+      const targetUserID = String(data.users_ID || "").trim();
+      let foundCheckIn = false;
+
+      for (let i = rows.length - 1; i > 0; i--) {
+        const row = rows[i];
+        const rowUserID = String(row[idxUserID] || "").trim();
+        const rowType = String(row[idxType] || "").trim();
+        const rowTimestamp = row[idxTimestamp];
+
+        if (rowUserID === targetUserID && rowType === 'check-in') {
+          let checkInDate;
+          if (rowTimestamp instanceof Date) {
+            checkInDate = rowTimestamp;
+          } else {
+            const parts = String(rowTimestamp).split(' ');
+            if (parts.length >= 2) {
+              const d = parts[0].split('-');
+              const t = parts[1].split(':');
+              checkInDate = new Date(d[0], d[1]-1, d[2], t[0], t[1], t[2]);
+            }
+          }
+
+          if (checkInDate && !isNaN(checkInDate.getTime())) {
+            const diffMs = today.getTime() - checkInDate.getTime();
+            const diffHours = diffMs / (1000 * 60 * 60);
+
+            if (diffHours >= 0 && diffHours <= 24) {
+              totalHours = parseFloat(diffHours.toFixed(2));
+              foundCheckIn = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!foundCheckIn) {
+        return createJSONResponse({ 
+          status: "error", 
+          message: "لا يوجد تسجيل حضور مفتوح لهذا اليوم (خلال آخر 24 ساعة). يرجى تسجيل الحضور أولاً." 
+        });
+      }
+    }
+
+    // إنشاء الصف الجديد بناءً على الهيدرز في SHEET_CONFIG
+    const headers = SHEET_CONFIG[SHEET_NAMES.ATTENDANCE];
+    const newRow = headers.map(headerName => {
+       switch(headerName) {
+         case 'id': return Date.now().toString();
+         case 'users_ID': return String(data.users_ID || "").trim();
+         case 'username': return data.username;
+         case 'branchId': return data.branchId;
+         case 'Type': return data.type;
+         case 'ip': return data.ip;
+         case 'Timestamp': return cairoTimeStr;
+         case 'date': return todayDateStr;
+         case 'Total_Hours': return totalHours;
+         default: return "";
+       }
+    });
+
+    sheet.appendRow(newRow);
+    return createJSONResponse({ status: "success", timestamp: cairoTimeStr });
+
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 0. تسجيل الدخول والتحقق من المستخدم
+ */
+/**
+ * 0. Login and user verification
+ * 
+ * @param {string} id - User ID
+ * @param {string} password - User Password
+ * @returns {ContentService.TextOutput} JSON response {success, id, name, role, ...}
+ */
+function handleLogin(id, password) {
+  try {
+    const ss = getSS();
+    const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+    if (!sheet) return createJSONResponse({ success: false, message: "Users sheet not found" });
+    
+    const data = sheet.getDataRange().getValues();
+    const idxId = getColIndex(SHEET_NAMES.USERS, "id");
+    const idxName = getColIndex(SHEET_NAMES.USERS, "name");
+    const idxPass = getColIndex(SHEET_NAMES.USERS, "password");
+    const idxRole = getColIndex(SHEET_NAMES.USERS, "role");
+    const idxBranch = getColIndex(SHEET_NAMES.USERS, "assignedBranchId");
+
+    if (idxId === undefined || idxPass === undefined) {
+      return createJSONResponse({ success: false, message: "هيكل جدول المستخدمين غير صحيح" });
+    }
+  
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (String(row[idxId]).trim() === String(id).trim() && String(row[idxPass]) === String(password)) {
+        return createJSONResponse({ 
+          success: true, 
+          id: String(row[idxId]), 
+          name: row[idxName], 
+          role: row[idxRole], 
+          assignedBranchId: row[idxBranch]
+        });
+      }
+    }
+    return createJSONResponse({ success: false, message: "ID أو كلمة مرور خاطئة" });
+  } catch (err) {
+    return createJSONResponse({ success: false, message: err.toString() });
+  }
+}
+
+/**
+ * 1. جلب البيانات من أي شيت (Entries, Expenses, Stock) مع فلترة الحماية
+ */
+/**
+ * 1. Retrieve data from a sheet with optional filtering
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {string} role - User role for authorization
+ * @param {string} username - Username for filtering
+ * @returns {ContentService.TextOutput} JSON response
+ */
+function handleGetData(sheetName, role, username) {
+  try {
+    if (sheetName === SHEET_NAMES.BRANCHES_CONFIG) checkAndResetDailyBalances();
+    const ss = getSS();
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return createJSONResponse([]);
+    
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return createJSONResponse([]);
+    
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1);
+    const tz = ss.getSpreadsheetTimeZone();
+    
+    const map = getHeaderMapping(sheet, sheetName);
+    const userIsAdmin = isAdmin(role);
+    
+    const result = rows
+      .filter(row => {
+        if (!row.some(cell => String(cell).trim() !== "")) return false;
+        
+        // تطبيق فلتر الصلاحيات (اختياري، مدمج حالياً في العرض بالفرونت إند، لكن هنا للأمان)
+        return true;
+      })
+      .map(row => {
+        const obj = {};
+        
+        // جلب البيانات بناءً على الهيدرز الموجودة
+        headers.forEach((header, index) => {
+          let val = row[index];
+          if (val instanceof Date) {
+            val = Utilities.formatDate(val, tz, "yyyy-MM-dd");
+          }
+          
+          const hLower = header.toLowerCase();
+          // تحويل الحقول المعرفة كسلاسل نصية
+          if (hLower === 'id' || hLower === 'users_id' || hLower === 'معرف' || hLower === 'barcode' || hLower === 'الباركود' || hLower === 'nationalid' || hLower === 'الرقم القومي') {
+            val = String(val || "");
+          }
+          
+          obj[header] = val;
+          // توفير نسخة بالاسم الصغير لتسهيل الوصول في الفرونت إند
+          obj[hLower] = val;
+        });
+
+        // تأكيد وجود الحقول الهامة باستخدام الخريطة (Mapping)
+        Object.keys(map).forEach(key => {
+          const idx = map[key];
+          if (idx !== undefined && idx < row.length) {
+            let val = row[idx];
+            if (val instanceof Date) val = Utilities.formatDate(val, tz, "yyyy-MM-dd");
+            obj[key] = val;
+          }
+        });
+
+        return obj;
+      });
+    
+    return createJSONResponse(result);
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  }
+}
+
+/**
+ * دالة جلب تقرير HR للمدير (الساعات الأسبوعية والشهرية)
+ */
+/**
+ * دالة جلب تقرير HR للمدير (الساعات الأسبوعية والشهرية)
+ * مطور لدعم فلتر الشهر وتفاصيل الحضور اليومية
+ */
+/**
+ * Get HR Report for Admin Dashboard
+ * 
+ * @param {string} monthParam - Target month 'YYYY-MM'
+ * @returns {ContentService.TextOutput} JSON response [{id, name, totalMonth, ...}]
+ */
+function handleGetHRReport(monthParam) {
+  try {
+    const ss = getSS();
+    const sheet = ss.getSheetByName(SHEET_NAMES.ATTENDANCE);
+    if (!sheet) return createJSONResponse([]);
+    
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return createJSONResponse([]);
+    
+    const idxUserID = getColIndex(SHEET_NAMES.ATTENDANCE, "users_ID");
+    const idxUser = getColIndex(SHEET_NAMES.ATTENDANCE, "username");
+    const idxHours = getColIndex(SHEET_NAMES.ATTENDANCE, "Total_Hours");
+    const idxDate = getColIndex(SHEET_NAMES.ATTENDANCE, "date");
+    const idxType = getColIndex(SHEET_NAMES.ATTENDANCE, "Type");
+    const idxTime = getColIndex(SHEET_NAMES.ATTENDANCE, "Timestamp");
+    
+    if (idxUserID === undefined || idxHours === undefined || idxDate === undefined) {
+      return createJSONResponse({ status: "error", message: "الأعمدة المطلوبة غير موجودة في جدول الحضور" });
+    }
+
+    const now = new Date();
+    const todayStr = getCairoDate();
+
+    // تحديد الشهر المستهدف (إما من البارامتر أو الشهر الحالي)
+    let targetYear, targetMonth;
+    if (monthParam) {
+      const parts = monthParam.split('-');
+      targetYear = parseInt(parts[0]);
+      targetMonth = parseInt(parts[1]);
+    } else {
+      targetYear = parseInt(Utilities.formatDate(now, "Africa/Cairo", "yyyy"));
+      targetMonth = parseInt(Utilities.formatDate(now, "Africa/Cairo", "MM"));
+    }
+
+    const report = {};
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const userID = String(row[idxUserID] || "").trim();
+      const userName = String(row[idxUser] || "").trim();
+      if (!userID) continue;
+      
+      const dateVal = row[idxDate];
+      let rowYear, rowMonth, rowDay, rowDateStr = "";
+
+      // استخراج التاريخ
+      if (dateVal instanceof Date) {
+         rowDateStr = Utilities.formatDate(dateVal, "Africa/Cairo", "yyyy-MM-dd");
+         const parts = rowDateStr.split('-');
+         rowYear = parseInt(parts[0]);
+         rowMonth = parseInt(parts[1]);
+         rowDay = parseInt(parts[2]);
+      } else {
+         rowDateStr = String(dateVal).trim();
+         const parts = rowDateStr.split(/\D+/);
+         if (parts.length >= 3) {
+            rowYear = parts[0].length === 4 ? parseInt(parts[0]) : parseInt(parts[2]);
+            rowMonth = parseInt(parts[1]);
+            rowDay = parts[0].length === 4 ? parseInt(parts[2]) : parseInt(parts[0]);
+         }
+      }
+
+      if (!rowYear || !rowMonth) continue;
+      
+      if (!report[userID]) {
+        report[userID] = {
+          name: userName || userID,
+          week1: 0,
+          week2: 0,
+          week3: 0,
+          week4: 0,
+          totalMonth: 0,
+          todayTotal: 0,
+          checkIn: "-",
+          checkOut: "-",
+          todayStatus: "غائب"
+        };
+      }
+
+      const activeUser = report[userID];
+      const hours = parseFloat(row[idxHours] || 0);
+
+      // 1. منطق اليوم الحالي (دائماً مرتبط بتاريخ اليوم الحقيقي للعرض في الجدول الرئيسي)
+      if (rowDateStr === todayStr) {
+        if (idxType !== undefined && idxTime !== undefined) {
+           const type = String(row[idxType]).toLowerCase();
+           let timePart = "";
+           const val = row[idxTime];
+           
+           if (val instanceof Date) {
+             timePart = Utilities.formatDate(val, "Africa/Cairo", "hh:mm a");
+           } else {
+             const fullTime = String(val);
+             timePart = fullTime.includes(' ') ? fullTime.split(' ')[1] : fullTime;
+           }
+
+           if (type.includes('check-in')) {
+             activeUser.checkIn = timePart;
+             activeUser.todayStatus = "حاضر";
+           } else if (type.includes('check-out')) {
+             activeUser.checkOut = timePart;
+             if (hours > 0) activeUser.todayTotal += hours;
+           }
+        }
+      }
+
+      // 2. منطق تجميع الشهر (بناءً على الشهر المختار للفلترة)
+      if (rowMonth === targetMonth && rowYear === targetYear) {
+        if (!isNaN(hours) && hours > 0) {
+          if (rowDay <= 7) activeUser.week1 += hours;
+          else if (rowDay <= 14) activeUser.week2 += hours;
+          else if (rowDay <= 21) activeUser.week3 += hours;
+          else activeUser.week4 += hours;
+
+          activeUser.totalMonth += hours;
+        }
+      }
+    }
+
+    const finalResult = Object.keys(report).map(id => ({
+      id: id,
+      name: report[id].name,
+      week1: parseFloat(report[id].week1.toFixed(2)),
+      week2: parseFloat(report[id].week2.toFixed(2)),
+      week3: parseFloat(report[id].week3.toFixed(2)),
+      week4: parseFloat(report[id].week4.toFixed(2)),
+      totalMonth: parseFloat(report[id].totalMonth.toFixed(2)),
+      todayTotal: parseFloat(report[id].todayTotal.toFixed(2)),
+      checkIn: report[id].checkIn,
+      checkOut: report[id].checkOut,
+      todayStatus: report[id].todayStatus
+    }));
+
+    return createJSONResponse(finalResult);
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  }
+}
+
+/**
+ * جلب كافة حركات موظف معين للشهر الحالي
+ */
+/**
+ * جلب كافة حركات موظف معين لشهر محدد أو الشهر الحالي
+ */
+/**
+ * Get detailed user attendance logs
+ * 
+ * @param {string} username - User name
+ * @param {string} monthParam - Target month 'YYYY-MM'
+ * @returns {ContentService.TextOutput} JSON response [{dateTime, type, hours}]
+ */
+function handleGetUserLogs(username, monthParam) {
+  try {
+    const ss = getSS();
+    const sheet = ss.getSheetByName(SHEET_NAMES.ATTENDANCE);
+    if (!sheet) return createJSONResponse([]);
+    
+    const data = sheet.getDataRange().getValues();
+    const idxUserID = getColIndex(SHEET_NAMES.ATTENDANCE, "users_ID");
+    const idxType = getColIndex(SHEET_NAMES.ATTENDANCE, "Type");
+    const idxTime = getColIndex(SHEET_NAMES.ATTENDANCE, "Timestamp");
+    const idxHours = getColIndex(SHEET_NAMES.ATTENDANCE, "Total_Hours");
+    const idxDate = getColIndex(SHEET_NAMES.ATTENDANCE, "date");
+
+    const now = new Date();
+    // تحديد الشهر المستهدف
+    let targetYear, targetMonth;
+    if (monthParam) {
+      const parts = monthParam.split('-');
+      targetYear = parseInt(parts[0]);
+      targetMonth = parseInt(parts[1]);
+    } else {
+      targetYear = parseInt(Utilities.formatDate(now, "Africa/Cairo", "yyyy"));
+      targetMonth = parseInt(Utilities.formatDate(now, "Africa/Cairo", "MM"));
+    }
+
+    const logs = [];
+    const targetUserID = String(username || "").trim();
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (String(row[idxUserID] || "").trim() !== targetUserID) continue;
+
+      const dateVal = row[idxDate];
+      let rowYear, rowMonth;
+      if (dateVal instanceof Date) {
+        rowYear = dateVal.getFullYear();
+        rowMonth = dateVal.getMonth() + 1;
+      } else {
+        const parts = String(dateVal).split(/\D+/);
+        if (parts.length >= 3) {
+          rowYear = parts[0].length === 4 ? parseInt(parts[0]) : parseInt(parts[2]);
+          rowMonth = parseInt(parts[1]);
+        }
+      }
+
+      if (rowMonth !== targetMonth || rowYear !== targetYear) continue;
+
+      const val = row[idxTime];
+      let rowDateStr = "";
+      let timePart = "";
+
+      if (dateVal instanceof Date) {
+        rowDateStr = Utilities.formatDate(dateVal, "Africa/Cairo", "yyyy-MM-dd");
+      } else {
+        rowDateStr = String(row[idxDate]).split('T')[0];
+      }
+
+      if (val instanceof Date) {
+        timePart = Utilities.formatDate(val, "Africa/Cairo", "hh:mm:ss a");
+      } else {
+        const fullTimeStr = String(val);
+        timePart = fullTimeStr.includes(' ') ? fullTimeStr.split(' ')[1] : fullTimeStr;
+      }
+      
+      const formattedDateTime = `${rowDateStr} ${timePart}`;
+      const hoursValue = parseFloat(row[idxHours] || 0);
+
+      logs.push({
+        dateTime: formattedDateTime,
+        type: row[idxType],
+        hours: hoursValue
+      });
+    }
+
+    return createJSONResponse(logs.reverse());
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  }
+}
+
+/**
+ * 2. إضافة سجل جديد (Entry أو Expense)
+ */
+/**
+ * 2. Add a new row (Entry or Expense)
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {Object} data - Row data
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleAddRow(sheetName, data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheet = ss.getSheetByName(sheetName);
+    const map = getHeaderMapping(sheet, sheetName);
+    
+    // جلب الهيدرز الفعلية من الشيت لضمان الترتيب الصحيح
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    const textFields = new Set(TEXT_FIELD_NAMES);
+
+    const isEntries = sheetName === SHEET_NAMES.ENTRIES || normalizeArabic(sheetName) === normalizeArabic('المعاملات');
+    const serviceType = data['serviceType'] || data['نوع الخدمة'] || "";
+    const isSettlement = isEntries && normalizeArabic(serviceType) === normalizeArabic(SERVICE_TYPES.DEBT_SETTLEMENT);
+
+    if (isSettlement) {
+      // فصل منطق سداد المديونية: تصفير أي مبالغ تخص الطرف الثالث لعدم التكرار
+      data['thirdPartyCost'] = 0;
+      data['thirdpartycost'] = 0;
+      data['hasThirdParty'] = false;
+      data['hasthirdparty'] = false;
+      data['serviceCost'] = 0; // السداد لا تكلفة له
+      data['remainingAmount'] = 0;
+      // مسح الأسماء لضمان عدم ظهورها في الاحصائيات
+      data['thirdPartyName'] = "";
+      data['thirdpartyname'] = "";
+    }
+
+    const newRow = headers.map(h => {
+      const headerName = String(h).trim();
+      let val = data[headerName];
+      if (val === undefined || val === null) {
+        val = data[headerName.toLowerCase()] || "";
+      }
+
+      // Trace logs for workOrderNumber
+      if (headerName === 'workOrderNumber') {
+          console.log(`[handleAddRow] Mapping workOrderNumber. Incoming value: "${val}"`);
+          if (!val) {
+              console.log(`[handleAddRow] Value is empty/undefined`);
+          }
+      }
+
+      if (textFields.has(headerName) && val && String(val).startsWith('0')) {
+        return "'" + val;
+      }
+      return val;
+    });
+
+    // منطق الرصيد الحي
+    if (sheetName === SHEET_NAMES.EXPENSES || normalizeArabic(sheetName) === normalizeArabic('المصروفات')) {
+      const amount = parseFloat(data['amount'] || data['المبلغ'] || 0);
+      const branch = data['branchId'] || data['الفرع'];
+      const currentBalance = getBranchBalance(branch);
+      
+      if (currentBalance < amount) {
+        return createJSONResponse({ status: "error", message: "رصيد الفرع لا يكفي لإتمام هذه العملية" });
+      }
+      updateBranchBalance(branch, -amount);
+    } else if (isEntries) {
+      const amountPaid = parseFloat(data['amountPaid'] || data['المدفوع'] || 0);
+      const branch = data['branchId'] || data['الفرع'];
+      
+      if (isSettlement) {
+        // تحديث المبلع المتبقي في المعاملة الأصلية (Parent Entry)
+        const parentId = data['parentEntryId'] || data['المعاملة الأصلية'];
+        if (parentId) {
+          const idColIdx = getColIndex(sheetName, "id");
+          const remColIdx = getColIndex(sheetName, "remainingAmount");
+          if (idColIdx !== undefined && remColIdx !== undefined) {
+             const values = sheet.getDataRange().getValues();
+             for (let i = 1; i < values.length; i++) {
+               if (String(values[i][idColIdx]) === String(parentId)) {
+                 const currentRem = parseFloat(values[i][remColIdx] || 0);
+                 const newRem = Math.max(0, parseFloat((currentRem - amountPaid).toFixed(2)));
+                 sheet.getRange(i + 1, remColIdx + 1).setValue(newRem);
+                 break;
+               }
+             }
+          }
+        }
+      }
+
+      const electronicAmount = parseFloat(data['electronicAmount'] || data['electronicamount'] || 0);
+      const physicalCash = amountPaid - electronicAmount;
+      if (physicalCash > 0) {
+        updateBranchBalance(branch, physicalCash);
+      }
+    }
+
+    sheet.appendRow(newRow);
+    applyTextFormatting(sheet, map, sheet.getLastRow());
+
+    return createJSONResponse({ status: "success" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 2b. تحديث سجل موجود (Update Entry)
+ */
+/**
+ * 2b. Update an existing entry (Update Entry)
+ * 
+ * @param {string} sheetName - Target sheet name
+ * @param {Object} data - Updated data fields
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleUpdateEntry(sheetName, data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheet = ss.getSheetByName(sheetName);
+    const map = getHeaderMapping(sheet, sheetName);
+    const idColIdx = getColIndex(sheetName, "id");
+    
+    if (idColIdx === undefined) return createJSONResponse({ status: "error", message: "ID Column not found" });
+
+    const values = sheet.getDataRange().getValues();
+    let rowIndex = -1;
+    for (let i = 1; i < values.length; i++) {
+        if (String(values[i][idColIdx]) === String(data.id)) {
+            rowIndex = i;
+            break;
+        }
+    }
+    
+    if (rowIndex === -1) return createJSONResponse({ status: "error", message: "السجل غير موجود" });
+    
+    const rowToUpdate = values[rowIndex];
+    const oldStatusIdx = getColIndex(sheetName, "status");
+    const oldAmountPaidIdx = getColIndex(sheetName, "amountPaid");
+    const oldElectronicAmountIdx = getColIndex(sheetName, "electronicAmount");
+    const branchIdx = getColIndex(sheetName, "branchId");
+    
+    const oldStatus = oldStatusIdx !== undefined ? String(rowToUpdate[oldStatusIdx]) : "";
+    const oldAmountPaid = oldAmountPaidIdx !== undefined ? parseFloat(rowToUpdate[oldAmountPaidIdx] || 0) : 0;
+    const oldElectronicAmount = oldElectronicAmountIdx !== undefined ? parseFloat(rowToUpdate[oldElectronicAmountIdx] || 0) : 0;
+    const oldPhysicalCash = oldAmountPaid - oldElectronicAmount;
+    const branch = branchIdx !== undefined ? String(rowToUpdate[branchIdx]) : "";
+
+    // تحديث البيانات في المصفوفة
+    Object.keys(data).forEach(key => {
+       if (key === 'id') return;
+       const colIdx = getColIndex(sheetName, key);
+       if (colIdx !== undefined) {
+          let val = data[key];
+          
+          if (key === 'workOrderNumber') {
+              console.log(`[handleUpdateEntry] Updating workOrderNumber. Incoming value: "${val}"`);
+          }
+
+          const textFields = new Set(['phoneNumber', 'رقم الهاتف', 'phone', 'barcode', 'الباركود', 'Barcode', 'nationalId', 'الرقم القومي']);
+          if (textFields.has(key) && val && String(val).startsWith('0')) {
+            rowToUpdate[colIdx] = "'" + val;
+          } else {
+            rowToUpdate[colIdx] = val;
+          }
+       }
+    });
+    
+    // منطق الإلغاء والخصم الفوري لـ Entries
+    if (sheetName === SHEET_NAMES.ENTRIES || normalizeArabic(sheetName) === normalizeArabic('المعاملات')) {
+      const newStatus = data['status'] || oldStatus;
+      const newAmountPaid = data['amountPaid'] !== undefined ? parseFloat(data['amountPaid']) : oldAmountPaid;
+      const newElectronicAmount = data['electronicAmount'] !== undefined ? parseFloat(data['electronicAmount']) : oldElectronicAmount;
+      const newPhysicalCash = newAmountPaid - newElectronicAmount;
+
+      const isNowCancelled = normalizeArabic(newStatus) === normalizeArabic(ENTRY_STATUS.CANCELLED_AR) || newStatus.toLowerCase() === ENTRY_STATUS.CANCELLED_EN;
+      const wasCancelled = normalizeArabic(oldStatus) === normalizeArabic(ENTRY_STATUS.CANCELLED_AR) || oldStatus.toLowerCase() === ENTRY_STATUS.CANCELLED_EN;
+
+      if (isNowCancelled && !wasCancelled) {
+        updateBranchBalance(branch, -oldPhysicalCash);
+      } else if (!isNowCancelled && !wasCancelled && newPhysicalCash !== oldPhysicalCash) {
+        updateBranchBalance(branch, newPhysicalCash - oldPhysicalCash);
+      }
+    }
+
+    sheet.getRange(rowIndex + 1, 1, 1, rowToUpdate.length).setValues([rowToUpdate]);
+    applyTextFormatting(sheet, map, rowIndex + 1);
+
+    return createJSONResponse({ status: "success" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 3. جلب أقدم باركود متاح (توزيع ذكي)
+ */
+/**
+ * 3. Get oldest available barcode for a branch/category
+ * 
+ * @param {string} branch - Branch ID
+ * @param {string} category - Stock category
+ * @returns {ContentService.TextOutput} JSON response {status, barcode}
+ */
+function handleGetAvailableBarcode(branch, category) {
+  const ss = getSS();
+  const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+  if (!sheet) return createJSONResponse({ status: "error", message: "Stock sheet not found" });
+  
+  const map = getHeaderMapping(sheet, SHEET_NAMES.STOCK);
+  if (['Barcode', 'Category', 'Branch', 'Status'].some(k => map[k] === undefined)) {
+     return createJSONResponse({ status: "error", message: "Invalid Stock Sheet Structure" });
+  }
+
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (String(row[map['Branch']]) === String(branch) && 
+        String(row[map['Category']]) === String(category) && 
+        row[map['Status']] === STOCK_STATUS.AVAILABLE) {
+      return createJSONResponse({ status: "success", barcode: row[map['Barcode']] });
+    }
+  }
+  return createJSONResponse({ status: "error", message: "Out of stock" });
+}
+
+/**
+ * 4. إضافة دفعة باركودات للمخزن (Batch Upload)
+ */
+/**
+ * 4. Add a batch of stock items (Batch Upload)
+ * 
+ * @param {Array<Object>} items - List of stock items to add
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleAddStockBatch(items) {
+  try {
+    const ss = getSS();
+    let sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+    
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAMES.STOCK);
+      sheet.appendRow(["Barcode", "Category", "Branch", "Status", "Created_At", "Used_By", "Usage_Date", "Order_ID"]);
+    }
+    
+    const map = getHeaderMapping(sheet, SHEET_NAMES.STOCK);
+    const headerKeys = Object.keys(map).sort((a, b) => map[a] - map[b]);
+
+    const rows = items.map(item => {
+       const rowData = new Array(headerKeys.length).fill("");
+       if (map['Barcode'] !== undefined) rowData[map['Barcode']] = item.barcode;
+       if (map['Category'] !== undefined) rowData[map['Category']] = item.category;
+       if (map['Branch'] !== undefined) rowData[map['Branch']] = item.branch;
+       if (map['Status'] !== undefined) rowData[map['Status']] = "Available";
+       if (map['Created_At'] !== undefined) rowData[map['Created_At']] = new Date().toISOString();
+       return rowData;
+    });
+    
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, headerKeys.length).setValues(rows);
+    
+    // تطبيق التنسيق النصي على المدى المضاف بالكامل
+    const startRow = sheet.getLastRow() - rows.length + 1;
+    for (let r = 0; r < rows.length; r++) {
+      applyTextFormatting(sheet, map, startRow + r);
+    }
+
+    return createJSONResponse({ status: "success" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  }
+}
+
+/**
+ * 5. تحديث حالة الباركود (مستخدم، خطأ، تالف) مع قفل
+ */
+/**
+ * 5. Update stock item status (Available, Used, Damaged, etc.)
+ * 
+ * @param {Object} params - {barcode, status, usedBy, orderId, ...}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleUpdateStockStatus(params) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+    
+    const barcodeCol = getColIndex(SHEET_NAMES.STOCK, "Barcode");
+    const statusCol = getColIndex(SHEET_NAMES.STOCK, "Status");
+    const usedByCol = getColIndex(SHEET_NAMES.STOCK, "Used_By");
+    const usageDateCol = getColIndex(SHEET_NAMES.STOCK, "Usage_Date");
+    const orderIdCol = getColIndex(SHEET_NAMES.STOCK, "Order_ID");
+
+    if (barcodeCol === undefined) return createJSONResponse({ status: "error", message: "Barcode Column Missing" });
+
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][barcodeCol]) === String(params.barcode)) {
+        const rowData = values[i];
+        const isAvailable = params.status === STOCK_STATUS.AVAILABLE;
+        
+        if (statusCol !== undefined) rowData[statusCol] = params.status;
+        if (usedByCol !== undefined) rowData[usedByCol] = isAvailable ? "" : (params.usedBy || "");
+        if (usageDateCol !== undefined) rowData[usageDateCol] = isAvailable ? "" : new Date().toISOString();
+        if (orderIdCol !== undefined) rowData[orderIdCol] = isAvailable ? "" : (params.orderId || "");
+        
+        sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
+        applyTextFormatting(sheet, getHeaderMapping(sheet, SHEET_NAMES.STOCK), i + 1);
+        return createJSONResponse({ status: "success" });
+      }
+    }
+    return createJSONResponse({ status: "error", message: "Barcode not found" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 5b. تحديث كامل لبيانات الباركود (تغيير الرقم أو الفرع)
+ */
+/**
+ * 5b. Full update of stock item details (Barcode or Branch)
+ * 
+ * @param {Object} data - {oldBarcode, newBarcode, newBranch}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleUpdateStockItem(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+    const barcodeCol = getColIndex(SHEET_NAMES.STOCK, "Barcode");
+    const branchCol = getColIndex(SHEET_NAMES.STOCK, "Branch");
+    
+    if (barcodeCol === undefined) return createJSONResponse({ status: "error", message: "Barcode Column missing" });
+
+    const values = sheet.getDataRange().getValues();
+    const oldBarcode = String(data.oldBarcode).trim();
+
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][barcodeCol]) === oldBarcode) {
+        const range = sheet.getRange(i + 1, 1, 1, values[i].length);
+        const rowData = values[i];
+        
+        rowData[barcodeCol] = data.newBarcode;
+        if (branchCol !== undefined) rowData[branchCol] = data.newBranch;
+        
+        range.setValues([rowData]);
+        applyTextFormatting(sheet, getHeaderMapping(sheet, SHEET_NAMES.STOCK), i + 1);
+        return createJSONResponse({ status: "success" });
+      }
+    }
+    return createJSONResponse({ status: "error", message: "الباركود القديم غير موجود" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 5c. حذف باركود نهائياً من المخزن
+ */
+/**
+ * 5c. Permanently delete a stock item
+ * 
+ * @param {string} barcode - Barcode to delete
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleDeleteStockItem(barcode) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheet = ss.getSheetByName(SHEET_NAMES.STOCK);
+    const barcodeCol = getColIndex(SHEET_NAMES.STOCK, "Barcode");
+    
+    if (barcodeCol === undefined) return createJSONResponse({ status: "error", message: "Barcode Column missing" });
+
+    const values = sheet.getDataRange().getValues();
+    const targetBarcode = String(barcode).trim();
+
+    for (let i = values.length - 1; i > 0; i--) {
+      if (String(values[i][barcodeCol]) === targetBarcode) {
+        sheet.deleteRow(i + 1);
+        return createJSONResponse({ status: "success" });
+      }
+    }
+    return createJSONResponse({ status: "error", message: "الباركود غير موجود للحذف" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * مساعد استجابة JSON
+ */
+function createJSONResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * دالة استخراج خريطة للأعمدة بناءً على أسمائها
+ */
+function getHeaderMapping(sheet, sheetName) {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "headers_v6_force_" + sheetName; // ترقية للنسخة v6 لإجبار التحديث
+  const cached = cache.get(cacheKey);
+  
+  if (cached) return JSON.parse(cached);
+
+  if (!sheet) {
+    const ss = getSS();
+    sheet = ss.getSheetByName(sheetName);
+  }
+  
+  if (!sheet) return {};
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+  headers.forEach((h, i) => {
+    const headerName = String(h).trim();
+    map[headerName] = i;
+  });
+  
+  // التأكد من وجود كافة الأعمدة المطلوبة من SCHEMA_CONFIG في المابنج لتجنب الأخطاء
+  if (SHEET_CONFIG[sheetName]) {
+    SHEET_CONFIG[sheetName].forEach(col => {
+      if (map[col] === undefined) {
+        // إذا لم يجد الاسم اللاتيني، يبحث عن بديل عربي إذا لزم الأمر أو يتركه undefined
+        // لكننا نعتمد الآن على الأسماء في SHEET_CONFIG كمرجع أساسي
+      }
+    });
+  }
+
+  cache.put(cacheKey, JSON.stringify(map), 21600); // 6 hours cache
+  return map;
+}
+
+/**
+ * دالة توحيد الحروف العربية لضمان صحة البحث والمطابقة
+ */
+function normalizeArabic(text) {
+  if (!text) return "";
+  return String(text)
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .trim();
+}
+
+/**
+ * دالة لضبط تنسيق الأعمدة الحساسة (هاتف، باركود، رقم قومي) كـ "Plain Text"
+ * لضمان عدم فقدان الأصفار جهة اليسار.
+ */
+function applyTextFormatting(sheet, map, rowIndex) {
+  const textFields = TEXT_FIELD_NAMES;
+  
+  textFields.forEach(field => {
+    const colIdx = map[field];
+    if (colIdx !== undefined) {
+      sheet.getRange(rowIndex, colIdx + 1).setNumberFormat('@');
+    }
+  });
+}
+
+/**
+ * دالة تحديث رصيد الفرع في شيت الإعدادات
+ * تم إضافة حماية LockService وفحص صارم لصحة البيانات
+ */
+function updateBranchBalance(branchId, amount) {
+  checkAndResetDailyBalances();
+  const amountParsed = parseFloat(amount || 0);
+  if (isNaN(amountParsed) || amountParsed === 0) return true;
+  
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
+    if (!configSheet) return false;
+  
+    const nameCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+    const balanceCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Current_Balance");
+  
+    if (nameCol === undefined || balanceCol === undefined) return false;
+  
+    const data = configSheet.getDataRange().getValues();
+    const targetBranch = normalizeArabic(branchId);
+  
+    for (let i = 1; i < data.length; i++) {
+      if (normalizeArabic(data[i][nameCol]) === targetBranch) {
+        let currentVal = parseFloat(data[i][balanceCol] || 0);
+        if (isNaN(currentVal)) currentVal = 0;
+        
+        const newValue = parseFloat((currentVal + amountParsed).toFixed(2));
+        configSheet.getRange(i + 1, balanceCol + 1).setValue(newValue);
+        SpreadsheetApp.flush(); 
+        return true;
+      }
+    }
+    return false;
+  } catch (err) {
+    Logger.log("UpdateBalance Error: " + err.toString());
+    throw err;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * جلب رصيد فرع معين مع فحص صحة البيانات
+ */
+function getBranchBalance(branchId) {
+  checkAndResetDailyBalances();
+  const ss = getSS();
+  const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
+  if (!configSheet) return 0;
+
+  const nameCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+  const balanceCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Current_Balance");
+  if (nameCol === undefined || balanceCol === undefined) return 0;
+
+  const data = configSheet.getDataRange().getValues();
+  const target = normalizeArabic(branchId);
+
+  for (let i = 1; i < data.length; i++) {
+    if (normalizeArabic(data[i][nameCol]) === target) {
+      const val = parseFloat(data[i][balanceCol] || 0);
+      return isNaN(val) ? 0 : val;
+    }
+  }
+  return 0;
+}
+
+/**
+ * دالة التحويل المالي بين الفروع
+ */
+/**
+ * Branch Fund Transfer
+ * 
+ * @param {Object} data - {fromBranch, toBranch, amount, recordedBy}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleBranchTransfer(data) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = getSS();
+    const sheetExpenses = ss.getSheetByName(SHEET_NAMES.EXPENSES);
+    
+    const amount = parseFloat(data.amount || 0);
+    if (isNaN(amount) || amount <= 0) return createJSONResponse({ status: "error", message: "مبلغ غير صالح" });
+
+    // 1. خصم من الفرع المرسل وتحقق من الرصيد
+    const fromBranchBalance = getBranchBalance(data.fromBranch);
+    if (fromBranchBalance < amount) {
+      return createJSONResponse({ status: "error", message: "رصيد الفرع المرسل لا يكفي لإتمام هذه العملية" });
+    }
+
+    // 2. تحديث الأرصدة
+    updateBranchBalance(data.fromBranch, -amount);
+    updateBranchBalance(data.toBranch, amount);
+
+    // 3. تسجيل كمصروف في الفرع المرسل للتوثيق
+    if (sheetExpenses) {
+      const headers = SHEET_CONFIG[SHEET_NAMES.EXPENSES];
+      const cairoDate = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+      const rowFrom = headers.map(key => {
+        const k = key.toLowerCase();
+        if (k === 'id') return Date.now() + "-tf-out";
+        if (k === 'category') return SERVICE_TYPES.BRANCH_TRANSFER_OUT;
+        if (k === 'amount') return amount;
+        if (k === 'branchid') return data.fromBranch;
+        if (k === 'date') return cairoDate;
+        if (k === 'recordedby') return data.recordedBy;
+        if (k === 'notes') return `تحويل إلى فرع: ${data.toBranch}`;
+        return "";
+      });
+      sheetExpenses.appendRow(rowFrom);
+    }
+    return createJSONResponse({ status: "success" });
+  } catch (err) {
+    return createJSONResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * دالة فحص وتصفير الأرصدة يومياً عند بدء أول عملية أو جلب بيانات
+ */
+function checkAndResetDailyBalances() {
+  const lock = LockService.getScriptLock();
+  try {
+    if (lock.tryLock(15000)) {
+      const ss = getSS();
+      const configSheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
+      if (!configSheet) return;
+
+      const map = getHeaderMapping(configSheet, SHEET_NAMES.BRANCHES_CONFIG);
+      let resetDateCol = map['Last_Reset_Date'] || map['Last Reset Date'];
+      const balanceCol = map['Current_Balance'];
+      
+      if (balanceCol === undefined) return;
+
+      if (resetDateCol === undefined) {
+        const lastCol = configSheet.getLastColumn();
+        configSheet.getRange(1, lastCol + 1).setValue("Last_Reset_Date");
+        CacheService.getScriptCache().remove("headers_v5_" + SHEET_NAMES.BRANCHES_CONFIG);
+        resetDateCol = lastCol;
+      }
+
+      const today = getCairoDate();
+      const data = configSheet.getDataRange().getValues();
+      let anyReset = false;
+
+      for (let i = 1; i < data.length; i++) {
+        const val = data[i][resetDateCol];
+        let lastReset = "";
+        if (val instanceof Date) {
+          lastReset = Utilities.formatDate(val, "Africa/Cairo", "yyyy-MM-dd");
+        } else {
+          lastReset = String(val || "").split('T')[0];
+        }
+
+        if (lastReset !== today) {
+          configSheet.getRange(i + 1, balanceCol + 1).setValue(0);
+          configSheet.getRange(i + 1, resetDateCol + 1).setValue(today);
+          anyReset = true;
+        }
+      }
+      
+      if (anyReset) {
+        SpreadsheetApp.flush();
+      }
+    }
+  } catch (err) {
+    console.error("Reset Error:", err);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * إدارة الموظفين للمدير فقط
+ */
+/**
+ * User Management (Admin Only)
+ * 
+ * @param {Object} data - {type: add|update|delete, user?, id?}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleManageUsers(data) {
+  const ss = getSS();
+  const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  const lock = LockService.getScriptLock();
+  
+  try {
+    lock.waitLock(20000);
+    const idCol = getColIndex(SHEET_NAMES.USERS, "id");
+    const nameCol = getColIndex(SHEET_NAMES.USERS, "name");
+    const passCol = getColIndex(SHEET_NAMES.USERS, "password");
+    const roleCol = getColIndex(SHEET_NAMES.USERS, "role");
+    const branchCol = getColIndex(SHEET_NAMES.USERS, "assignedBranchId");
+
+    const values = sheet.getDataRange().getValues();
+
+    if (data.type === 'add') {
+      const newId = String(data.user.id).trim();
+      for (let i = 1; i < values.length; i++) {
+        if (String(values[i][idCol]).trim() === newId) {
+          return createJSONResponse({ status: "error", message: "هذا الـ ID مسجل مسبقاً لموظف آخر" });
+        }
+      }
+
+      const headers = SHEET_CONFIG[SHEET_NAMES.USERS];
+      const row = headers.map(key => {
+         const k = key.toLowerCase();
+         if (k === 'id') return String(data.user.id).trim();
+         if (k === 'name') return data.user.name;
+         if (k === 'password') return String(data.user.password);
+         if (k === 'role') return data.user.role;
+         if (k === 'assignedbranchid') return data.user.assignedBranchId;
+         return "";
+      });
+      
+      sheet.appendRow(row);
+      return createJSONResponse({ status: "success", message: "تم إضافة الموظف بنجاح" });
+    }
+
+    if (data.type === 'delete') {
+      const targetId = String(data.id).trim();
+      for (let i = 1; i < values.length; i++) {
+        if (String(values[i][idCol]).trim() === targetId) {
+          sheet.deleteRow(i + 1);
+          return createJSONResponse({ status: "success", message: "تم حذف الموظف بنجاح" });
+        }
+      }
+      return createJSONResponse({ status: "error", message: "الموظف غير موجود" });
+    }
+
+    if (data.type === 'update') {
+      const targetId = String(data.user.id).trim();
+      for (let i = 1; i < values.length; i++) {
+        if (String(values[i][idCol]).trim() === targetId) {
+          if (data.user.password && passCol !== undefined) sheet.getRange(i + 1, passCol + 1).setValue(String(data.user.password));
+          if (data.user.assignedBranchId && branchCol !== undefined) sheet.getRange(i + 1, branchCol + 1).setValue(data.user.assignedBranchId);
+          if (data.user.role && roleCol !== undefined) sheet.getRange(i + 1, roleCol + 1).setValue(data.user.role);
+          if (data.user.name && nameCol !== undefined) sheet.getRange(i + 1, nameCol + 1).setValue(data.user.name);
+          return createJSONResponse({ status: "success", message: "تم تحديث بيانات الموظف بنجاح" });
+        }
+      }
+    }
+  } catch (e) {
+    return createJSONResponse({ status: "error", message: e.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * إدارة الفروع للمدير فقط
+ */
+/**
+ * Branch Management (Admin Only)
+ * 
+ * @param {Object} data - {type: add|delete, branch?, name?}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleManageBranches(data) {
+  const ss = getSS();
+  const sheet = ss.getSheetByName(SHEET_NAMES.BRANCHES_CONFIG);
+  const lock = LockService.getScriptLock();
+  
+  try {
+    lock.waitLock(20000);
+    const nameCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Branch_Name");
+    const balanceCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Current_Balance");
+    const ipCol = getColIndex(SHEET_NAMES.BRANCHES_CONFIG, "Authorized_IP");
+
+    if (data.type === 'add') {
+      const headers = SHEET_CONFIG[SHEET_NAMES.BRANCHES_CONFIG];
+      const row = headers.map(key => {
+         const k = key.toLowerCase();
+         if (k === 'branch_name') return data.branch.name;
+         if (k === 'current_balance') return 0;
+         if (k === 'authorized_ip') return data.branch.ip || '';
+         return "";
+      });
+      sheet.appendRow(row);
+      return createJSONResponse({ status: "success", message: "تم إضافة الفرع بنجاح" });
+    }
+
+    if (data.type === 'delete') {
+      const values = sheet.getDataRange().getValues();
+      const targetName = normalizeArabic(data.name);
+      for (let i = 1; i < values.length; i++) {
+        if (normalizeArabic(values[i][nameCol]) === targetName) {
+          sheet.deleteRow(i + 1);
+          return createJSONResponse({ status: "success", message: "تم حذف الفرع بنجاح" });
+        }
+      }
+      return createJSONResponse({ status: "error", message: "الفرع غير موجود" });
+    }
+  } catch (e) {
+    return createJSONResponse({ status: "error", message: e.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+/**
+ * Update Application Settings (Service/Expense Lists)
+ * 
+ * @param {Object} data - {serviceList, expenseList}
+ * @returns {ContentService.TextOutput} JSON response {status}
+ */
+function handleUpdateSettings(data) {
+  const ss = getSS();
+  let sheet = ss.getSheetByName(SHEET_NAMES.SERVICE_EXPENSE);
+  const lock = LockService.getScriptLock();
+  
+  try {
+    lock.waitLock(20000);
+    
+    // 1. إنشاء الشيت إذا لم تكن موجودة
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAMES.SERVICE_EXPENSE);
+      sheet.appendRow(SHEET_CONFIG[SHEET_NAMES.SERVICE_EXPENSE]);
+      SpreadsheetApp.flush();
+    }
+
+    // 2. فحص الهيدرز
+    let lastCol = sheet.getLastColumn();
+    let headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+    const expected = SHEET_CONFIG[SHEET_NAMES.SERVICE_EXPENSE];
+    let updatedHeaders = false;
+
+    expected.forEach(col => {
+      const found = headers.some(h => normalizeArabic(String(h).trim()).toLowerCase() === normalizeArabic(col).toLowerCase());
+      if (!found) {
+        sheet.getRange(1, headers.length + 1).setValue(col);
+        headers.push(col);
+        updatedHeaders = true;
+      }
+    });
+
+    if (updatedHeaders) {
+      SpreadsheetApp.flush();
+      CacheService.getScriptCache().remove("headers_v5_" + SHEET_NAMES.SERVICE_EXPENSE);
+    }
+
+    // 3. تحديد أماكن الأعمدة
+    let sIdx = -1, eIdx = -1;
+    headers.forEach((h, i) => {
+      const normH = normalizeArabic(String(h).trim()).toLowerCase();
+      if (normH === normalizeArabic("Service_List").toLowerCase()) sIdx = i;
+      if (normH === normalizeArabic("Expense_List").toLowerCase()) eIdx = i;
+    });
+
+    // 4. حفظ البيانات في الصف الثاني (كإعدادات عالمية)
+    // نستخدم صفاً واحداً فقط لكافة الإعدادات
+    const rowValues = new Array(headers.length).fill("");
+    if (sIdx !== -1) rowValues[sIdx] = data.serviceList || "";
+    if (eIdx !== -1) rowValues[eIdx] = data.expenseList || "";
+
+    if (sheet.getLastRow() < 2) {
+      sheet.appendRow(rowValues);
+    } else {
+      sheet.getRange(2, 1, 1, headers.length).setValues([rowValues]);
+    }
+
+    return createJSONResponse({ status: "error", message: e.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * ============================================
+ * ARCHIVING SYSTEM FUNCTIONS
+ * ============================================
+ */
+
+/**
+ * Archive "Delivered" data within a date range to a yearly archive sheet.
+ * Transfers formatting and deletes original rows.
+ * 
+ * @param {string} startDate - Range start (yyyy-MM-dd)
+ * @param {string} endDate - Range end (yyyy-MM-dd)
+ * @returns {Object} {status, movedCount, message}
+ */
+function archiveDataByRange(startDate, endDate) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000); // Heavy operation, wait longer
+    const ss = getSS();
+    const sheetEntries = ss.getSheetByName(SHEET_NAMES.ENTRIES);
+    if (!sheetEntries) return { status: "error", message: "Entries sheet not found" };
+
+    const data = sheetEntries.getDataRange().getValues();
+    const headers = data[0];
+    const map = getHeaderMapping(sheetEntries, SHEET_NAMES.ENTRIES);
+    const dateColIdx = getColIndex(SHEET_NAMES.ENTRIES, "date");
+    const statusColIdx = getColIndex(SHEET_NAMES.ENTRIES, "status");
+
+    if (dateColIdx === undefined || statusColIdx === undefined) {
+      return { status: "error", message: "Missing required columns (date/status)" };
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    const rowsToArchive = [];
+    const rowIndicesToDelete = [];
+    const targetStatus = normalizeArabic(ENTRY_STATUS.DELIVERED);
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      let rowDateRaw = row[dateColIdx];
+      let rowDate;
+      
+      if (rowDateRaw instanceof Date) {
+        rowDate = rowDateRaw;
+      } else {
+        rowDate = new Date(rowDateRaw);
+      }
+      
+      const rowStatus = normalizeArabic(row[statusColIdx]);
+
+      if (rowStatus === targetStatus && !isNaN(rowDate.getTime()) && rowDate >= start && rowDate <= end) {
+        rowsToArchive.push(row);
+        rowIndicesToDelete.push(i + 1);
+      }
+    }
+
+    if (rowsToArchive.length === 0) {
+      return { status: "success", movedCount: 0, message: "لا توجد عمليات منتهية في هذا النطاق الزمني أو تأكد من مسميات الحالة" };
+    }
+
+    // Determine archive sheet name based on current year or start date year
+    const archiveYear = new Date().getFullYear();
+    const archiveSheetName = `Archive_${archiveYear}`;
+    let sheetArchive = ss.getSheetByName(archiveSheetName);
+
+    if (!sheetArchive) {
+      sheetArchive = ss.insertSheet(archiveSheetName);
+      sheetArchive.appendRow(headers);
+      // Copy formatting for headers if needed, but simple append works for now
+      sheetArchive.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f3f3f3");
+    }
+
+    // Append all rows at once
+    const destRange = sheetArchive.getRange(sheetArchive.getLastRow() + 1, 1, rowsToArchive.length, headers.length);
+    destRange.setValues(rowsToArchive);
+    
+    // Apply formatting to archived rows (Plain text for sensitive fields)
+    const archiveMap = getHeaderMapping(sheetArchive, archiveSheetName);
+    for (let j = 0; j < rowsToArchive.length; j++) {
+      applyTextFormatting(sheetArchive, archiveMap, sheetArchive.getLastRow() - rowsToArchive.length + j + 1);
+    }
+
+    // Delete rows from Entries in reverse order
+    for (let k = rowIndicesToDelete.length - 1; k >= 0; k--) {
+      sheetEntries.deleteRow(rowIndicesToDelete[k]);
+    }
+
+    SpreadsheetApp.flush();
+    return { status: "success", movedCount: rowsToArchive.length, message: `تم نقل ${rowsToArchive.length} عملية للأرشيف بنجاح` };
+
+  } catch (err) {
+    Logger.log("Archive Error: " + err.toString());
+    return { status: "error", message: err.toString() };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Search across all sheets starting with 'Archive_'
+ * 
+ * @param {string} query - Search query (Client Name, Phone, National ID, Work Order Number)
+ * @returns {Array} Search results
+ */
+function searchAllArchives(query) {
+  try {
+    const ss = getSS();
+    const sheets = ss.getSheets();
+    const archiveSheets = sheets.filter(s => s.getName().startsWith("Archive_"));
+    let results = [];
+    const normalizedQuery = String(query).toLowerCase().trim();
+
+    if (!normalizedQuery) return [];
+
+    archiveSheets.forEach(sheet => {
+      const data = sheet.getDataRange().getValues();
+      if (data.length <= 1) return;
+
+      const headers = data[0].map(h => String(h).trim());
+      const map = getHeaderMapping(sheet, sheet.getName());
+      const tz = ss.getSpreadsheetTimeZone();
+
+      // Find indices of searchable columns
+      const searchCols = [
+        getColIndex(sheet.getName(), "clientName"),
+        getColIndex(sheet.getName(), "phoneNumber"),
+        getColIndex(sheet.getName(), "nationalId"),
+        getColIndex(sheet.getName(), "workOrderNumber"),
+        getColIndex(sheet.getName(), "barcode")
+      ].filter(idx => idx !== undefined);
+
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        let found = false;
+
+        for (let j = 0; j < searchCols.length; j++) {
+          const cellValue = String(row[searchCols[j]]).toLowerCase();
+          if (cellValue.includes(normalizedQuery)) {
+            found = true;
+            break;
+          }
+        }
+
+        if (found) {
+          const obj = { archiveSource: sheet.getName() };
+          headers.forEach((header, index) => {
+            let val = row[index];
+            if (val instanceof Date) {
+              val = Utilities.formatDate(val, tz, "yyyy-MM-dd");
+            }
+            obj[header] = val;
+            obj[header.toLowerCase()] = val;
+          });
+          results.push(obj);
+        }
+      }
+    });
+
+    return results;
+  } catch (err) {
+    Logger.log("Search Archive Error: " + err.toString());
+    return [];
+  }
+}
