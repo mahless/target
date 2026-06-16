@@ -9,7 +9,6 @@ import { useModal } from '../context/ModalContext';
 import { ArchiveEntry, User } from '../types';
 import { useDebounce, normalizeArabic, searchMultipleFields } from '../utils';
 import SearchInput from '../components/SearchInput';
-import LoadingOverlay from '../components/LoadingOverlay';
 import ServiceEntryDetails from '../components/ServiceEntryDetails';
 
 interface ArchivePageProps {
@@ -167,60 +166,51 @@ const ArchivePage: React.FC<ArchivePageProps> = ({ user, userRole }) => {
 
  {/* Admin Controls */}
  {isAdmin && (
- <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden relative group">
- <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-[5rem] -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+  <div className="space-y-2">
+  <div className="px-1 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+  <div className="flex items-center gap-3">
+  <div className="w-2 h-8 bg-[#D97706] rounded-full shadow-lg shadow-orange-500/20"></div>
+  <div>
+  <h3 className="text-lg font-black text-[#01404E] whitespace-nowrap">أدوات الأرشفة والترحيل</h3>
+  <p className="text-[9px] text-[#D97706] font-black uppercase mt-0.5">نقل العمليات المكتملة إلى الأرشيف السحابي</p>
+  </div>
+  </div>
 
- <div className="relative z-10 space-y-2">
- <div className="flex items-center gap-2">
- <div className="w-2 h-8 bg-[#D97706] rounded-full"></div>
- <h3 className="text-lg font-black text-[#01404E]">أدوات الأرشفة والترحيل</h3>
- </div>
+  <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
+  <div className="flex items-center justify-between gap-2 shrink-0 bg-white border-2 border-orange-500/20 rounded-xl px-4 h-[42px] w-full md:w-auto hover:border-[#D97706] transition-colors">
+  <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap">من:</span>
+  <input
+  type="date"
+  value={archiveStartDate}
+  onChange={(e) => setArchiveStartDate(e.target.value)}
+  className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[100px] cursor-pointer"
+  />
+  <div className="w-px h-4 bg-[#01404E]/20 mx-1"></div>
+  <span className="text-[10px] font-black text-[#01404E]/60 whitespace-nowrap">إلى:</span>
+  <input
+  type="date"
+  value={archiveEndDate}
+  onChange={(e) => setArchiveEndDate(e.target.value)}
+  className="bg-transparent border-none text-xs font-black text-[#01404E] focus:ring-0 p-0 w-[100px] cursor-pointer"
+  />
+  </div>
+  <button
+  onClick={handleStartArchive}
+  className="flex items-center justify-center gap-2 h-[42px] px-6 rounded-xl text-[10px] font-black bg-[#D97706] text-white hover:bg-[#b45309] transition-all shadow-md active:scale-95 group w-full md:w-auto shrink-0"
+  >
+  <Database className="w-3.5 h-3.5 shrink-0 group-hover:scale-125 transition-transform" />
+  <span className="whitespace-nowrap">بدء عملية الأرشفة</span>
+  </button>
+  </div>
+  </div>
 
- <div className="flex flex-col lg:flex-row items-end gap-2">
- <div className="w-full lg:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
- <div className="space-y-2">
- <label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1">
- <Calendar className="w-3 h-3" />
- تاريخ البداية
- </label>
- <input
- type="date"
- value={archiveStartDate}
- onChange={(e) => setArchiveStartDate(e.target.value)}
- className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-200 font-black text-[#01404E] focus:ring-4 focus:ring-orange-100 focus:border-orange-200 outline-none transition-all"
- />
- </div>
- <div className="space-y-2">
- <label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1">
- <Calendar className="w-3 h-3" />
- تاريخ النهاية
- </label>
- <input
- type="date"
- value={archiveEndDate}
- onChange={(e) => setArchiveEndDate(e.target.value)}
- className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-200 font-black text-[#01404E] focus:ring-4 focus:ring-orange-100 focus:border-orange-200 outline-none transition-all"
- />
- </div>
- </div>
-
- <button
- onClick={handleStartArchive}
- className="w-full lg:w-auto px-10 py-4 bg-[#D97706] text-white rounded-2xl font-black shadow-lg shadow-orange-200 hover:shadow-orange-300 transform hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-3 whitespace-nowrap"
- >
- <Database className="w-5 h-5" />
- بدء عملية الأرشفة
- </button>
- </div>
-
- <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-4">
- <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
- <p className="text-[11px] text-blue-700 font-bold leading-relaxed">
- تنبيه: سيتم ترحيل جميع العمليات التي تحمل حالة <span className="underline decoration-blue-300">"تم التسليم"</span> فقط. يتم الاحتفاظ بجميع التفاصيل المالية والموظفين المسجلين للعملية.
- </p>
- </div>
- </div>
- </div>
+  <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-100/50 flex items-start gap-3 mx-1">
+  <Info className="w-5 h-5 text-blue-500 shrink-0" />
+  <p className="text-[10px] text-blue-700 font-bold leading-relaxed">
+  تنبيه: سيتم ترحيل جميع العمليات التي تحمل حالة <span className="underline decoration-blue-300">"تم التسليم"</span> فقط. يتم الاحتفاظ بجميع التفاصيل المالية والموظفين المسجلين للعملية.
+  </p>
+  </div>
+  </div>
  )}
 
  {/* Search Section */}
