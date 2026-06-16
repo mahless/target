@@ -56,6 +56,8 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
 
  const isCancelled = entry.status === STATUS.CANCELLED;
  const isDelivered = entry.status === STATUS.DELIVERED;
+ const isIdCard = normalizeArabic(entry.serviceType) === normalizeArabic('بطاقة رقم قومي');
+ const canShowReady = !isIdCard || (isIdCard && !!entry.workOrderNumber);
 
  if (isCancelled) return <span className="text-[10px] text-red-400 font-bold px-3 py-1 bg-red-50 rounded-xl border border-red-100">ملغاة</span>;
  if (isDelivered) return <span className="text-[10px] text-[#00A6A6] font-bold px-3 py-1 bg-[#00A6A6]/5 rounded-xl border border-[#00A6A6]/20 whitespace-nowrap">تم التسليم</span>;
@@ -130,17 +132,33 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
  تسليم الخدمة
  </button>
  )}
- <button
- type="button"
- onClick={(e) => {
- e.preventDefault();
- e.stopPropagation();
- handleAction(() => onSetWorkOrder(entry));
- }}
- className="w-full text-right px-4 py-2.5 text-xs font-black text-blue-600 hover:bg-blue-50 transition-colors"
- >
- رقم أمر الشغل
- </button>
+ {canShowReady && (
+  <button
+  type="button"
+  onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  handleAction(() => onUpdateStatus(entry, STATUS.READY as ServiceEntry['status'], 'جاهزة للاستلام'));
+  }}
+  className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors"
+  >
+  جاهزة للاستلام
+  </button>
+  )}
+
+  {isIdCard && !entry.workOrderNumber && (
+  <button
+  type="button"
+  onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  handleAction(() => onSetWorkOrder(entry));
+  }}
+  className="w-full text-right px-4 py-2.5 text-xs font-black text-blue-600 hover:bg-blue-50 transition-colors"
+  >
+  رقم أمر الشغل
+  </button>
+  )}
  <button
  type="button"
  onClick={(e) => {
@@ -157,17 +175,33 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({
 
  {entry.status === STATUS.IN_PROGRESS && (
  <>
- <button
- type="button"
- onClick={(e) => {
- e.preventDefault();
- e.stopPropagation();
- handleAction(() => onUpdateStatus(entry, STATUS.READY as ServiceEntry['status'], 'جاهزة للتسليم'));
- }}
- className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors"
- >
- جاهزة للتسليم
- </button>
+  {canShowReady && (
+  <button
+  type="button"
+  onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  handleAction(() => onUpdateStatus(entry, STATUS.READY as ServiceEntry['status'], 'جاهزة للاستلام'));
+  }}
+  className="w-full text-right px-4 py-2.5 text-xs font-black text-green-600 hover:bg-green-50 transition-colors"
+  >
+  جاهزة للاستلام
+  </button>
+  )}
+  
+  {isIdCard && !entry.workOrderNumber && (
+  <button
+  type="button"
+  onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  handleAction(() => onSetWorkOrder(entry));
+  }}
+  className="w-full text-right px-4 py-2.5 text-xs font-black text-blue-600 hover:bg-blue-50 transition-colors"
+  >
+  رقم أمر الشغل
+  </button>
+  )}
  <button
  type="button"
  onClick={(e) => {
