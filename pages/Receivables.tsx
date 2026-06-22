@@ -54,6 +54,7 @@ const Receivables: React.FC<ReceivablesProps> = ({
 
  const handleCollect = (entry: ServiceEntry) => {
  let amount = entry.remainingAmount;
+ let isElectronic = false;
  showModal({
  title: `تحصيل من: ${entry.clientName}`,
  content: (
@@ -61,6 +62,19 @@ const Receivables: React.FC<ReceivablesProps> = ({
  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
  <span className="text-xs font-black text-blue-600">المتبقي الحالي:</span>
  <span className="text-xl font-black text-blue-800">{entry.remainingAmount}</span>
+ </div>
+ <div className="space-y-2">
+ <label className="text-[10px] font-black text-gray-400 uppercase mr-1">طريقة الدفع</label>
+ <div className="flex gap-6 mb-4">
+ <label className="flex items-center gap-2 cursor-pointer">
+ <input type="radio" name="paymentMethod" defaultChecked value="cash" onChange={() => isElectronic = false} className="w-4 h-4 text-[#01404E] focus:ring-[#01404E]" />
+ <span className="text-sm font-black text-[#01404E]">كاش</span>
+ </label>
+ <label className="flex items-center gap-2 cursor-pointer">
+ <input type="radio" name="paymentMethod" value="electronic" onChange={() => isElectronic = true} className="w-4 h-4 text-blue-600 focus:ring-blue-600" />
+ <span className="text-sm font-black text-blue-600">إلكتروني</span>
+ </label>
+ </div>
  </div>
  <div className="space-y-2">
  <label className="text-[10px] font-black text-gray-400 uppercase mr-1">المبلغ المحصل الآن</label>
@@ -93,9 +107,9 @@ const Receivables: React.FC<ReceivablesProps> = ({
  hasThirdParty: false,
  thirdPartyCost: 0,
  isCostPaid: false,
- isElectronic: false,
- electronicAmount: 0,
- electronicMethod: undefined,
+ isElectronic: isElectronic,
+ electronicAmount: isElectronic ? amount : 0,
+ electronicMethod: isElectronic ? 'انستا باي' : undefined,
  parentEntryId: entry.id,
  notes: `سداد متبقي من عملية: ${entry.serviceType}`,
  timestamp: Date.now(),

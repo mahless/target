@@ -528,7 +528,11 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  }
  };
 
- if (remaining === 0) {
+ if (remaining > 0) {
+ showQuickStatus('لا يمكن تسليم المعاملة لوجود مديونية متبقية، يرجى تحصيلها من شاشة سجل المتبقيات أولاً', 'error');
+ return;
+ }
+
  showModal({
  title: 'تأكيد التسليم',
  content: (
@@ -540,33 +544,6 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  confirmText: 'تأكيد التسليم',
  onConfirm: () => performDelivery(0)
  });
- } else {
- showModal({
- title: 'تحصيل المتبقي وتسليم المعاملة',
- content: (
- <div className="space-y-4 text-right">
- <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
- <p className="text-[10px] text-amber-700 font-black uppercase mb-1">المبلغ المتبقي</p>
- <p className="text-2xl font-black text-amber-600">{remaining} ج.م</p>
- </div>
- <div className="space-y-2">
- <label className="block text-[10px] font-black text-gray-900 uppercase mr-1">المبلغ المستلم الآن</label>
- <input
- type="text"
- inputMode="numeric"
- pattern="[0-9]*"
- defaultValue={remaining}
- onChange={(e) => amountToCollect = Number(toEnglishDigits(e.target.value))}
- className="w-full p-4 bg-gray-100 rounded-2xl border-2 border-transparent focus:border-green-600 font-black text-lg outline-none transition-all"
- />
- <p className="text-[9px] text-gray-400 font-bold leading-relaxed mr-1 italic">* سيتم تسجيل هذا المبلغ كعملية"سداد مديونية" جديدة.</p>
- </div>
- </div>
- ),
- confirmText: 'تأكيد التحصيل والتسليم',
- onConfirm: () => performDelivery(amountToCollect)
- });
- }
  }, [onDeliverOrder, showModal, showQuickStatus, branchId, username]);
 
  const handleTransfer = () => {
@@ -758,7 +735,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
  </span>
  {entry.isElectronic && (
  <span className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mt-1 font-bold whitespace-nowrap border border-blue-200">
- {entry.electronicMethod || 'إلكتروني'} {toEnglishDigits(String(entry.electronicAmount || ''))}
+ إلكتروني {toEnglishDigits(String(entry.electronicAmount || ''))}
  </span>
  )}
  </div>
