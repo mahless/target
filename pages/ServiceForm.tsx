@@ -3,7 +3,7 @@ import { ID_CARD_SPEEDS, PASSPORT_SPEEDS, ELECTRONIC_METHODS } from '../constant
 import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { generateReceipt } from '../services/pdfService';
-import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw, Check } from 'lucide-react';
+import { Save, Printer, AlertTriangle, Search, UserCheck, Smartphone, Zap, RefreshCw, Check, CheckCircle, XCircle } from 'lucide-react';
 import { toEnglishDigits, normalizeArabic } from '../utils';
 import { validateServiceSubmission } from '../validators';
 import { useModal } from '../context/ModalContext';
@@ -58,6 +58,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
 
   // UI State
+  const [activeTab, setActiveTab] = useState<'electronic' | 'thirdParty' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [lastEntry, setLastEntry] = useState<ServiceEntry | null>(null);
@@ -222,6 +223,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     // Removed finally { setIsSubmitting(false) }
   };
 
+  const hasElectronicData = electronicAmount > 0 || electronicMethod !== '';
+  const hasThirdPartyData = thirdPartyName.trim() !== '' || thirdPartyCost > 0;
+
   return (
     <div className="max-w-4xl mx-auto p-2 md:p-3">
       <div className={`transition-opacity animate-premium-in relative z-30 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -334,7 +338,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                   <div className="flex-1 animate-fadeIn">
                     <label className="flex items-center gap-2 text-[10px] font-black text-[#036564] uppercase mb-2 mr-1">
                       <Zap className="w-3.5 h-3.5 text-[#00A6A6]" />
-                      سرعة تنفيذ الخدمة <span className="text-red-500 mr-1">*</span>
+                      سرعة الخدمة <span className="text-red-500 mr-1">*</span>
                     </label>
                     <div className="flex flex-wrap items-center gap-4 py-2.5">
                       {(serviceType === 'بطاقة رقم قومي' ? ID_CARD_SPEEDS : PASSPORT_SPEEDS).map(s => (
@@ -359,78 +363,120 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
               </div>
             </div>
 
-            {/* Section: Electronic Payment Card */}
-            <div className="p-2 space-y-2">
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="elecCheck" checked={isElectronic} onChange={e => setIsElectronic(e.target.checked)} className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500" />
-                <label htmlFor="elecCheck" className="text-sm font-black text-gray-800 flex items-center gap-2 cursor-pointer select-none">
-                  <Smartphone className="w-4 h-4 text-blue-600" />
-                  تحصيل عبر محفظة إلكترونية أو انستا باي
+            {/* Section: Additional Options (Tabs) */}
+            <div className="p-2 space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Electronic Payment Toggle */}
+                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${activeTab === 'electronic' || hasElectronicData ? 'border-[#00A6A6] bg-[#00A6A6]/10 text-[#01404E]' : 'border-[#01404E]/10 bg-[#01404E]/5 text-[#01404E]/60 hover:bg-[#01404E]/10'}`}>
+                  <input
+                    type="checkbox"
+                    checked={isElectronic}
+                    onChange={e => {
+                      const checked = e.target.checked;
+                      setIsElectronic(checked);
+                      if (checked) {
+                        setActiveTab('electronic');
+                      } else {
+                        if (activeTab === 'electronic') setActiveTab(null);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  {hasElectronicData && <CheckCircle className="w-4 h-4 text-[#00A6A6]" />}
+                  <span className="text-xs font-black">تحصيل إلكتروني</span>
+                </label>
+
+                {/* Third Party Toggle */}
+                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${activeTab === 'thirdParty' || hasThirdPartyData ? 'border-[#00A6A6] bg-[#00A6A6]/10 text-[#01404E]' : 'border-[#01404E]/10 bg-[#01404E]/5 text-[#01404E]/60 hover:bg-[#01404E]/10'}`}>
+                  <input
+                    type="checkbox"
+                    checked={hasThirdParty}
+                    onChange={e => {
+                      const checked = e.target.checked;
+                      setHasThirdParty(checked);
+                      if (checked) {
+                        setActiveTab('thirdParty');
+                      } else {
+                        if (activeTab === 'thirdParty') setActiveTab(null);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  {hasThirdPartyData && <CheckCircle className="w-4 h-4 text-[#00A6A6]" />}
+                  <span className="text-xs font-black">إدراج مكتب خارجي</span>
+                </label>
+
+                {/* Selling Form Toggle */}
+                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${isSellingForm ? 'border-[#00A6A6] bg-[#00A6A6]/10 text-[#01404E]' : 'border-[#01404E]/10 bg-[#01404E]/5 text-[#01404E]/60 hover:bg-[#01404E]/10'}`}>
+                  <input
+                    type="checkbox"
+                    checked={isSellingForm}
+                    onChange={e => setIsSellingForm(e.target.checked)}
+                    className="hidden"
+                  />
+                  {isSellingForm && <CheckCircle className="w-4 h-4 text-[#00A6A6]" />}
+                  <span className="text-xs font-black">بيع استمارة</span>
                 </label>
               </div>
-              {isElectronic && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
-                  <div className="flex-1 animate-fadeIn">
-                    <label className="block text-[10px] md:text-xs font-black text-gray-600 uppercase mb-2 mr-1">وسيلة التحصيل</label>
-                    <div className="flex flex-wrap items-center gap-4 py-2.5">
-                      {ELECTRONIC_METHODS.map(m => (
-                        <label key={m} className="flex items-center gap-2 cursor-pointer">
-                          <input type="radio" name="elecMethod" checked={electronicMethod === m} onChange={() => setElectronicMethod(m as ElectronicMethod)} className="w-4 h-4 text-blue-600 focus:ring-blue-600" />
-                          <span className="text-[10px] md:text-xs font-black text-gray-700">{m}</span>
-                        </label>
-                      ))}
+
+              {/* Tabs Content Details */}
+              {activeTab && (
+                <div className="bg-[#01404E]/5 p-3 rounded-xl border border-[#01404E]/10 space-y-2 animate-fadeIn flex flex-col">
+                  {/* Header / Clear Button */}
+                  <div className="flex justify-end w-full -mt-1 -mb-1">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                         if (activeTab === 'electronic') {
+                            setElectronicAmount(0);
+                            setElectronicMethod('');
+                            setIsElectronic(false);
+                         } else if (activeTab === 'thirdParty') {
+                            setThirdPartyName('');
+                            setThirdPartyCost(0);
+                            setHasThirdParty(false);
+                         }
+                         setActiveTab(null);
+                      }}
+                      className="text-red-500 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors flex items-center gap-1 opacity-80 hover:opacity-100"
+                    >
+                       <XCircle className="w-4 h-4" />
+                       <span className="text-[10px] font-black">مسح وإلغاء</span>
+                    </button>
+                  </div>
+
+                  {activeTab === 'electronic' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex-1 animate-fadeIn">
+                        <label className="block text-[10px] md:text-xs font-black text-[#01404E]/60 uppercase mb-2 mr-1">وسيلة التحصيل</label>
+                        <div className="flex flex-wrap items-center gap-4 py-1">
+                          {ELECTRONIC_METHODS.map(m => (
+                            <label key={m} className="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" name="elecMethod" checked={electronicMethod === m} onChange={() => setElectronicMethod(m as ElectronicMethod)} className="w-4 h-4 text-[#00A6A6] focus:ring-[#00A6A6]" />
+                              <span className="text-[10px] md:text-xs font-black text-[#01404E]">{m}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-[#01404E]/60 mb-2 mr-1">القيمة المحولة</label>
+                        <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-[#01404E] text-base`} placeholder="0" />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-gray-600 mb-2 mr-1">القيمة المحولة</label>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={electronicAmount} onChange={e => setElectronicAmount(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-blue-700 text-base`} placeholder="0" />
-                  </div>
-                </div>
-              )}
-            </div>
+                  )}
 
-            {/* Section: Options (Third Party & Selling Form) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="tpCheck"
-                  checked={hasThirdParty}
-                  onChange={e => {
-                    const checked = e.target.checked;
-                    setHasThirdParty(checked);
-                    if (checked) setIsSellingForm(false);
-                  }}
-                  className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500"
-                />
-                <label htmlFor="tpCheck" className="text-sm font-black text-gray-800 cursor-pointer select-none line-clamp-1">إدراج مكتب خارجي</label>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="sellFormCheck"
-                  checked={isSellingForm}
-                  onChange={e => {
-                    const checked = e.target.checked;
-                    setIsSellingForm(checked);
-                    if (checked) setHasThirdParty(false);
-                  }}
-                  className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500"
-                />
-                <label htmlFor="sellFormCheck" className="text-sm font-black text-gray-800 cursor-pointer select-none line-clamp-1">بيع استمارة</label>
-              </div>
-
-              {hasThirdParty && (
-                <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 animate-fadeIn">
-                  <div>
-                    <label className="block text-xs font-black text-gray-600 mb-2 mr-1">اسم المكتب</label>
-                    <input required type="text" value={thirdPartyName} onChange={e => setThirdPartyName(e.target.value)} className={commonInputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-gray-600 mb-2 mr-1">تكلفة المكتب</label>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={thirdPartyCost} onChange={e => setThirdPartyCost(Number(toEnglishDigits(e.target.value)))} className={commonInputClass} placeholder="0" />
-                  </div>
+                  {activeTab === 'thirdParty' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-black text-[#01404E]/60 mb-2 mr-1">اسم المكتب</label>
+                        <input required type="text" value={thirdPartyName} onChange={e => setThirdPartyName(e.target.value)} className={commonInputClass} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-[#01404E]/60 mb-2 mr-1">تكلفة المكتب</label>
+                        <input type="text" inputMode="numeric" pattern="[0-9]*" value={thirdPartyCost} onChange={e => setThirdPartyCost(Number(toEnglishDigits(e.target.value)))} className={commonInputClass} placeholder="0" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -438,15 +484,27 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
             {/* Section: Financials Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-2 pt-4">
               <div>
-                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">إجمالي سعر الخدمة</label>
+                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">سعر الخدمة</label>
                 <input required type="text" inputMode="numeric" pattern="[0-9]*" value={serviceCost} onChange={e => setServiceCost(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-lg`} placeholder="0" />
               </div>
               <div>
-                <label className="block text-xs font-black text-gray-700 mb-2 mr-1 text-green-700">إجمالي المحصل (كاش + إلكتروني)</label>
-                <input type="text" inputMode="numeric" pattern="[0-9]*" value={amountPaid} onChange={e => setAmountPaid(Number(toEnglishDigits(e.target.value)))} className={`${commonInputClass} text-lg text-green-700 border-2 border-green-50`} placeholder="0" />
+                <label className="block text-xs font-black text-gray-700 mb-2 mr-1 text-green-700">إجمالي المدفوع (كاش + إلكتروني)</label>
+                <input 
+                  type="text" 
+                  inputMode="numeric" 
+                  pattern="[0-9]*" 
+                  value={amountPaid} 
+                  onChange={e => {
+                    let val = Number(toEnglishDigits(e.target.value));
+                    if (val > serviceCost) val = serviceCost;
+                    setAmountPaid(val);
+                  }} 
+                  className={`${commonInputClass} text-lg text-green-700 border-2 border-green-50`} 
+                  placeholder="0" 
+                />
               </div>
               <div>
-                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">المتبقي الآجل</label>
+                <label className="block text-xs font-black text-gray-700 mb-2 mr-1">المتبقي</label>
                 <input readOnly type="number" value={remainingAmount} className={`w-full py-2.5 px-3.5 border-none rounded-xl font-black text-lg outline-none shadow-inner ${remainingAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-300 text-gray-500'}`} />
               </div>
             </div>

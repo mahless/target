@@ -56,16 +56,20 @@ const Receivables: React.FC<ReceivablesProps> = ({
  let amount = entry.remainingAmount;
  let isElectronic = false;
  showModal({
- title: `تحصيل من: ${entry.clientName}`,
+ title: 'تحصيل من',
  content: (
  <div className="space-y-4 text-right">
- <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
- <span className="text-xs font-black text-blue-600">المتبقي الحالي:</span>
- <span className="text-xl font-black text-blue-800">{entry.remainingAmount}</span>
+ <div className="flex justify-between items-center bg-[#01404E]/5 px-4 py-3 rounded-2xl border border-[#01404E]/10 mb-2">
+ <h3 className="text-sm md:text-base font-black text-[#01404E] truncate max-w-[65%]">{entry.clientName}</h3>
+ <div className="flex items-center gap-2">
+ <span className="text-[10px] font-black text-[#01404E]/60">المتبقي الحالي:</span>
+ <span className="text-lg font-black text-red-600">{entry.remainingAmount}</span>
  </div>
+ </div>
+ <div className="grid grid-cols-2 gap-3 items-end">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-gray-400 uppercase mr-1">طريقة الدفع</label>
- <div className="flex gap-6 mb-4">
+ <label className="block text-[10px] font-black text-gray-400 uppercase mr-1">طريقة الدفع</label>
+ <div className="flex gap-4 h-[52px] items-center justify-center bg-gray-50 rounded-2xl px-2 md:px-4 border-2 border-transparent">
  <label className="flex items-center gap-2 cursor-pointer">
  <input type="radio" name="paymentMethod" defaultChecked value="cash" onChange={() => isElectronic = false} className="w-4 h-4 text-[#01404E] focus:ring-[#01404E]" />
  <span className="text-sm font-black text-[#01404E]">كاش</span>
@@ -77,16 +81,17 @@ const Receivables: React.FC<ReceivablesProps> = ({
  </div>
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-gray-400 uppercase mr-1">المبلغ المحصل الآن</label>
+ <label className="block text-[10px] font-black text-gray-400 uppercase mr-1">المبلغ المحصل الآن</label>
  <input
  type="text"
  inputMode="numeric"
  pattern="[0-9]*"
  autoFocus
- className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-xl text-center outline-none transition-all"
+ className="w-full h-[52px] px-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-blue-500 font-black text-xl text-center outline-none transition-all"
  defaultValue={entry.remainingAmount}
  onChange={(e) => amount = Number(toEnglishDigits(e.target.value))}
  />
+ </div>
  </div>
  </div>
  ),
