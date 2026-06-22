@@ -1473,7 +1473,7 @@ function createJSONResponse(data) {
  */
 function getHeaderMapping(sheet, sheetName) {
   const cache = CacheService.getScriptCache();
-  const cacheKey = "headers_v6_force_" + sheetName; // ترقية للنسخة v6 لإجبار التحديث
+  const cacheKey = "headers_v7_force_" + sheetName; // ترقية للنسخة v7 لإجبار التحديث
   const cached = cache.get(cacheKey);
   
   if (cached) return JSON.parse(cached);
