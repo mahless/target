@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useMemo } from 'react';
 import { ServiceEntry, Expense, Branch, StockItem, User } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
 import { normalizeArabic, normalizeDate } from '../utils';
@@ -17,6 +17,9 @@ export const useAppActions = (
   const { setUser, setBranch, setCurrentDate, setEntries, setExpenses, setStock, setBranches, setUsers, setServiceTypes, setExpenseCategories, setAttendanceStatus } = setters;
 
   const isSyncingRef = useRef(false);
+  // Synchronous lock ref to prevent race conditions on rapid double-clicks.
+  // React state (isSubmitting) is async and can be stale in closures.
+  const submittingLockRef = useRef(false);
 
   const syncAll = useCallback(async () => {
     if (!navigator.onLine || isSyncingRef.current) return;
@@ -239,7 +242,9 @@ export const useAppActions = (
   }, [setUser, setBranch, setCurrentDate]);
 
   const addEntry = useCallback(async (entry: ServiceEntry): Promise<boolean> => {
-    if (isSubmitting) return false;
+    // Use synchronous ref lock to prevent race conditions from rapid double-clicks
+    if (submittingLockRef.current || isSubmitting) return false;
+    submittingLockRef.current = true;
     startSubmitting();
     try {
       const sheetEntry = {
@@ -272,12 +277,14 @@ export const useAppActions = (
       }
       return result.success;
     } finally {
+      submittingLockRef.current = false;
       stopSubmitting();
     }
   }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, syncAll, setEntries, setBranches]);
 
   const updateEntry = useCallback(async (updatedEntry: ServiceEntry): Promise<boolean> => {
-    if (isSubmitting) return false;
+    if (submittingLockRef.current || isSubmitting) return false;
+    submittingLockRef.current = true;
     startSubmitting();
     try {
       setEntries((prev: ServiceEntry[]) => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
@@ -316,12 +323,14 @@ export const useAppActions = (
       }
       return success;
     } finally {
+      submittingLockRef.current = false;
       stopSubmitting();
     }
   }, [isSubmitting, startSubmitting, stopSubmitting, user?.role, entries, syncAll, setEntries, setBranches]);
 
   const addExpense = useCallback(async (expense: Expense): Promise<boolean> => {
-    if (isSubmitting) return false;
+    if (submittingLockRef.current || isSubmitting) return false;
+    submittingLockRef.current = true;
     startSubmitting();
     try {
       const sheetExpense = { ...expense, 'التاريخ': expense.date, 'البند': expense.category, 'المبلغ': expense.amount, 'الفرع': expense.branchId };
@@ -334,6 +343,7 @@ export const useAppActions = (
       }
       return result.success;
     } finally {
+      submittingLockRef.current = false;
       stopSubmitting();
     }
   }, [isSubmitting, startSubmitting, stopSubmitting, user?.name, user?.role, syncAll, setExpenses, setBranches]);

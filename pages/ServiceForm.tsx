@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ID_CARD_SPEEDS, PASSPORT_SPEEDS, ELECTRONIC_METHODS } from '../constants';
 import { ServiceEntry, ServiceSpeed, ElectronicMethod, Expense, StockCategory } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
@@ -62,6 +62,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [lastEntry, setLastEntry] = useState<ServiceEntry | null>(null);
+  // Local ref-based guard to prevent double-click submission at the form level.
+  // Works synchronously, unlike React state which batches updates.
+  const isLocalSubmittingRef = useRef(false);
 
   const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
   const isBirthCertFirstTime = normalizeArabic(serviceType) === normalizeArabic('شهادة ميلاد اول مرة');
@@ -128,7 +131,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    // Double-click guard: ref check is synchronous and immediate
+    if (isSubmitting || isLocalSubmittingRef.current) return;
+    isLocalSubmittingRef.current = true;
 
     setError(null);
     setSuccessMsg(null);
@@ -219,6 +224,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
     } catch (err) {
       showQuickStatus('حدث خطأ', 'error');
       console.error(err);
+    } finally {
+      isLocalSubmittingRef.current = false;
     }
     // Removed finally { setIsSubmitting(false) }
   };
