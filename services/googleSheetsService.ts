@@ -125,11 +125,14 @@ export const GoogleSheetsService = {
         try {
             console.log('--- ADD ROW PAYLOAD ---');
             console.log(JSON.stringify(data, null, 2));
+            // CRITICAL: retries=1 (no retry) for write operations.
+            // Retrying POST requests causes duplicate entries when the server
+            // processes the first request successfully but the response times out.
             const response = await this.fetchWithRetry(`${GOOGLE_SCRIPT_URL}?action=${API_ACTIONS.ADD_ROW}&sheetName=${sheetName}&role=${encodeURIComponent(role)}`, {
                 method: 'POST',
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(data)
-            }, NETWORK.TIMEOUT_LONG);
+            }, NETWORK.TIMEOUT_LONG, 1);
 
             const json = await response.json() as BackendResponse;
             return { success: json.status === STATUS.SUCCESS, message: json.message };

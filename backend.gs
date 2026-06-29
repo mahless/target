@@ -1067,6 +1067,25 @@ function handleAddRow(sheetName, data) {
     // جلب الهيدرز الفعلية من الشيت لضمان الترتيب الصحيح
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     
+    // ========== IDEMPOTENCY CHECK ==========
+    // حماية من التكرار: التحقق من وجود معاملة بنفس الـ ID قبل الإضافة
+    // هذا يمنع التكرار الناتج عن: ضغط مزدوج، إعادة إرسال الشبكة، أو أي خطأ آخر
+    const entryId = String(data['id'] || data['معرف'] || '').trim();
+    if (entryId) {
+      const idColIdx = getColIndex(sheetName, 'id');
+      if (idColIdx !== undefined) {
+        const existingValues = sheet.getDataRange().getValues();
+        for (let i = 1; i < existingValues.length; i++) {
+          if (String(existingValues[i][idColIdx]).trim() === entryId) {
+            console.log('[handleAddRow] DUPLICATE BLOCKED - Entry ID: ' + entryId + ' already exists at row ' + (i + 1));
+            // نعيد success لأن المعاملة مسجلة بالفعل (idempotent)
+            return createJSONResponse({ status: "success", message: "المعاملة مسجلة بالفعل (تم منع التكرار)" });
+          }
+        }
+      }
+    }
+    // ========== END IDEMPOTENCY CHECK ==========
+
     const textFields = new Set(TEXT_FIELD_NAMES);
 
     const isEntries = sheetName === SHEET_NAMES.ENTRIES || normalizeArabic(sheetName) === normalizeArabic('المعاملات');
