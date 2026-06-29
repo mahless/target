@@ -330,8 +330,10 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
                       <input
                         required
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={barcode}
-                        onChange={(e) => setBarcode(toEnglishDigits(e.target.value))}
+                        onChange={(e) => setBarcode(toEnglishDigits(e.target.value).replace(/\D/g, ''))}
                         className={`${commonInputClass} font-mono`}
                         placeholder="اكتب رقم الباركود هنا..."
                       />
