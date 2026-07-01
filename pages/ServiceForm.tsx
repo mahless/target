@@ -65,6 +65,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
   // Local ref-based guard to prevent double-click submission at the form level.
   // Works synchronously, unlike React state which batches updates.
   const isLocalSubmittingRef = useRef(false);
+  // Stable ID to persist across retries if network fails
+  const stableEntryIdRef = useRef<string>(Date.now().toString());
 
   const isOtherService = normalizeArabic(serviceType) === normalizeArabic('أخرى');
   const isBirthCertFirstTime = normalizeArabic(serviceType) === normalizeArabic('شهادة ميلاد اول مرة');
@@ -161,7 +163,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
     // Removed setIsSubmitting(true) as it's handled globally in onAddEntry
     try {
-      const entryId = Date.now().toString();
+      const entryId = stableEntryIdRef.current;
 
       const newEntry: ServiceEntry = {
         id: entryId,
@@ -202,6 +204,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onAddEntry, onAddExpense, ent
 
         setLastEntry(newEntry);
         setSuccessMsg("تم حفظ المعاملة بنجاح!");
+
+        // Generate a new ID for the next potential entry
+        stableEntryIdRef.current = Date.now().toString();
 
         // Reset Form
         setClientName('');

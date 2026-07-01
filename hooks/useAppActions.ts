@@ -264,6 +264,9 @@ export const useAppActions = (
       const result = await GoogleSheetsService.addRow('Entries', sheetEntry, user?.role || 'موظف');
       if (!result.success) {
         setEntries((prev: ServiceEntry[]) => prev.filter(e => e.id !== entry.id));
+        // If it failed due to a timeout but actually succeeded on the server, 
+        // triggering a sync will eventually pull it back down so it doesn't stay hidden.
+        syncAll();
       } else {
         const physicalCash = entry.amountPaid - (entry.electronicAmount || 0);
         if (physicalCash !== 0) {
